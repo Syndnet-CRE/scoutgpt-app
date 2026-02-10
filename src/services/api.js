@@ -7,7 +7,7 @@ import {
 } from '../data/mockData';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const USE_MOCK = true; // Flip to false when backend is ready
+const USE_MOCK = false; // Flip to false when backend is ready
 
 // --- Properties ---
 
