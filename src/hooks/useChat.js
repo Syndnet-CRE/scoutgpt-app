@@ -1,24 +1,46 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { sendChatMessage } from '../services/api';
 
+const GREETING = {
+  role: 'assistant',
+  content:
+    "Hey — I'm Scout, your CRE research assistant. I can search properties, analyze market data, and find opportunities across Travis County. What are you looking for?",
+  timestamp: new Date(),
+};
+
 export function useChat() {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: "Hey — I'm Scout, your CRE research assistant. I can search properties, analyze market data, and find opportunities across Travis County. What are you looking for?",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState([GREETING]);
   const [loading, setLoading] = useState(false);
   const [highlightedProperties, setHighlightedProperties] = useState([]);
 
-  const send = useCallback(async (text, mapContext = {}) => {
+  // Keep a ref to messages so the send callback always sees current state
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
+  const send = useCallback(async (text) => {
     const userMsg = { role: 'user', content: text, timestamp: new Date() };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
     try {
-      const response = await sendChatMessage(text, mapContext);
+      // Build API messages from conversation history
+      // Skip the canned greeting (index 0), only send real exchanges
+      const currentMsgs = [...messagesRef.current, userMsg];
+      const apiMessages = [];
+
+      for (let i = 1; i < currentMsgs.length; i++) {
+        const m = currentMsgs[i];
+        if ((m.role === 'user' || m.role === 'assistant') && !m.error) {
+          apiMessages.push({ role: m.role, content: m.content });
+        }
+      }
+
+      // Safety: ensure we have at least the current user message
+      if (apiMessages.length === 0) {
+        apiMessages.push({ role: 'user', content: text });
+      }
+
+      const response = await sendChatMessage(apiMessages);
 
       const assistantMsg = {
         role: 'assistant',
@@ -33,13 +55,14 @@ export function useChat() {
         setHighlightedProperties(response.properties);
       }
     } catch (err) {
+      console.error('[CHAT] Error:', err);
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: "Something went wrong with that search. Could you try rephrasing?",
-          timestamp: new Date(),
+          content: err.message || "Something went wrong with that search. Could you try rephrasing?",
           error: true,
+          timestamp: new Date(),
         },
       ]);
     } finally {
