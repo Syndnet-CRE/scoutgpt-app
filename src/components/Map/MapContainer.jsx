@@ -47,28 +47,15 @@ export default function MapContainer({
         generateId: true,
       });
 
-      // Base fill — all parcels
+      // Base fill — invisible, kept for click/hover detection
       map.addLayer({
         id: 'parcels-fill',
         type: 'fill',
         source: 'parcels',
         'source-layer': TILESET_LAYER,
         paint: {
-          'fill-color': '#1e40af',
-          'fill-opacity': 0.15,
-        },
-      });
-
-      // Base outline — all parcels
-      map.addLayer({
-        id: 'parcels-outline',
-        type: 'line',
-        source: 'parcels',
-        'source-layer': TILESET_LAYER,
-        paint: {
-          'line-color': '#3b82f6',
-          'line-width': 0.5,
-          'line-opacity': 0.4,
+          'fill-color': '#000000',
+          'fill-opacity': 0,
         },
       });
 
@@ -99,7 +86,7 @@ export default function MapContainer({
         },
       });
 
-      // Selected fill — clicked parcel (blue)
+      // Selected fill — clicked parcel (red)
       map.addLayer({
         id: 'parcels-selected-fill',
         type: 'fill',
@@ -107,12 +94,12 @@ export default function MapContainer({
         'source-layer': TILESET_LAYER,
         filter: ['==', ['get', 'attom_id'], -1],
         paint: {
-          'fill-color': '#3b82f6',
-          'fill-opacity': 0.5,
+          'fill-color': '#ef4444',
+          'fill-opacity': 0.25,
         },
       });
 
-      // Selected outline — clicked parcel (blue)
+      // Selected outline — clicked parcel (red)
       map.addLayer({
         id: 'parcels-selected-outline',
         type: 'line',
@@ -120,7 +107,7 @@ export default function MapContainer({
         'source-layer': TILESET_LAYER,
         filter: ['==', ['get', 'attom_id'], -1],
         paint: {
-          'line-color': '#60a5fa',
+          'line-color': '#ef4444',
           'line-width': 2.5,
           'line-opacity': 1,
         },
@@ -245,7 +232,7 @@ export default function MapContainer({
     const map = mapRef.current;
     const vis = visibleLayers?.parcels !== false ? 'visible' : 'none';
     const parcelLayers = [
-      'parcels-fill', 'parcels-outline',
+      'parcels-fill',
       'parcels-highlight-fill', 'parcels-highlight-outline',
       'parcels-selected-fill', 'parcels-selected-outline',
       'chat-markers-circle', 'chat-markers-dot',
