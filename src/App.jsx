@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import MapContainer from './components/Map/MapContainer';
 import LeftPanel from './components/LeftPanel/LeftPanel';
 import RightPanel from './components/RightPanel/RightPanel';
@@ -34,7 +34,7 @@ export default function App() {
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
 
   // Chat state
-  const { messages, loading: chatLoading, send: sendChat, highlightedProperties } = useChat();
+  const { messages, loading: chatLoading, send: sendChat, highlightedProperties, clearHighlights } = useChat();
 
   // Properties for current viewport + filters
   const { properties } = useProperties(mapBbox, filters);
@@ -54,14 +54,16 @@ export default function App() {
     loadProperty(attomId);
   }, [loadProperty]);
 
-  // Chat send handler
+  // Debug: log when highlighted properties change
+  useEffect(() => {
+    console.log('[APP] highlightedProperties changed:', highlightedProperties.length, highlightedProperties.slice(0, 5));
+  }, [highlightedProperties]);
+
+  // Chat send handler — clear old highlights before sending new query
   const handleChatSend = useCallback((text) => {
-    sendChat(text, {
-      visibleLayers,
-      filters,
-      // In production, include map bbox here
-    });
-  }, [sendChat, visibleLayers, filters]);
+    clearHighlights();
+    sendChat(text);
+  }, [sendChat, clearHighlights]);
 
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-scout-bg">

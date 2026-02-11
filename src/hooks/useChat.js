@@ -41,6 +41,7 @@ export function useChat() {
       }
 
       const response = await sendChatMessage(apiMessages);
+      console.log('[CHAT] Response received:', { text: response.text?.substring(0, 80), propertiesCount: response.properties?.length, properties: response.properties?.slice(0, 5) });
 
       const assistantMsg = {
         role: 'assistant',
@@ -52,7 +53,12 @@ export function useChat() {
       setMessages((prev) => [...prev, assistantMsg]);
 
       if (response.properties && response.properties.length > 0) {
-        setHighlightedProperties(response.properties.map(Number));
+        const numericIds = response.properties.map(Number);
+        console.log('[CHAT] Setting highlighted properties:', numericIds.length, 'first 5:', numericIds.slice(0, 5));
+        setHighlightedProperties(numericIds);
+      } else {
+        console.log('[CHAT] No properties in response, clearing highlights');
+        setHighlightedProperties([]);
       }
     } catch (err) {
       console.error('[CHAT] Error:', err);
