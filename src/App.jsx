@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import MapContainer from './components/Map/MapContainer';
 import LeftPanel from './components/LeftPanel/LeftPanel';
 import RightPanel from './components/RightPanel/RightPanel';
@@ -7,7 +7,7 @@ import { useProperties } from './hooks/useProperties';
 import { usePropertyDetail } from './hooks/usePropertyDetail';
 import { useLayers } from './hooks/useLayers';
 import { useChat } from './hooks/useChat';
-import { MOCK_PARCELS_GEOJSON, MOCK_FLOOD_GEOJSON, MOCK_SCHOOL_GEOJSON } from './data/mockData';
+import { MOCK_FLOOD_GEOJSON, MOCK_SCHOOL_GEOJSON } from './data/mockData';
 
 export default function App() {
   // Layer visibility state
@@ -60,14 +60,6 @@ export default function App() {
     });
   }, [sendChat, visibleLayers, filters]);
 
-  // Using mock GeoJSON directly for now — swap to API-fetched data later
-  const parcelsGeoJSON = useMemo(() => {
-    // Add feature IDs for feature-state to work
-    const data = { ...MOCK_PARCELS_GEOJSON };
-    data.features = data.features.map((f, i) => ({ ...f, id: i }));
-    return data;
-  }, []);
-
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-scout-bg">
       {/* Left Panel — Layers + Filters */}
@@ -81,7 +73,6 @@ export default function App() {
       {/* Map — Center */}
       <div className="flex-1 relative">
         <MapContainer
-          parcelsGeoJSON={parcelsGeoJSON}
           floodGeoJSON={MOCK_FLOOD_GEOJSON}
           schoolsGeoJSON={MOCK_SCHOOL_GEOJSON}
           visibleLayers={visibleLayers}

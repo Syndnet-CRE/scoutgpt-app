@@ -1,14 +1,15 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 
-// You'll set this to your real token
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.placeholder';
 
 const AUSTIN_CENTER = [-97.7431, 30.2672];
 const INITIAL_ZOOM = 12;
 
+const TILESET_ID = 'bradyirwin.travis-parcels';
+const TILESET_LAYER = 'parcels'; // source-layer name from MTS recipe
+
 export default function MapContainer({
-  parcelsGeoJSON,
   floodGeoJSON,
   schoolsGeoJSON,
   visibleLayers,
@@ -37,37 +38,24 @@ export default function MapContainer({
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
 
     map.on('load', () => {
-      setMapLoaded(true);
-    });
+      // --- PARCEL BOUNDARIES FROM VECTOR TILESET ---
+      map.addSource('parcels', {
+        type: 'vector',
+        url: `mapbox://${TILESET_ID}`,
+        promoteId: 'attom_id', // Use attom_id as feature ID for feature-state
+      });
 
-    mapRef.current = map;
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
-
-  // Add/update parcel layer
-  useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !parcelsGeoJSON) return;
-    const map = mapRef.current;
-
-    if (map.getSource('parcels')) {
-      map.getSource('parcels').setData(parcelsGeoJSON);
-    } else {
-      map.addSource('parcels', { type: 'geojson', data: parcelsGeoJSON });
-
+      // Base fill — all parcels
       map.addLayer({
         id: 'parcels-fill',
         type: 'fill',
         source: 'parcels',
+        'source-layer': TILESET_LAYER,
         paint: {
           'fill-color': [
             'case',
             ['boolean', ['feature-state', 'selected'], false], '#3b82f6',
             ['boolean', ['feature-state', 'highlighted'], false], '#f59e0b',
-            ['==', ['get', 'is_corporate'], true], '#8b5cf6',
             '#1e40af',
           ],
           'fill-opacity': [
@@ -79,10 +67,12 @@ export default function MapContainer({
         },
       });
 
+      // Outline — all parcels
       map.addLayer({
         id: 'parcels-outline',
         type: 'line',
         source: 'parcels',
+        'source-layer': TILESET_LAYER,
         paint: {
           'line-color': [
             'case',
@@ -94,37 +84,47 @@ export default function MapContainer({
             'case',
             ['boolean', ['feature-state', 'selected'], false], 2.5,
             ['boolean', ['feature-state', 'highlighted'], false], 2,
-            1,
+            0.5,
           ],
-          'line-opacity': 0.8,
+          'line-opacity': [
+            'case',
+            ['boolean', ['feature-state', 'selected'], false], 1,
+            ['boolean', ['feature-state', 'highlighted'], false], 0.9,
+            0.4,
+          ],
         },
       });
 
-      // Hover effect
-      let hoveredId = null;
-
+      // Hover cursor
       map.on('mouseenter', 'parcels-fill', () => {
         map.getCanvas().style.cursor = 'pointer';
       });
 
       map.on('mouseleave', 'parcels-fill', () => {
         map.getCanvas().style.cursor = '';
-        if (hoveredId !== null) {
-          map.setFeatureState({ source: 'parcels', id: hoveredId }, { hover: false });
-          hoveredId = null;
-        }
       });
 
-      // Click handler
+      // Click handler — get attom_id from clicked parcel
       map.on('click', 'parcels-fill', (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
           const attomId = feature.properties.attom_id;
-          if (onParcelClick) onParcelClick(attomId);
+          if (attomId && onParcelClick) {
+            onParcelClick(Number(attomId));
+          }
         }
       });
-    }
-  }, [mapLoaded, parcelsGeoJSON, onParcelClick]);
+
+      setMapLoaded(true);
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
 
   // Toggle parcel visibility
   useEffect(() => {
@@ -135,7 +135,7 @@ export default function MapContainer({
     if (map.getLayer('parcels-outline')) map.setLayoutProperty('parcels-outline', 'visibility', vis);
   }, [mapLoaded, visibleLayers?.parcels]);
 
-  // Flood zone layer
+  // Flood zone layer (GeoJSON from API)
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
@@ -156,7 +156,7 @@ export default function MapContainer({
           'fill-opacity': 0.2,
         },
         layout: { visibility: 'none' },
-      }, 'parcels-fill'); // Insert below parcels
+      }, 'parcels-fill');
 
       map.addLayer({
         id: 'flood-outline',
@@ -184,7 +184,7 @@ export default function MapContainer({
     if (map.getLayer('flood-outline')) map.setLayoutProperty('flood-outline', 'visibility', vis);
   }, [mapLoaded, visibleLayers?.flood]);
 
-  // School district layer
+  // School district layer (GeoJSON from API)
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
@@ -246,36 +246,35 @@ export default function MapContainer({
     if (map.getLayer('schools-label')) map.setLayoutProperty('schools-label', 'visibility', vis);
   }, [mapLoaded, visibleLayers?.schools]);
 
-  // Highlight properties from chat results
+  // Highlight properties from chat results + selected parcel
+  // Uses feature-state on vector tileset — keyed by attom_id (promoteId)
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !parcelsGeoJSON) return;
+    if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
-    const source = map.getSource('parcels');
-    if (!source) return;
 
-    // Clear all highlights first
-    parcelsGeoJSON.features.forEach((f, i) => {
-      map.setFeatureState({ source: 'parcels', id: i }, { highlighted: false, selected: false });
-    });
+    // Clear previous highlights by removing and re-adding feature states
+    // For vector sources, we need to track what we've set
+    // Use removeFeatureState to clear all at once
+    map.removeFeatureState({ source: 'parcels', sourceLayer: TILESET_LAYER });
 
-    // Set highlights
+    // Set highlights from chat results
     if (highlightedProperties && highlightedProperties.length > 0) {
-      parcelsGeoJSON.features.forEach((f, i) => {
-        if (highlightedProperties.includes(f.properties.attom_id)) {
-          map.setFeatureState({ source: 'parcels', id: i }, { highlighted: true });
-        }
-      });
+      for (const attomId of highlightedProperties) {
+        map.setFeatureState(
+          { source: 'parcels', sourceLayer: TILESET_LAYER, id: attomId },
+          { highlighted: true }
+        );
+      }
     }
 
-    // Set selected
+    // Set selected parcel
     if (selectedAttomId) {
-      parcelsGeoJSON.features.forEach((f, i) => {
-        if (f.properties.attom_id === selectedAttomId) {
-          map.setFeatureState({ source: 'parcels', id: i }, { selected: true });
-        }
-      });
+      map.setFeatureState(
+        { source: 'parcels', sourceLayer: TILESET_LAYER, id: selectedAttomId },
+        { selected: true }
+      );
     }
-  }, [mapLoaded, highlightedProperties, selectedAttomId, parcelsGeoJSON]);
+  }, [mapLoaded, highlightedProperties, selectedAttomId]);
 
   return (
     <div ref={mapContainer} className="w-full h-full" />
