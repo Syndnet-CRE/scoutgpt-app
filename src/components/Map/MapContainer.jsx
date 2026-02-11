@@ -42,7 +42,7 @@ export default function MapContainer({
       map.addSource('parcels', {
         type: 'vector',
         url: `mapbox://${TILESET_ID}`,
-        promoteId: 'attom_id', // Use attom_id as feature ID for feature-state
+        generateId: true,
       });
 
       // Base fill — all parcels
@@ -52,46 +52,75 @@ export default function MapContainer({
         source: 'parcels',
         'source-layer': TILESET_LAYER,
         paint: {
-          'fill-color': [
-            'case',
-            ['boolean', ['feature-state', 'selected'], false], '#3b82f6',
-            ['boolean', ['feature-state', 'highlighted'], false], '#f59e0b',
-            '#1e40af',
-          ],
-          'fill-opacity': [
-            'case',
-            ['boolean', ['feature-state', 'selected'], false], 0.5,
-            ['boolean', ['feature-state', 'highlighted'], false], 0.4,
-            0.15,
-          ],
+          'fill-color': '#1e40af',
+          'fill-opacity': 0.15,
         },
       });
 
-      // Outline — all parcels
+      // Base outline — all parcels
       map.addLayer({
         id: 'parcels-outline',
         type: 'line',
         source: 'parcels',
         'source-layer': TILESET_LAYER,
         paint: {
-          'line-color': [
-            'case',
-            ['boolean', ['feature-state', 'selected'], false], '#60a5fa',
-            ['boolean', ['feature-state', 'highlighted'], false], '#fbbf24',
-            '#3b82f6',
-          ],
-          'line-width': [
-            'case',
-            ['boolean', ['feature-state', 'selected'], false], 2.5,
-            ['boolean', ['feature-state', 'highlighted'], false], 2,
-            0.5,
-          ],
-          'line-opacity': [
-            'case',
-            ['boolean', ['feature-state', 'selected'], false], 1,
-            ['boolean', ['feature-state', 'highlighted'], false], 0.9,
-            0.4,
-          ],
+          'line-color': '#3b82f6',
+          'line-width': 0.5,
+          'line-opacity': 0.4,
+        },
+      });
+
+      // Highlight fill — chat results (amber)
+      map.addLayer({
+        id: 'parcels-highlight-fill',
+        type: 'fill',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        filter: ['==', ['get', 'attom_id'], ''],
+        paint: {
+          'fill-color': '#f59e0b',
+          'fill-opacity': 0.4,
+        },
+      });
+
+      // Highlight outline — chat results (amber)
+      map.addLayer({
+        id: 'parcels-highlight-outline',
+        type: 'line',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        filter: ['==', ['get', 'attom_id'], ''],
+        paint: {
+          'line-color': '#fbbf24',
+          'line-width': 2,
+          'line-opacity': 0.9,
+        },
+      });
+
+      // Selected fill — clicked parcel (blue)
+      map.addLayer({
+        id: 'parcels-selected-fill',
+        type: 'fill',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        filter: ['==', ['get', 'attom_id'], ''],
+        paint: {
+          'fill-color': '#3b82f6',
+          'fill-opacity': 0.5,
+        },
+      });
+
+      // Selected outline — clicked parcel (blue)
+      map.addLayer({
+        id: 'parcels-selected-outline',
+        type: 'line',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        filter: ['==', ['get', 'attom_id'], ''],
+        paint: {
+          'line-color': '#60a5fa',
+          'line-width': 2.5,
+          'line-opacity': 1,
         },
       });
 
@@ -108,8 +137,9 @@ export default function MapContainer({
       map.on('click', 'parcels-fill', (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
+          console.log('[MAP] Clicked feature:', feature.properties);
           const attomId = feature.properties.attom_id;
-          if (attomId && onParcelClick) {
+          if (attomId != null && onParcelClick) {
             onParcelClick(Number(attomId));
           }
         }
@@ -131,8 +161,14 @@ export default function MapContainer({
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
     const vis = visibleLayers?.parcels !== false ? 'visible' : 'none';
-    if (map.getLayer('parcels-fill')) map.setLayoutProperty('parcels-fill', 'visibility', vis);
-    if (map.getLayer('parcels-outline')) map.setLayoutProperty('parcels-outline', 'visibility', vis);
+    const parcelLayers = [
+      'parcels-fill', 'parcels-outline',
+      'parcels-highlight-fill', 'parcels-highlight-outline',
+      'parcels-selected-fill', 'parcels-selected-outline',
+    ];
+    for (const id of parcelLayers) {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
+    }
   }, [mapLoaded, visibleLayers?.parcels]);
 
   // Flood zone layer (GeoJSON from API)
@@ -246,35 +282,43 @@ export default function MapContainer({
     if (map.getLayer('schools-label')) map.setLayoutProperty('schools-label', 'visibility', vis);
   }, [mapLoaded, visibleLayers?.schools]);
 
-  // Highlight properties from chat results + selected parcel
-  // Uses feature-state on vector tileset — keyed by attom_id (promoteId)
+  // Highlight properties from chat results (filter-based — works regardless of attom_id type)
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
 
-    // Clear previous highlights by removing and re-adding feature states
-    // For vector sources, we need to track what we've set
-    // Use removeFeatureState to clear all at once
-    map.removeFeatureState({ source: 'parcels', sourceLayer: TILESET_LAYER });
-
-    // Set highlights from chat results
     if (highlightedProperties && highlightedProperties.length > 0) {
-      for (const attomId of highlightedProperties) {
-        map.setFeatureState(
-          { source: 'parcels', sourceLayer: TILESET_LAYER, id: attomId },
-          { highlighted: true }
-        );
-      }
+      // Include both string and number variants so the filter matches either type
+      const ids = highlightedProperties.flatMap((id) => [String(id), Number(id)]);
+      const filter = ['in', ['get', 'attom_id'], ['literal', ids]];
+      if (map.getLayer('parcels-highlight-fill')) map.setFilter('parcels-highlight-fill', filter);
+      if (map.getLayer('parcels-highlight-outline')) map.setFilter('parcels-highlight-outline', filter);
+    } else {
+      const noMatch = ['==', ['get', 'attom_id'], ''];
+      if (map.getLayer('parcels-highlight-fill')) map.setFilter('parcels-highlight-fill', noMatch);
+      if (map.getLayer('parcels-highlight-outline')) map.setFilter('parcels-highlight-outline', noMatch);
     }
+  }, [mapLoaded, highlightedProperties]);
 
-    // Set selected parcel
-    if (selectedAttomId) {
-      map.setFeatureState(
-        { source: 'parcels', sourceLayer: TILESET_LAYER, id: selectedAttomId },
-        { selected: true }
-      );
+  // Selected parcel (filter-based)
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+
+    if (selectedAttomId != null) {
+      // Match either string or number representation
+      const filter = ['any',
+        ['==', ['get', 'attom_id'], String(selectedAttomId)],
+        ['==', ['get', 'attom_id'], Number(selectedAttomId)],
+      ];
+      if (map.getLayer('parcels-selected-fill')) map.setFilter('parcels-selected-fill', filter);
+      if (map.getLayer('parcels-selected-outline')) map.setFilter('parcels-selected-outline', filter);
+    } else {
+      const noMatch = ['==', ['get', 'attom_id'], ''];
+      if (map.getLayer('parcels-selected-fill')) map.setFilter('parcels-selected-fill', noMatch);
+      if (map.getLayer('parcels-selected-outline')) map.setFilter('parcels-selected-outline', noMatch);
     }
-  }, [mapLoaded, highlightedProperties, selectedAttomId]);
+  }, [mapLoaded, selectedAttomId]);
 
   return (
     <div ref={mapContainer} className="w-full h-full" />
