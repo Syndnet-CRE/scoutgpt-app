@@ -29,7 +29,7 @@ export default function MapContainer({
 
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: 'mapbox://styles/bradyirwin/cmlg51jvm004601qv5428h4aq',
       center: AUSTIN_CENTER,
       zoom: INITIAL_ZOOM,
       pitch: 0,
