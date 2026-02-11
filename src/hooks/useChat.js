@@ -12,6 +12,7 @@ export function useChat() {
   const [messages, setMessages] = useState([GREETING]);
   const [loading, setLoading] = useState(false);
   const [highlightedProperties, setHighlightedProperties] = useState([]);
+  const [chatMarkers, setChatMarkers] = useState([]);
 
   // Keep a ref to messages so the send callback always sees current state
   const messagesRef = useRef(messages);
@@ -60,6 +61,12 @@ export function useChat() {
         console.log('[CHAT] No properties in response, clearing highlights');
         setHighlightedProperties([]);
       }
+
+      if (response.propertyMarkers && response.propertyMarkers.length > 0) {
+        setChatMarkers(response.propertyMarkers);
+      } else {
+        setChatMarkers([]);
+      }
     } catch (err) {
       console.error('[CHAT] Error:', err);
       setMessages((prev) => [
@@ -78,7 +85,8 @@ export function useChat() {
 
   const clearHighlights = useCallback(() => {
     setHighlightedProperties([]);
+    setChatMarkers([]);
   }, []);
 
-  return { messages, loading, send, highlightedProperties, clearHighlights };
+  return { messages, loading, send, highlightedProperties, clearHighlights, chatMarkers };
 }

@@ -14,6 +14,7 @@ export default function MapContainer({
   schoolsGeoJSON,
   visibleLayers,
   highlightedProperties,
+  chatMarkers,
   onParcelClick,
   onBoundsChange,
   selectedAttomId,
@@ -125,6 +126,57 @@ export default function MapContainer({
         },
       });
 
+      // --- CHAT RESULT MARKERS (GeoJSON points) ---
+      map.addSource('chat-markers', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Red circle marker
+      map.addLayer({
+        id: 'chat-markers-circle',
+        type: 'circle',
+        source: 'chat-markers',
+        paint: {
+          'circle-radius': 7,
+          'circle-color': '#ef4444',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.9,
+        },
+      });
+
+      // White inner dot for pin effect
+      map.addLayer({
+        id: 'chat-markers-dot',
+        type: 'circle',
+        source: 'chat-markers',
+        paint: {
+          'circle-radius': 3,
+          'circle-color': '#ffffff',
+          'circle-opacity': 0.9,
+        },
+      });
+
+      // Click handler for chat markers
+      map.on('click', 'chat-markers-circle', (e) => {
+        if (e.features && e.features.length > 0) {
+          const attomId = e.features[0].properties.attomId;
+          if (attomId && onParcelClick) {
+            onParcelClick(Number(attomId));
+            map.flyTo({ center: e.lngLat, zoom: Math.max(map.getZoom(), 16), duration: 800 });
+          }
+        }
+      });
+
+      map.on('mouseenter', 'chat-markers-circle', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+
+      map.on('mouseleave', 'chat-markers-circle', () => {
+        map.getCanvas().style.cursor = '';
+      });
+
       // Hover cursor
       map.on('mouseenter', 'parcels-fill', () => {
         map.getCanvas().style.cursor = 'pointer';
@@ -196,6 +248,7 @@ export default function MapContainer({
       'parcels-fill', 'parcels-outline',
       'parcels-highlight-fill', 'parcels-highlight-outline',
       'parcels-selected-fill', 'parcels-selected-outline',
+      'chat-markers-circle', 'chat-markers-dot',
     ];
     for (const id of parcelLayers) {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
@@ -348,6 +401,34 @@ export default function MapContainer({
       if (map.getLayer('parcels-selected-outline')) map.setFilter('parcels-selected-outline', noMatch);
     }
   }, [mapLoaded, selectedAttomId]);
+
+  // Update chat marker points
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+    const source = map.getSource('chat-markers');
+    if (!source) return;
+
+    if (chatMarkers && chatMarkers.length > 0) {
+      const geojson = {
+        type: 'FeatureCollection',
+        features: chatMarkers
+          .filter(m => m.latitude && m.longitude)
+          .map(m => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [Number(m.longitude), Number(m.latitude)],
+            },
+            properties: { attomId: m.attomId },
+          })),
+      };
+      source.setData(geojson);
+      console.log('[MAP] Set', geojson.features.length, 'chat markers');
+    } else {
+      source.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }, [mapLoaded, chatMarkers]);
 
   return (
     <div ref={mapContainer} className="w-full h-full" />

@@ -34,7 +34,7 @@ export default function App() {
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
 
   // Chat state
-  const { messages, loading: chatLoading, send: sendChat, highlightedProperties, clearHighlights } = useChat();
+  const { messages, loading: chatLoading, send: sendChat, highlightedProperties, clearHighlights, chatMarkers } = useChat();
 
   // Properties for current viewport + filters
   const { properties } = useProperties(mapBbox, filters);
@@ -82,6 +82,7 @@ export default function App() {
           schoolsGeoJSON={MOCK_SCHOOL_GEOJSON}
           visibleLayers={visibleLayers}
           highlightedProperties={highlightedProperties}
+          chatMarkers={chatMarkers}
           onParcelClick={handleParcelClick}
           onBoundsChange={setMapBbox}
           selectedAttomId={selectedProperty?.attomId}
