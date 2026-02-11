@@ -1,13 +1,4 @@
-import {
-  MOCK_PROPERTIES,
-  MOCK_PARCELS_GEOJSON,
-  MOCK_FLOOD_GEOJSON,
-  MOCK_SCHOOL_GEOJSON,
-  MOCK_CHAT_RESPONSES,
-} from '../data/mockData';
-
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const USE_MOCK = false; // Connected to live backend
 
 // --- Properties ---
 

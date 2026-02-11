@@ -134,7 +134,7 @@ export default function MapContainer({
         map.getCanvas().style.cursor = '';
       });
 
-      // Click handler — get attom_id from clicked parcel
+      // Click handler — get attom_id from clicked parcel and fly to it
       map.on('click', 'parcels-fill', (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
@@ -143,6 +143,12 @@ export default function MapContainer({
           if (attomId != null && onParcelClick) {
             onParcelClick(Number(attomId));
           }
+          // Center map on the clicked parcel
+          map.flyTo({
+            center: [e.lngLat.lng, e.lngLat.lat],
+            zoom: Math.max(map.getZoom(), 16),
+            duration: 800,
+          });
         }
       });
 
