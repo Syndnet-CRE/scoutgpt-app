@@ -24,10 +24,106 @@ function formatArea(sqft) {
   return `${sqft.toLocaleString()} sf`;
 }
 
+// Transform API camelCase response into the shape sub-components expect
+function transformProperty(raw) {
+  // Owner from first ownership record
+  const ownerRec = raw.ownership?.[0];
+  const owner = ownerRec ? {
+    name: ownerRec.owner1NameFull || '—',
+    type: ownerRec.ownershipType || '—',
+    is_absentee: ownerRec.isAbsenteeOwner,
+    is_owner_occupied: ownerRec.isOwnerOccupied,
+    mail_address: [ownerRec.mailAddressFull, ownerRec.mailAddressCity, ownerRec.mailAddressState, ownerRec.mailAddressZip].filter(Boolean).join(', ') || null,
+  } : null;
+
+  // Tax from most recent assessment
+  const taxRec = raw.taxAssessments?.[0];
+  const tax = taxRec ? {
+    year: taxRec.taxYear,
+    assessed_total: parseFloat(taxRec.assessedValueTotal) || 0,
+    assessed_land: parseFloat(taxRec.assessedValueLand) || 0,
+    assessed_improvements: parseFloat(taxRec.assessedValueImprovements) || 0,
+    tax_billed: parseFloat(taxRec.taxAmountBilled) || 0,
+    homeowner_exemption: taxRec.hasHomeownerExemption,
+  } : null;
+
+  // Sales transactions
+  const sales = (raw.salesTransactions || [])
+    .filter(s => s.salePrice != null && parseFloat(s.salePrice) > 0)
+    .map(s => ({
+      price: parseFloat(s.salePrice) || 0,
+      date: s.recordingDate ? new Date(s.recordingDate).toLocaleDateString() : '—',
+      seller: s.grantor1NameFull || '—',
+      buyer: s.grantee1NameFull || '—',
+      arms_length: s.isArmsLength,
+    }));
+
+  // Current loans
+  const loans = (raw.currentLoans || []).map(l => ({
+    position: l.loanPosition,
+    amount: parseFloat(l.loanAmount) || 0,
+    type: l.mortgageType || l.loanType || '—',
+    rate: parseFloat(l.interestRate) || 0,
+    lender: l.lenderNameStandardized || '—',
+  }));
+
+  // Valuation from first record
+  const valRec = raw.valuations?.[0];
+  const valuation = valRec ? {
+    estimated_value: parseFloat(valRec.estimatedValue) || null,
+    estimated_min: parseFloat(valRec.estimatedMinValue) || null,
+    estimated_max: parseFloat(valRec.estimatedMaxValue) || null,
+    confidence: parseFloat(valRec.confidenceScore) || null,
+    rental_value: parseFloat(valRec.estimatedRentalValue) || null,
+    ltv: valRec.ltv != null ? parseFloat(valRec.ltv) / 100 : null,
+    available_equity: parseFloat(valRec.availableEquity) || null,
+  } : null;
+
+  // Climate risk (-1 means unknown, convert to 0)
+  const cr = raw.climateRisk;
+  const safeScore = (v) => (v != null && v >= 0) ? v : 0;
+  const climate = cr ? {
+    total: safeScore(cr.totalRiskScore),
+    heat: safeScore(cr.heatRiskScore),
+    storm: safeScore(cr.stormRiskScore),
+    wildfire: safeScore(cr.wildfireRiskScore),
+    drought: safeScore(cr.droughtRiskScore),
+    flood: safeScore(cr.floodRiskScore),
+  } : null;
+
+  // Building permits
+  const permits = (raw.buildingPermits || []).map(bp => ({
+    type: bp.permitType || '—',
+    status: bp.status || '—',
+    date: bp.effectiveDate ? new Date(bp.effectiveDate).toLocaleDateString() : '—',
+    description: bp.description || '',
+    value: parseFloat(bp.jobValue) || null,
+  }));
+
+  return {
+    address: raw.addressFull || '—',
+    city: raw.addressCity || '',
+    state: raw.addressState || '',
+    zip: raw.addressZip || '',
+    property_use: raw.propertyUseGroup || '—',
+    year_built: raw.yearBuilt,
+    building_area: raw.areaBuilding,
+    assessed_value: parseFloat(raw.taxAssessedValueTotal) || null,
+    last_sale_price: parseFloat(raw.lastSalePrice) || null,
+    valuation,
+    owner,
+    tax,
+    sales,
+    loans,
+    climate,
+    permits,
+  };
+}
+
 export default function PropertyCard({ property, onClose }) {
   if (!property) return null;
 
-  const p = property;
+  const p = transformProperty(property);
 
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[480px] max-h-[70vh] bg-scout-surface border border-scout-border rounded-xl shadow-2xl overflow-hidden animate-fade-in z-20">

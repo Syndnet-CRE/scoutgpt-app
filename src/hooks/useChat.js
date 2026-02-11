@@ -52,7 +52,7 @@ export function useChat() {
       setMessages((prev) => [...prev, assistantMsg]);
 
       if (response.properties && response.properties.length > 0) {
-        setHighlightedProperties(response.properties);
+        setHighlightedProperties(response.properties.map(Number));
       }
     } catch (err) {
       console.error('[CHAT] Error:', err);

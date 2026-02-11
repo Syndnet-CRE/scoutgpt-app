@@ -15,6 +15,7 @@ export default function MapContainer({
   visibleLayers,
   highlightedProperties,
   onParcelClick,
+  onBoundsChange,
   selectedAttomId,
 }) {
   const mapContainer = useRef(null);
@@ -145,7 +146,31 @@ export default function MapContainer({
         }
       });
 
+      // Emit initial bounds
+      if (onBoundsChange) {
+        const bounds = map.getBounds();
+        onBoundsChange({
+          west: bounds.getWest(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          north: bounds.getNorth(),
+        });
+      }
+
       setMapLoaded(true);
+    });
+
+    // Emit bounds on viewport change
+    map.on('moveend', () => {
+      if (onBoundsChange) {
+        const bounds = map.getBounds();
+        onBoundsChange({
+          west: bounds.getWest(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          north: bounds.getNorth(),
+        });
+      }
     });
 
     mapRef.current = map;

@@ -27,6 +27,9 @@ export default function App() {
     highEquity: false,
   });
 
+  // Map viewport bbox
+  const [mapBbox, setMapBbox] = useState(null);
+
   // Property detail state
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
 
@@ -34,7 +37,7 @@ export default function App() {
   const { messages, loading: chatLoading, send: sendChat, highlightedProperties } = useChat();
 
   // Properties for current viewport + filters
-  const { properties } = useProperties(null, filters);
+  const { properties } = useProperties(mapBbox, filters);
 
   // Layer toggle handler
   const handleToggleLayer = useCallback((layerKey) => {
@@ -78,7 +81,8 @@ export default function App() {
           visibleLayers={visibleLayers}
           highlightedProperties={highlightedProperties}
           onParcelClick={handleParcelClick}
-          selectedAttomId={selectedProperty?.attom_id}
+          onBoundsChange={setMapBbox}
+          selectedAttomId={selectedProperty?.attomId}
         />
 
         {/* Property Card overlay on map */}
