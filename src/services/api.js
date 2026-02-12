@@ -41,11 +41,6 @@ export async function fetchSchoolDistricts(bbox) {
 
 // --- Chat ---
 
-/**
- * Send chat messages to the backend.
- * @param {Array} messages - Full conversation history: [{ role: 'user'|'assistant', content: '...' }]
- * @returns {Promise<{ text: string, properties: number[], toolCalls: number }>}
- */
 export async function sendChatMessage(messages) {
   const res = await fetch(`${API_BASE}/chat`, {
     method: 'POST',
