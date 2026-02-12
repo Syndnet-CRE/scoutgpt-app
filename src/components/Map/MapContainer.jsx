@@ -211,7 +211,11 @@ export default function MapContainer({
             popupRef.current = popup;
             if (onPopupOpen) onPopupOpen(container, lngLat);
 
-            map.flyTo({ center: lngLat, zoom: Math.max(map.getZoom(), 16), duration: 800, offset: [0, -100] });
+            const leftPanel = 370;
+            const rightPanel = 400;
+            const horizontalOffset = (leftPanel - rightPanel) / 2;
+            const verticalOffset = 100;
+            map.flyTo({ center: lngLat, zoom: Math.max(map.getZoom(), 16), duration: 800, offset: [horizontalOffset, verticalOffset] });
           }
         }
       });
@@ -275,11 +279,19 @@ export default function MapContainer({
           popupRef.current = popup;
           if (onPopupOpen) onPopupOpen(container, lngLat);
 
+          // Calculate offset to center parcel+popup in visible area between panels
+          // Left panel ~370px, right panel ~400px → shift right by half the difference
+          const leftPanel = 370;
+          const rightPanel = 400;
+          const horizontalOffset = (leftPanel - rightPanel) / 2;
+          // Popup is ~200px tall above parcel, shift down so both are centered
+          const verticalOffset = 100;
+
           map.flyTo({
             center: lngLat,
             zoom: Math.max(map.getZoom(), 16),
             duration: 800,
-            offset: [0, -100],
+            offset: [horizontalOffset, verticalOffset],
           });
         }
       });
