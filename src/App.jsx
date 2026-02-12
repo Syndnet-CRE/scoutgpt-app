@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import MapContainer from './components/Map/MapContainer';
-import LeftPanel from './components/LeftPanel/LeftPanel';
+import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import RightPanel from './components/RightPanel/RightPanel';
 import PropertyCard from './components/PropertyCard/PropertyCard';
 import { useProperties } from './hooks/useProperties';
@@ -17,18 +17,11 @@ export default function App() {
     schools: false,
   });
 
-  // Data filter state
-  const [filters, setFilters] = useState({
-    absentee: false,
-    foreclosure: false,
-    ownerOccupied: false,
-    corporate: false,
-    recentSales: false,
-    highEquity: false,
-  });
-
   // Map viewport bbox
   const [mapBbox, setMapBbox] = useState(null);
+
+  // Filter-highlighted attom_ids (separate from chat highlights)
+  const [filterHighlightIds, setFilterHighlightIds] = useState([]);
 
   // Property detail state
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
@@ -36,17 +29,56 @@ export default function App() {
   // Chat state
   const { messages, loading: chatLoading, send: sendChat, highlightedProperties, clearHighlights, chatMarkers } = useChat();
 
-  // Properties for current viewport + filters
-  const { properties } = useProperties(mapBbox, filters);
+  // Properties for current viewport
+  const { properties } = useProperties(mapBbox, {});
 
-  // Layer toggle handler
-  const handleToggleLayer = useCallback((layerKey) => {
-    setVisibleLayers((prev) => ({ ...prev, [layerKey]: !prev[layerKey] }));
+  // Debounced filter handler — calls backend when filters change
+  const filterTimeoutRef = useRef(null);
+
+  const handleFilterChange = useCallback((backendFilters) => {
+    // Clear previous timeout
+    if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current);
+
+    // Check if any filters are active
+    const hasActiveFilters = Object.keys(backendFilters).length > 0;
+
+    if (!hasActiveFilters) {
+      // No filters active — clear filter highlights
+      setFilterHighlightIds([]);
+      return;
+    }
+
+    // Debounce 500ms to avoid spamming API during slider drags
+    filterTimeoutRef.current = setTimeout(async () => {
+      try {
+        // Use Travis County default bbox
+        const bbox = '-98.2,30.0,-97.3,30.7';
+        const params = new URLSearchParams({ bbox });
+
+        // Add active filters to query params
+        for (const [key, value] of Object.entries(backendFilters)) {
+          params.append(key, String(value));
+        }
+
+        const API_URL = import.meta.env.VITE_API_URL || 'https://scoutgpt-app.onrender.com/api';
+        const response = await fetch(`${API_URL}/properties?${params.toString()}`);
+
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+        const data = await response.json();
+        const ids = (data.properties || data || []).map(p => p.attomId || p.attom_id).filter(Boolean);
+
+        console.log(`[FILTERS] ${ids.length} properties match active filters`);
+        setFilterHighlightIds(ids);
+      } catch (err) {
+        console.error('[FILTERS] Failed to fetch filtered properties:', err);
+        setFilterHighlightIds([]);
+      }
+    }, 500);
   }, []);
 
-  // Filter toggle handler
-  const handleToggleFilter = useCallback((filterKey) => {
-    setFilters((prev) => ({ ...prev, [filterKey]: !prev[filterKey] }));
+  const handleLayerChange = useCallback((layerKey, isVisible) => {
+    setVisibleLayers(prev => ({ ...prev, [layerKey]: isVisible }));
   }, []);
 
   // Parcel click handler
@@ -67,15 +99,7 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-scout-bg">
-      {/* Left Panel — Layers + Filters */}
-      <LeftPanel
-        visibleLayers={visibleLayers}
-        onToggleLayer={handleToggleLayer}
-        filters={filters}
-        onToggleFilter={handleToggleFilter}
-      />
-
-      {/* Map — Center */}
+      {/* Map — full width */}
       <div className="flex-1 relative">
         <MapContainer
           floodGeoJSON={MOCK_FLOOD_GEOJSON}
@@ -86,6 +110,13 @@ export default function App() {
           onParcelClick={handleParcelClick}
           onBoundsChange={setMapBbox}
           selectedAttomId={selectedProperty?.attomId}
+          filterHighlightIds={filterHighlightIds}
+        />
+
+        {/* Floating left panel overlay */}
+        <LayersPanel
+          onLayerChange={handleLayerChange}
+          onFilterChange={handleFilterChange}
         />
 
         {/* Property Card overlay on map */}

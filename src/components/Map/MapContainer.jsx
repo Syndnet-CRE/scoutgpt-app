@@ -18,6 +18,7 @@ export default function MapContainer({
   onParcelClick,
   onBoundsChange,
   selectedAttomId,
+  filterHighlightIds,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -111,6 +112,32 @@ export default function MapContainer({
           'line-width': 2.5,
           'line-opacity': 1,
         },
+      });
+
+      // --- FILTER HIGHLIGHT LAYERS (green/teal) ---
+      map.addLayer({
+        id: 'parcels-filter-fill',
+        type: 'fill',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        paint: {
+          'fill-color': '#10b981',
+          'fill-opacity': 0.35,
+        },
+        filter: ['in', ['get', 'attom_id'], ['literal', []]],
+      });
+
+      map.addLayer({
+        id: 'parcels-filter-outline',
+        type: 'line',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 2,
+          'line-opacity': 0.9,
+        },
+        filter: ['in', ['get', 'attom_id'], ['literal', []]],
       });
 
       // --- CHAT RESULT MARKERS (GeoJSON points) ---
@@ -235,6 +262,7 @@ export default function MapContainer({
       'parcels-fill',
       'parcels-highlight-fill', 'parcels-highlight-outline',
       'parcels-selected-fill', 'parcels-selected-outline',
+      'parcels-filter-fill', 'parcels-filter-outline',
       'chat-markers-circle', 'chat-markers-dot',
     ];
     for (const id of parcelLayers) {
@@ -372,6 +400,25 @@ export default function MapContainer({
       if (map.getLayer('parcels-highlight-outline')) map.setFilter('parcels-highlight-outline', noMatch);
     }
   }, [mapLoaded, highlightedProperties]);
+
+  // Filter-highlight from left panel data filters
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+
+    if (filterHighlightIds && filterHighlightIds.length > 0) {
+      // Include both string and number variants for type safety
+      const ids = filterHighlightIds.flatMap(id => [Number(id), String(id)]);
+      const filterExpr = ['in', ['get', 'attom_id'], ['literal', ids]];
+      if (map.getLayer('parcels-filter-fill')) map.setFilter('parcels-filter-fill', filterExpr);
+      if (map.getLayer('parcels-filter-outline')) map.setFilter('parcels-filter-outline', filterExpr);
+    } else {
+      // No filters active — hide filter layers
+      const emptyFilter = ['in', ['get', 'attom_id'], ['literal', []]];
+      if (map.getLayer('parcels-filter-fill')) map.setFilter('parcels-filter-fill', emptyFilter);
+      if (map.getLayer('parcels-filter-outline')) map.setFilter('parcels-filter-outline', emptyFilter);
+    }
+  }, [mapLoaded, filterHighlightIds]);
 
   // Selected parcel (filter-based — attom_id is numeric in tiles)
   useEffect(() => {
