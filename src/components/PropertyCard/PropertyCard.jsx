@@ -135,7 +135,7 @@ export default function PropertyCard({ property, onClose }) {
   // ── MINI STATE ──────────────────────────────────────────────────
   if (!expanded) {
     return (
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] bg-scout-surface border border-scout-border rounded-xl shadow-2xl overflow-hidden animate-fade-in z-20">
+      <div className="w-[320px] bg-scout-surface border border-scout-border rounded-xl shadow-2xl overflow-hidden animate-fade-in">
         {/* Header */}
         <div className="flex items-start justify-between p-4 pb-0">
           <h2 className="text-base font-semibold text-white leading-snug pr-2">{p.addressFull || '—'}</h2>
@@ -190,7 +190,7 @@ export default function PropertyCard({ property, onClose }) {
   const foreclosures = p.foreclosureRecords || [];
 
   return (
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-h-[80vh] bg-scout-surface border border-scout-border rounded-xl shadow-2xl overflow-hidden animate-fade-in z-20 flex flex-col">
+    <div className="w-[420px] max-h-[60vh] bg-scout-surface border border-scout-border rounded-xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-r from-scout-accent/10 to-transparent border-b border-scout-border p-4 shrink-0">
         <div className="flex items-start justify-between">

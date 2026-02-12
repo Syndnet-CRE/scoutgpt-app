@@ -19,9 +19,12 @@ export default function MapContainer({
   onBoundsChange,
   selectedAttomId,
   filterHighlightIds,
+  onPopupOpen,
+  onPopupClose,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
+  const popupRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 
   // Initialize map
@@ -178,7 +181,37 @@ export default function MapContainer({
           const attomId = e.features[0].properties.attomId;
           if (attomId && onParcelClick) {
             onParcelClick(Number(attomId));
-            map.flyTo({ center: e.lngLat, zoom: Math.max(map.getZoom(), 16), duration: 800 });
+
+            if (popupRef.current) {
+              popupRef.current.remove();
+              popupRef.current = null;
+            }
+
+            const container = document.createElement('div');
+            container.style.width = '320px';
+            const lngLat = [e.lngLat.lng, e.lngLat.lat];
+
+            const popup = new mapboxgl.Popup({
+              closeButton: false,
+              closeOnClick: false,
+              maxWidth: '440px',
+              anchor: 'bottom',
+              offset: 15,
+              className: 'scout-popup',
+            })
+              .setLngLat(lngLat)
+              .setDOMContent(container)
+              .addTo(map);
+
+            popup.on('close', () => {
+              popupRef.current = null;
+              if (onPopupClose) onPopupClose();
+            });
+
+            popupRef.current = popup;
+            if (onPopupOpen) onPopupOpen(container, lngLat);
+
+            map.flyTo({ center: lngLat, zoom: Math.max(map.getZoom(), 16), duration: 800, offset: [0, -100] });
           }
         }
       });
@@ -200,7 +233,7 @@ export default function MapContainer({
         map.getCanvas().style.cursor = '';
       });
 
-      // Click handler — get attom_id from clicked parcel and fly to it
+      // Click handler — get attom_id from clicked parcel and open popup
       map.on('click', 'parcels-fill', (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
@@ -209,11 +242,44 @@ export default function MapContainer({
           if (attomId != null && onParcelClick) {
             onParcelClick(Number(attomId));
           }
-          // Center map on the clicked parcel
+
+          // Close existing popup
+          if (popupRef.current) {
+            popupRef.current.remove();
+            popupRef.current = null;
+          }
+
+          // Create popup DOM container
+          const container = document.createElement('div');
+          container.style.width = '320px';
+
+          const lngLat = [e.lngLat.lng, e.lngLat.lat];
+
+          const popup = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            maxWidth: '440px',
+            anchor: 'bottom',
+            offset: 15,
+            className: 'scout-popup',
+          })
+            .setLngLat(lngLat)
+            .setDOMContent(container)
+            .addTo(map);
+
+          popup.on('close', () => {
+            popupRef.current = null;
+            if (onPopupClose) onPopupClose();
+          });
+
+          popupRef.current = popup;
+          if (onPopupOpen) onPopupOpen(container, lngLat);
+
           map.flyTo({
-            center: [e.lngLat.lng, e.lngLat.lat],
+            center: lngLat,
             zoom: Math.max(map.getZoom(), 16),
             duration: 800,
+            offset: [0, -100],
           });
         }
       });
@@ -419,6 +485,14 @@ export default function MapContainer({
       if (map.getLayer('parcels-filter-outline')) map.setFilter('parcels-filter-outline', emptyFilter);
     }
   }, [mapLoaded, filterHighlightIds]);
+
+  // Close popup when property is deselected
+  useEffect(() => {
+    if (selectedAttomId == null && popupRef.current) {
+      popupRef.current.remove();
+      popupRef.current = null;
+    }
+  }, [selectedAttomId]);
 
   // Selected parcel (filter-based — attom_id is numeric in tiles)
   useEffect(() => {

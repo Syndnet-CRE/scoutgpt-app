@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import RightPanel from './components/RightPanel/RightPanel';
@@ -22,6 +23,9 @@ export default function App() {
 
   // Filter-highlighted attom_ids (separate from chat highlights)
   const [filterHighlightIds, setFilterHighlightIds] = useState([]);
+
+  // Popup container for portal rendering
+  const [popupContainer, setPopupContainer] = useState(null);
 
   // Property detail state
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
@@ -81,6 +85,15 @@ export default function App() {
     setVisibleLayers(prev => ({ ...prev, [layerKey]: isVisible }));
   }, []);
 
+  const handlePopupOpen = useCallback((container) => {
+    setPopupContainer(container);
+  }, []);
+
+  const handlePopupClose = useCallback(() => {
+    setPopupContainer(null);
+    clearProperty();
+  }, [clearProperty]);
+
   // Parcel click handler
   const handleParcelClick = useCallback((attomId) => {
     loadProperty(attomId);
@@ -111,6 +124,8 @@ export default function App() {
           onBoundsChange={setMapBbox}
           selectedAttomId={selectedProperty?.attomId}
           filterHighlightIds={filterHighlightIds}
+          onPopupOpen={handlePopupOpen}
+          onPopupClose={handlePopupClose}
         />
 
         {/* Floating left panel overlay */}
@@ -119,12 +134,13 @@ export default function App() {
           onFilterChange={handleFilterChange}
         />
 
-        {/* Property Card overlay on map */}
-        {selectedProperty && (
+        {/* Property Card rendered inside Mapbox popup via portal */}
+        {selectedProperty && popupContainer && createPortal(
           <PropertyCard
             property={selectedProperty}
-            onClose={clearProperty}
-          />
+            onClose={() => { clearProperty(); setPopupContainer(null); }}
+          />,
+          popupContainer
         )}
 
         {/* Loading overlay for property detail */}
