@@ -21,11 +21,48 @@ export default function MapContainer({
   filterHighlightIds,
   onPopupOpen,
   onPopupClose,
+  mapExpandRef,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const popupRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Handle popup expand — re-pan map to center larger DetailModule
+  const handlePopupExpand = () => {
+    if (!mapRef.current || !popupRef.current) return;
+    const map = mapRef.current;
+
+    // Get the popup's anchor coordinates
+    const lngLat = popupRef.current.getLngLat();
+    if (!lngLat) return;
+
+    // Calculate offset to center the larger card
+    // Card is 780px wide, ~90vh tall
+    // Left panel ~370px, right panel ~400px
+    // Visible map area: window.innerWidth - 370 - 400
+    const leftPanel = 370;
+    const rightPanel = 400;
+    const visibleHeight = window.innerHeight;
+
+    // We want the CENTER of the card to be at the CENTER of visible area
+    // Card anchors at top-center to the parcel point
+    // So we need to offset the parcel point down and to the center
+    const horizontalOffset = (leftPanel - rightPanel) / 2;
+    const verticalOffset = visibleHeight * 0.45; // push parcel toward bottom so card body is centered
+
+    map.flyTo({
+      center: [lngLat.lng, lngLat.lat],
+      offset: [horizontalOffset, verticalOffset],
+      duration: 600,
+      essential: true,
+    });
+  };
+
+  // Expose handlePopupExpand via ref
+  if (mapExpandRef) {
+    mapExpandRef.current = handlePopupExpand;
+  }
 
   // Initialize map
   useEffect(() => {
@@ -188,13 +225,12 @@ export default function MapContainer({
             }
 
             const container = document.createElement('div');
-            container.style.width = '416px';
             const lngLat = [e.lngLat.lng, e.lngLat.lat];
 
             const popup = new mapboxgl.Popup({
               closeButton: false,
               closeOnClick: false,
-              maxWidth: '440px',
+              maxWidth: '800px',
               anchor: 'bottom',
               offset: 15,
               className: 'scout-popup',
@@ -255,14 +291,13 @@ export default function MapContainer({
 
           // Create popup DOM container
           const container = document.createElement('div');
-          container.style.width = '416px';
 
           const lngLat = [e.lngLat.lng, e.lngLat.lat];
 
           const popup = new mapboxgl.Popup({
             closeButton: false,
             closeOnClick: false,
-            maxWidth: '440px',
+            maxWidth: '800px',
             anchor: 'bottom',
             offset: 15,
             className: 'scout-popup',

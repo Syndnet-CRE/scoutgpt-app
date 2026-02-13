@@ -937,7 +937,7 @@ const RiskEnvironment = ({ data }) => {
 // MINI POPUP (for Mapbox popup portal)
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const MiniPopup = ({ data, onViewDetails, onClose }) => {
+const MiniPopup = ({ data, onViewDetails, onClose }) => {
   if (!data) return null;
 
   // Get data with fallbacks for both camelCase and snake_case
@@ -1087,7 +1087,7 @@ export const MiniPopup = ({ data, onViewDetails, onClose }) => {
 const TABS = [
   { id: 'overview', label: 'Overview', icon: 'building' },
   { id: 'ownership', label: 'Ownership', icon: 'user' },
-  { id: 'deals', label: 'Deals', icon: 'handshake' },
+  { id: 'deals', label: 'Transactions', icon: 'handshake' },
   { id: 'financing', label: 'Financing', icon: 'dollar-sign' },
   { id: 'distress', label: 'Distress', icon: 'alert-triangle' },
   { id: 'valuation', label: 'Valuation', icon: 'bar-chart' },
@@ -1096,7 +1096,7 @@ const TABS = [
   { id: 'risk', label: 'Risk', icon: 'shield' },
 ];
 
-export const DetailModule = ({ data, onClose }) => {
+const DetailModule = ({ data, onClose }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!data) return null;
@@ -1134,7 +1134,7 @@ export const DetailModule = ({ data, onClose }) => {
 
   return (
     <Glass
-      className="w-[480px] max-h-[85vh] flex flex-col shadow-2xl"
+      className="w-[780px] max-h-[90vh] flex flex-col shadow-2xl"
       style={{ ...GLASS }}
     >
       {/* Header */}
@@ -1211,3 +1211,27 @@ export const DetailModule = ({ data, onClose }) => {
     </Glass>
   );
 };
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROPERTY CARD (manages mini/expanded state)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const PropertyCard = ({ data, onClose, onExpand }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!data) return null;
+
+  const handleViewDetails = () => {
+    setExpanded(true);
+    // Notify parent so map can re-pan to center the larger card
+    onExpand?.();
+  };
+
+  if (expanded) {
+    return <DetailModule data={data} onClose={onClose} />;
+  }
+
+  return <MiniPopup data={data} onViewDetails={handleViewDetails} onClose={onClose} />;
+};
+
+export { PropertyCard };

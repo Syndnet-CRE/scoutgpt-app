@@ -1,2 +1,2 @@
-import { MiniPopup } from './PropertyCardModule';
-export default MiniPopup;
+import { PropertyCard } from './PropertyCardModule';
+export default PropertyCard;
