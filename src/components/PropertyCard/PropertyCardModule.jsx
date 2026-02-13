@@ -69,6 +69,65 @@ const get = (obj, camel, snake) => {
   return obj[camel] ?? obj[snake] ?? null;
 };
 
+// Property use code lookup (ATTOM codes → human labels)
+const PROPERTY_USE_LABELS = {
+  "100": "Agricultural",
+  "102": "Farm/Ranch",
+  "110": "Livestock",
+  "130": "Timberland",
+  "163": "Orchard",
+  "200": "Commercial",
+  "201": "Office",
+  "202": "Retail",
+  "203": "Warehouse",
+  "204": "Restaurant",
+  "205": "Hotel/Motel",
+  "206": "Medical Office",
+  "207": "Shopping Center",
+  "208": "Service Station",
+  "209": "Parking",
+  "210": "Bank",
+  "211": "Day Care",
+  "212": "Auto Dealership",
+  "220": "Industrial Light",
+  "221": "Industrial Heavy",
+  "230": "Mixed Use",
+  "240": "Entertainment",
+  "250": "Government",
+  "260": "Church/Religious",
+  "270": "School/Education",
+  "280": "Hospital/Health",
+  "290": "Utility",
+  "300": "Vacant Land",
+  "301": "Vacant Residential",
+  "302": "Vacant Commercial",
+  "303": "Vacant Industrial",
+  "350": "Residential",
+  "360": "Single Family",
+  "361": "Condo",
+  "362": "Townhouse",
+  "363": "Co-op",
+  "364": "Mobile Home",
+  "370": "Duplex",
+  "371": "Triplex",
+  "372": "Quadruplex",
+  "380": "Multi-Family (5-9)",
+  "381": "Multi-Family (10-19)",
+  "382": "Multi-Family (20-49)",
+  "383": "Multi-Family (50-99)",
+  "384": "Multi-Family (100+)",
+  "385": "Residential (NEC)",
+  "390": "Apartment",
+  "400": "Exempt/Institutional",
+};
+
+const resolvePropertyType = (code, group) => {
+  if (!code && !group) return "Property";
+  if (code && PROPERTY_USE_LABELS[code]) return PROPERTY_USE_LABELS[code];
+  if (code && /^[0-9]+$/.test(code)) return group || `Type ${code}`;
+  return code || group || "Property";
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ICON COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
@@ -188,8 +247,7 @@ const SectionDivider = () => (
 
 // 1. Property Overview
 const PropertyOverview = ({ data }) => {
-  const type = get(data, 'propertyUseStandardized', 'property_use_standardized') ||
-               get(data, 'propertyUseGroup', 'property_use_group');
+  const type = resolvePropertyType(get(data, 'propertyUseStandardized', 'property_use_standardized'), get(data, 'propertyUseGroup', 'property_use_group'));
   const yearBuilt = get(data, 'yearBuilt', 'year_built');
   const beds = get(data, 'bedroomsCount', 'bedrooms_count');
   const baths = get(data, 'bathCount', 'bath_count');
@@ -202,10 +260,10 @@ const PropertyOverview = ({ data }) => {
   const units = get(data, 'unitsCount', 'units_count');
   const buildings = get(data, 'buildingsCount', 'buildings_count');
   const construction = get(data, 'constructionType', 'construction_type');
-  const foundation = get(data, 'foundationType', 'foundation_type');
+  const foundation = get(data, 'foundation', 'foundation');
   const roof = get(data, 'roofType', 'roof_type');
-  const roofMaterial = get(data, 'roofMaterialType', 'roof_material_type');
-  const exterior = get(data, 'exteriorWallsType', 'exterior_walls_type');
+  const roofMaterial = get(data, 'roofMaterial', 'roof_material');
+  const exterior = get(data, 'exteriorWalls', 'exterior_walls');
   const floor = get(data, 'floorType', 'floor_type');
   const pool = get(data, 'hasPool', 'has_pool');
   const poolType = get(data, 'poolType', 'pool_type');
@@ -215,9 +273,9 @@ const PropertyOverview = ({ data }) => {
   const garage = get(data, 'garageType', 'garage_type');
   const garageArea = get(data, 'garageArea', 'garage_area');
   const parking = get(data, 'parkingSpaces', 'parking_spaces');
-  const hvacCooling = get(data, 'hvacCoolingType', 'hvac_cooling_type');
-  const hvacHeating = get(data, 'hvacHeatingType', 'hvac_heating_type');
-  const hvacFuel = get(data, 'hvacHeatingFuel', 'hvac_heating_fuel');
+  const hvacCooling = get(data, 'hvacCooling', 'hvac_cooling');
+  const hvacHeating = get(data, 'hvacHeating', 'hvac_heating');
+  const hvacFuel = get(data, 'hvacFuel', 'hvac_fuel');
   const quality = get(data, 'qualityGrade', 'quality_grade');
   const condition = get(data, 'condition', 'condition');
   const zoning = get(data, 'zoning', 'zoning');
@@ -383,9 +441,9 @@ const DealHistory = ({ data }) => {
         const seller = get(sale, 'grantor1NameFull', 'grantor1_name_full');
         const armsLength = get(sale, 'isArmsLength', 'is_arms_length');
         const distressed = get(sale, 'isDistressed', 'is_distressed');
-        const investor = get(sale, 'isInvestor', 'is_investor');
+        const investor = get(sale, 'granteeInvestorFlag', 'grantee_investor_flag');
         const docType = get(sale, 'documentType', 'document_type');
-        const titleCompany = get(sale, 'titleCompany', 'title_company');
+        const titleCompany = get(sale, 'titleCompanyStandardized', 'title_company_standardized');
         const downPayment = get(sale, 'downPayment', 'down_payment');
         const purchaseLtv = get(sale, 'purchaseLtv', 'purchase_ltv');
         const mortgages = sale.mortgages || [];
@@ -470,7 +528,7 @@ const FinancingDebt = ({ data }) => {
             const lender = get(loan, 'lenderNameStandardized', 'lender_name_standardized');
             const rate = get(loan, 'interestRate', 'interest_rate');
             const term = get(loan, 'loanTerm', 'loan_term');
-            const dueDate = get(loan, 'loanDueDate', 'loan_due_date');
+            const dueDate = get(loan, 'dueDate', 'due_date');
             const estBalance = get(loan, 'estimatedBalance', 'estimated_balance');
             const estMonthly = get(loan, 'estimatedMonthlyPayment', 'estimated_monthly_payment');
 
@@ -499,7 +557,8 @@ const FinancingDebt = ({ data }) => {
 // 5. Distress Signals
 const DistressSignals = ({ data }) => {
   const foreclosures = data.foreclosureRecords || data.foreclosure_records || [];
-  const taxDelinquentYear = get(data, 'taxDelinquentYear', 'tax_delinquent_year');
+  const taxDelinquentYear = get(data, 'taxDelinquentYear', 'tax_delinquent_year') ||
+                            get(data.taxAssessments?.[0], 'taxDelinquentYear', 'tax_delinquent_year');
 
   const hasDistress = foreclosures.length > 0 || taxDelinquentYear;
 
@@ -532,7 +591,7 @@ const DistressSignals = ({ data }) => {
         const filingDate = get(f, 'foreclosureRecordingDate', 'foreclosure_recording_date');
         const caseNumber = get(f, 'caseNumber', 'case_number');
         const borrower = get(f, 'borrowerName', 'borrower_name');
-        const lender = get(f, 'lenderName', 'lender_name');
+        const lender = get(f, 'lenderNameStandardized', 'lender_name_standardized');
         const trustee = get(f, 'trusteeName', 'trustee_name');
         const originalLoan = get(f, 'originalLoanAmount', 'original_loan_amount');
         const loanBalance = get(f, 'loanBalance', 'loan_balance');
@@ -540,7 +599,7 @@ const DistressSignals = ({ data }) => {
         const auctionDate = get(f, 'auctionDate', 'auction_date');
         const openingBid = get(f, 'auctionOpeningBid', 'auction_opening_bid');
         const auctionAddress = get(f, 'auctionAddress', 'auction_address');
-        const status = get(f, 'statusField', 'status_field');
+        const status = get(f, 'status', 'status');
         const estimatedValue = get(f, 'estimatedValue', 'estimated_value');
         const maturityDate = get(f, 'loanMaturityDate', 'loan_maturity_date');
         const originalRate = get(f, 'originalLoanInterestRate', 'original_loan_interest_rate');
@@ -661,8 +720,9 @@ const ValuationEquity = ({ data }) => {
 // 7. Tax Profile
 const TaxProfile = ({ data }) => {
   const taxRecords = data.taxAssessments || data.tax_assessments || [];
-  const taxDelinquentYear = get(data, 'taxDelinquentYear', 'tax_delinquent_year');
   const current = taxRecords[0];
+  const taxDelinquentYear = get(data, 'taxDelinquentYear', 'tax_delinquent_year') ||
+                            get(current, 'taxDelinquentYear', 'tax_delinquent_year');
 
   if (!current && !taxDelinquentYear) {
     return <div className="text-slate-400 text-sm italic">No tax data available</div>;
@@ -775,7 +835,7 @@ const DevelopmentActivity = ({ data }) => {
           const effectiveDate = get(p, 'effectiveDate', 'effective_date');
           const description = get(p, 'description', 'description');
           const jobValue = get(p, 'jobValue', 'job_value');
-          const fees = get(p, 'permitFees', 'permit_fees');
+          const fees = get(p, 'fees', 'fees');
           const projectName = get(p, 'projectName', 'project_name');
           const businessName = get(p, 'businessName', 'business_name');
 
@@ -885,8 +945,7 @@ export const MiniPopup = ({ data, onViewDetails, onClose }) => {
   const city = get(data, 'addressCity', 'address_city');
   const state = get(data, 'addressState', 'address_state');
   const zip = get(data, 'addressZip', 'address_zip');
-  const propertyType = get(data, 'propertyUseStandardized', 'property_use_standardized') ||
-                       get(data, 'propertyUseGroup', 'property_use_group') || "Property";
+  const propertyType = resolvePropertyType(get(data, 'propertyUseStandardized', 'property_use_standardized'), get(data, 'propertyUseGroup', 'property_use_group'));
 
   // Valuation
   const valuation = data.valuations?.[0] || data.valuation;
@@ -912,7 +971,8 @@ export const MiniPopup = ({ data, onViewDetails, onClose }) => {
 
   // Distress signals
   const foreclosures = data.foreclosureRecords || data.foreclosure_records || [];
-  const taxDelinquentYear = get(data, 'taxDelinquentYear', 'tax_delinquent_year');
+  const taxDelinquentYear = get(data, 'taxDelinquentYear', 'tax_delinquent_year') ||
+                            get(data.taxAssessments?.[0], 'taxDelinquentYear', 'tax_delinquent_year');
   const hasForeclosure = foreclosures.length > 0;
   const hasTaxDelinquent = !!taxDelinquentYear;
 
@@ -1045,8 +1105,7 @@ export const DetailModule = ({ data, onClose }) => {
   const city = get(data, 'addressCity', 'address_city');
   const state = get(data, 'addressState', 'address_state');
   const zip = get(data, 'addressZip', 'address_zip');
-  const propertyType = get(data, 'propertyUseStandardized', 'property_use_standardized') ||
-                       get(data, 'propertyUseGroup', 'property_use_group') || "Property";
+  const propertyType = resolvePropertyType(get(data, 'propertyUseStandardized', 'property_use_standardized'), get(data, 'propertyUseGroup', 'property_use_group'));
 
   // Key metrics for header bar
   const valuation = data.valuations?.[0] || data.valuation;
