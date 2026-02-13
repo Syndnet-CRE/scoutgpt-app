@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import {
-  X, Building2, User, Receipt, DollarSign, TrendingUp,
-  Shield, Hammer, ChevronDown, ChevronUp, Calendar, Ruler,
-  Home, Landmark, MapPin, BedDouble, Bath, AlertTriangle,
-  Layers, FileText, Gavel,
+  X, User, Receipt, DollarSign, TrendingUp,
+  Shield, Hammer, ChevronDown, ChevronUp,
+  Home, Landmark, Layers, Gavel,
 } from 'lucide-react';
 
 // ── Formatting helpers ──────────────────────────────────────────────

@@ -2,11 +2,11 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
-import RightPanel from './components/RightPanel/RightPanel';
+import ScoutGPTChatPanel from './components/RightPanel/ScoutGPTChatPanel';
 import PropertyCard from './components/PropertyCard/PropertyCard';
 import { useProperties } from './hooks/useProperties';
 import { usePropertyDetail } from './hooks/usePropertyDetail';
-import { useLayers } from './hooks/useLayers';
+
 import { useChat } from './hooks/useChat';
 import { MOCK_FLOOD_GEOJSON, MOCK_SCHOOL_GEOJSON } from './data/mockData';
 
@@ -31,7 +31,7 @@ export default function App() {
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
 
   // Chat state
-  const { messages, loading: chatLoading, send: sendChat, highlightedProperties, clearHighlights, chatMarkers } = useChat();
+  const { messages, loading: chatLoading, send: sendChat, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers } = useChat();
 
   // Properties for current viewport
   const { properties } = useProperties(mapBbox, {});
@@ -110,6 +110,28 @@ export default function App() {
     sendChat(text);
   }, [sendChat, clearHighlights]);
 
+  // Chat panel: highlight specific properties on map
+  const handleHighlightProperties = useCallback((attomIds) => {
+    if (setHighlightedProperties) {
+      setHighlightedProperties(attomIds.map(Number));
+    }
+  }, [setHighlightedProperties]);
+
+  // Chat panel: show single property on map (flyTo + highlight)
+  const handleShowOnMap = useCallback((attomId) => {
+    // Highlight just this one property
+    if (setHighlightedProperties) {
+      setHighlightedProperties([Number(attomId)]);
+    }
+    // Also load the property detail to open its popup
+    loadProperty(attomId);
+  }, [setHighlightedProperties, loadProperty]);
+
+  // Chat panel: view property details (opens Mapbox popup via same flow as parcel click)
+  const handleSelectProperty = useCallback((attomId) => {
+    loadProperty(attomId);
+  }, [loadProperty]);
+
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-scout-bg">
       {/* Map — full width */}
@@ -154,11 +176,14 @@ export default function App() {
         )}
       </div>
 
-      {/* Right Panel — Claude Chat */}
-      <RightPanel
+      {/* Right Panel — Scout AI Chat (floating overlay) */}
+      <ScoutGPTChatPanel
         messages={messages}
         loading={chatLoading}
         onSend={handleChatSend}
+        onSelectProperty={handleSelectProperty}
+        onShowOnMap={handleShowOnMap}
+        onHighlightProperties={handleHighlightProperties}
       />
     </div>
   );
