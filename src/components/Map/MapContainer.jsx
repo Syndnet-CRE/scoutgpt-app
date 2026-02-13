@@ -188,7 +188,7 @@ export default function MapContainer({
             }
 
             const container = document.createElement('div');
-            container.style.width = '320px';
+            container.style.width = '416px';
             const lngLat = [e.lngLat.lng, e.lngLat.lat];
 
             const popup = new mapboxgl.Popup({
@@ -255,7 +255,7 @@ export default function MapContainer({
 
           // Create popup DOM container
           const container = document.createElement('div');
-          container.style.width = '320px';
+          container.style.width = '416px';
 
           const lngLat = [e.lngLat.lng, e.lngLat.lat];
 

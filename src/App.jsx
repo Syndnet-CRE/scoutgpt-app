@@ -4,6 +4,7 @@ import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import ScoutGPTChatPanel from './components/RightPanel/ScoutGPTChatPanel';
 import PropertyCard from './components/PropertyCard/PropertyCard';
+import { DetailModule } from './components/PropertyCard/PropertyCardModule';
 import { useProperties } from './hooks/useProperties';
 import { usePropertyDetail } from './hooks/usePropertyDetail';
 
@@ -27,11 +28,14 @@ export default function App() {
   // Popup container for portal rendering
   const [popupContainer, setPopupContainer] = useState(null);
 
+  // Detail overlay state (full 9-tab module)
+  const [detailOverlay, setDetailOverlay] = useState(null);
+
   // Property detail state
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
 
   // Chat state
-  const { messages, loading: chatLoading, send: sendChat, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers } = useChat();
+  const { messages, loading: chatLoading, send: sendChat, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers, resetChat } = useChat();
 
   // Properties for current viewport
   const { properties } = useProperties(mapBbox, {});
@@ -96,8 +100,21 @@ export default function App() {
 
   // Parcel click handler
   const handleParcelClick = useCallback((attomId) => {
+    setDetailOverlay(null); // Close detail overlay when clicking new parcel
     loadProperty(attomId);
   }, [loadProperty]);
+
+  // View property details — opens full 9-tab DetailModule overlay
+  const handleViewDetails = useCallback(() => {
+    if (selectedProperty) {
+      setDetailOverlay(selectedProperty);
+      // Close the Mapbox popup
+      if (popupContainer) {
+        setPopupContainer(null);
+        clearProperty();
+      }
+    }
+  }, [selectedProperty, popupContainer, clearProperty]);
 
   // Debug: log when highlighted properties change
   useEffect(() => {
@@ -159,7 +176,8 @@ export default function App() {
         {/* Property Card rendered inside Mapbox popup via portal */}
         {selectedProperty && popupContainer && createPortal(
           <PropertyCard
-            property={selectedProperty}
+            data={selectedProperty}
+            onViewDetails={handleViewDetails}
             onClose={() => { clearProperty(); setPopupContainer(null); }}
           />,
           popupContainer
@@ -184,7 +202,27 @@ export default function App() {
         onSelectProperty={handleSelectProperty}
         onShowOnMap={handleShowOnMap}
         onHighlightProperties={handleHighlightProperties}
+        onNewChat={resetChat}
       />
+
+      {/* Detail Module Overlay */}
+      {detailOverlay && (
+        <>
+          {/* Click-catcher: covers map area only, closes detail */}
+          <div
+            className="fixed inset-0"
+            style={{ zIndex: 50 }}
+            onClick={() => setDetailOverlay(null)}
+          />
+          {/* Detail Module */}
+          <div
+            className="fixed top-4 bottom-4"
+            style={{ zIndex: 60, right: 440 }}
+          >
+            <DetailModule data={detailOverlay} onClose={() => setDetailOverlay(null)} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

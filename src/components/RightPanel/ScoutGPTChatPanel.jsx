@@ -375,7 +375,7 @@ function ToggleButton({ onClick }) {
         border: `1px solid ${hovered ? T.accent : T.borderLight}`,
         boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "all 200ms ease", zIndex: 50,
+        transition: "all 200ms ease", zIndex: 55,
       }}>
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"
@@ -399,6 +399,7 @@ export default function ScoutGPTChatPanel({
   onSelectProperty,
   onShowOnMap,
   onHighlightProperties,
+  onNewChat,
   onClose,
 }) {
   // ── Multi-session state ──
@@ -423,13 +424,16 @@ export default function ScoutGPTChatPanel({
 
   // ── Create new session ──
   const createNewChat = useCallback(() => {
+    onNewChat?.(); // Reset parent state (messages, highlights, markers)
     const id = "chat_" + Date.now();
     setSessions(prev => [{ id, title: "New chat", subtitle: "Just now" }, ...prev]);
     setActiveSessionId(id);
     setHistoryOpen(false);
     setInput("");
+    setCardData({}); // Clear cached property cards
+    lastFetchedRef.current = new Set(); // Reset fetch tracking
     onHighlightProperties?.([]);
-  }, [onHighlightProperties]);
+  }, [onNewChat, onHighlightProperties]);
 
   // ── Switch session ──
   const switchSession = useCallback((id) => {
@@ -535,7 +539,7 @@ export default function ScoutGPTChatPanel({
       boxShadow: "0 8px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.15)",
       overflow: "hidden",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
-      color: T.textBody, zIndex: 50,
+      color: T.textBody, zIndex: 55,
       animation: "slideIn 300ms cubic-bezier(0.4, 0, 0.2, 1)",
     }}>
 

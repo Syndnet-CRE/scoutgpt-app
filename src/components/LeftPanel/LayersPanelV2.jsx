@@ -365,7 +365,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange }) {
   const filtered = search ? SECTIONS.map(s=>({...s,layers:s.layers.filter(l=>l.label.toLowerCase().includes(search.toLowerCase()))})).filter(s=>s.layers.length>0) : SECTIONS;
 
   if (!isOpen) return (
-    <div style={{ position: "absolute", top: 12, left: 12, zIndex: 20, display: "flex", gap: 6 }}>
+    <div style={{ position: "absolute", top: 12, left: 12, zIndex: 55, display: "flex", gap: 6 }}>
       {[["layers",Layers,"Layers",totalLayers],["filters",Filter,"Filters",cntFilters]].map(([v,Ic,lb,cnt]) => (
         <button key={v} onClick={() => {setIsOpen(true);setView(v);}} style={{ background: C.panelBg, color: C.textPrimary, border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, boxShadow: C.panelShadow, fontFamily: font }}>
           <Ic size={15} strokeWidth={1.8} />{lb}
@@ -376,7 +376,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange }) {
   );
 
   return (<>
-    <div style={{ position: "absolute", top: 12, left: 12, zIndex: 20, width: 350, maxHeight: "calc(100vh - 24px)", background: C.panelBg, borderRadius: 14, boxShadow: C.panelShadow, display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: font, border: `1px solid ${C.borderLight}` }}>
+    <div style={{ position: "absolute", top: 12, left: 12, zIndex: 55, width: 350, maxHeight: "calc(100vh - 24px)", background: C.panelBg, borderRadius: 14, boxShadow: C.panelShadow, display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: font, border: `1px solid ${C.borderLight}` }}>
       {/* HEADER */}
       <div style={{ padding: "12px 14px 0", borderBottom: `1px solid ${C.borderLight}`, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>

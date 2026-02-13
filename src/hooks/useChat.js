@@ -88,5 +88,11 @@ export function useChat() {
     setChatMarkers([]);
   }, []);
 
-  return { messages, loading, send, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers };
+  const resetChat = useCallback(() => {
+    setMessages([GREETING]);
+    setHighlightedProperties([]);
+    setChatMarkers([]);
+  }, []);
+
+  return { messages, loading, send, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers, resetChat };
 }
