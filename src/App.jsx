@@ -4,6 +4,7 @@ import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import ScoutGPTChatPanel from './components/RightPanel/ScoutGPTChatPanel';
 import { PropertyCard } from './components/PropertyCard/PropertyCardModule';
+import WorkstationDrawer from './components/Workstation/WorkstationDrawer';
 import { useProperties } from './hooks/useProperties';
 import { usePropertyDetail } from './hooks/usePropertyDetail';
 
@@ -29,6 +30,13 @@ export default function App() {
 
   // Ref for map expand callback
   const mapExpandRef = useRef(null);
+
+  // Workstation state
+  const [workstationOpen, setWorkstationOpen] = useState(false);
+  const [workstationProperty, setWorkstationProperty] = useState(null);
+
+  // Track if workstation was open in previous render (to avoid clearing popup on first property load)
+  const wasWorkstationOpenRef = useRef(false);
 
   // Property detail state
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
@@ -135,6 +143,29 @@ export default function App() {
     loadProperty(attomId);
   }, [loadProperty]);
 
+  // Open workstation with property data
+  const handleOpenWorkstation = useCallback((propertyData) => {
+    setWorkstationProperty(propertyData);
+    setWorkstationOpen(true);
+    // Close the Mapbox popup
+    clearProperty();
+    setPopupContainer(null);
+  }, [clearProperty]);
+
+  // Update workstation data when a new parcel is clicked while workstation is already open
+  useEffect(() => {
+    // Only auto-update workstation if it was ALREADY open before this property loaded
+    // This prevents clearing the popup on initial property load
+    if (selectedProperty && workstationOpen && wasWorkstationOpenRef.current) {
+      setWorkstationProperty(selectedProperty);
+      // Close popup since workstation is showing this property
+      clearProperty();
+      setPopupContainer(null);
+    }
+    // Track current workstation state for next render
+    wasWorkstationOpenRef.current = workstationOpen;
+  }, [selectedProperty, workstationOpen, clearProperty]);
+
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-scout-bg">
       {/* Map — full width */}
@@ -166,6 +197,7 @@ export default function App() {
             data={selectedProperty}
             onClose={() => { clearProperty(); setPopupContainer(null); }}
             onExpand={() => mapExpandRef.current?.()}
+            onOpenWorkstation={() => handleOpenWorkstation(selectedProperty)}
           />,
           popupContainer
         )}
@@ -190,6 +222,13 @@ export default function App() {
         onShowOnMap={handleShowOnMap}
         onHighlightProperties={handleHighlightProperties}
         onNewChat={resetChat}
+      />
+
+      {/* Bottom Drawer Workstation */}
+      <WorkstationDrawer
+        data={workstationProperty}
+        isOpen={workstationOpen}
+        onClose={() => setWorkstationOpen(false)}
       />
     </div>
   );

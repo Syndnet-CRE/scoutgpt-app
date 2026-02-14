@@ -937,7 +937,7 @@ const RiskEnvironment = ({ data }) => {
 // MINI POPUP (for Mapbox popup portal)
 // ══════════════════════════════════════════════════════════════════════════════
 
-const MiniPopup = ({ data, onViewDetails, onClose }) => {
+const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
   if (!data) return null;
 
   // Get data with fallbacks for both camelCase and snake_case
@@ -1066,7 +1066,7 @@ const MiniPopup = ({ data, onViewDetails, onClose }) => {
         </div>
       </div>
 
-      {/* CTA Button */}
+      {/* CTA Buttons */}
       <div className="px-4 pb-4">
         <button
           onClick={onViewDetails}
@@ -1075,6 +1075,30 @@ const MiniPopup = ({ data, onViewDetails, onClose }) => {
           VIEW PROPERTY DETAILS
           <Icon name="chevron-down" size={14} className="rotate-[-90deg]" />
         </button>
+        {onOpenWorkstation && (
+          <button
+            onClick={onOpenWorkstation}
+            style={{
+              width: '100%',
+              padding: '9px 0',
+              marginTop: '6px',
+              background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#fff',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              letterSpacing: '0.02em',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>&#x2B1C;</span> OPEN IN WORKSTATION
+          </button>
+        )}
       </div>
     </Glass>
   );
@@ -1216,7 +1240,7 @@ const DetailModule = ({ data, onClose }) => {
 // PROPERTY CARD (manages mini/expanded state)
 // ══════════════════════════════════════════════════════════════════════════════
 
-const PropertyCard = ({ data, onClose, onExpand }) => {
+const PropertyCard = ({ data, onClose, onExpand, onOpenWorkstation }) => {
   const [expanded, setExpanded] = useState(false);
 
   if (!data) return null;
@@ -1231,7 +1255,7 @@ const PropertyCard = ({ data, onClose, onExpand }) => {
     return <DetailModule data={data} onClose={onClose} />;
   }
 
-  return <MiniPopup data={data} onViewDetails={handleViewDetails} onClose={onClose} />;
+  return <MiniPopup data={data} onViewDetails={handleViewDetails} onClose={onClose} onOpenWorkstation={onOpenWorkstation} />;
 };
 
 export { PropertyCard };
