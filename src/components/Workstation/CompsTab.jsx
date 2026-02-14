@@ -54,26 +54,15 @@ const fmt = {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
-// HELPER: get value with fallback
-// ══════════════════════════════════════════════════════════════════════════════
-
-const get = (obj, ...keys) => {
-  if (!obj) return null;
-  for (const k of keys) {
-    if (obj[k] != null && obj[k] !== '') return obj[k];
-  }
-  return null;
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
 // COMPS TAB
 // ══════════════════════════════════════════════════════════════════════════════
 
 export default function CompsTab({ data }) {
-  // Subject property info
-  const address = get(data, 'addressFull', 'address_full', 'propertyAddress') || 'Subject Property';
-  const buildingSf = get(data, 'areaBuilding', 'area_building', 'buildingArea');
-  const propertyType = get(data, 'propertyUseStandardized', 'property_use_standardized', 'propertyUseGroup', 'property_use_group', 'propertyType') || 'Property';
+  // Subject property info - use correct camelCase API field names
+  const address = data?.addressFull || 'Subject Property';
+  const buildingSf = data?.areaBuilding;
+  const lotAcres = data?.areaLotAcres;
+  const propertyType = data?.propertyUseStandardized || data?.propertyUseGroup || 'Property';
 
   // Calculate averages from mock data
   const avgPsf = MOCK_COMPS.reduce((sum, c) => sum + c.psf, 0) / MOCK_COMPS.length;
@@ -105,6 +94,10 @@ export default function CompsTab({ data }) {
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase' }}>SF</div>
               <div style={{ fontSize: 13, color: C.text, fontFamily: fontMono }}>{fmt.sf(buildingSf)}</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase' }}>Lot</div>
+              <div style={{ fontSize: 13, color: C.text, fontFamily: fontMono }}>{fmt.ac(lotAcres)}</div>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase' }}>Type</div>

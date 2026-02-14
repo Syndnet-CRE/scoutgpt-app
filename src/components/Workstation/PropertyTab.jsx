@@ -7,6 +7,8 @@ import React, { useState } from 'react';
 const C = {
   bg: '#0f172a',
   bgCard: 'rgba(30,41,59,0.5)',
+  bgRow: 'rgba(30,41,59,0.3)',
+  bgRowHover: 'rgba(51,65,85,0.4)',
   borderLight: 'rgba(51,65,85,0.5)',
   borderAccent: 'rgba(99,102,241,0.3)',
   accent: '#6366f1',
@@ -17,6 +19,7 @@ const C = {
   green: '#34d399',
   amber: '#fbbf24',
   red: '#f87171',
+  cyan: '#22d3ee',
 };
 
 const font = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
@@ -27,31 +30,28 @@ const fontMono = "'JetBrains Mono', 'Fira Code', monospace";
 // ══════════════════════════════════════════════════════════════════════════════
 
 const fmt = {
-  money: v => v == null || v === 0 ? '—' : `$${Number(v).toLocaleString()}`,
-  sf: v => v == null ? '—' : `${Number(v).toLocaleString()} SF`,
-  ac: v => v == null ? '—' : `${Number(v).toFixed(2)} ac`,
-  pct: v => v == null ? '—' : `${Number(v).toFixed(1)}%`,
-  num: v => v == null ? '—' : Number(v).toLocaleString(),
-  text: v => v == null || v === '' ? '—' : v,
+  money: v => (v == null || v === 0 || v === '') ? '—' : `$${Number(v).toLocaleString()}`,
+  sf: v => (v == null || v === 0 || v === '') ? '—' : `${Number(v).toLocaleString()} SF`,
+  ac: v => (v == null || v === 0 || v === '') ? '—' : `${Number(v).toFixed(2)} ac`,
+  pct: v => (v == null || v === '') ? '—' : `${Number(v).toFixed(1)}%`,
+  num: v => (v == null || v === 0 || v === '') ? '—' : Number(v).toLocaleString(),
+  psf: v => (v == null || v === 0 || v === '') ? '—' : `$${Number(v).toFixed(2)}/SF`,
+  date: v => {
+    if (!v) return '—';
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  },
+  text: v => (v == null || v === '') ? '—' : v,
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// HELPER: get value with fallback
-// ══════════════════════════════════════════════════════════════════════════════
-
-const get = (obj, ...keys) => {
-  if (!obj) return null;
-  for (const k of keys) {
-    if (obj[k] != null && obj[k] !== '') return obj[k];
-  }
-  return null;
-};
+const riskColor = (score) => !score ? C.textMuted : score > 70 ? C.red : score > 40 ? C.amber : C.green;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SUB-COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-const DataRow = ({ label, value }) => (
+const DataRow = ({ label, value, valueColor }) => (
   <div
     style={{
       display: 'flex',
@@ -62,7 +62,7 @@ const DataRow = ({ label, value }) => (
     }}
   >
     <span style={{ color: C.textDim, fontSize: 13 }}>{label}</span>
-    <span style={{ color: '#f1f5f9', fontSize: 13, fontFamily: fontMono }}>{value}</span>
+    <span style={{ color: valueColor || '#f1f5f9', fontSize: 13, fontFamily: fontMono }}>{value}</span>
   </div>
 );
 
@@ -90,6 +90,7 @@ const Badge = ({ children, color = 'slate' }) => {
     cyan: { bg: 'rgba(34,211,238,0.2)', text: '#22d3ee', border: 'rgba(34,211,238,0.3)' },
     amber: { bg: 'rgba(251,191,36,0.2)', text: '#fbbf24', border: 'rgba(251,191,36,0.3)' },
     green: { bg: 'rgba(52,211,153,0.2)', text: '#34d399', border: 'rgba(52,211,153,0.3)' },
+    red: { bg: 'rgba(248,113,113,0.2)', text: '#f87171', border: 'rgba(248,113,113,0.3)' },
   };
   const c = colors[color] || colors.slate;
   return (
@@ -112,7 +113,7 @@ const Badge = ({ children, color = 'slate' }) => {
   );
 };
 
-const PlaceholderContent = ({ icon, title }) => (
+const EmptyState = ({ icon, title, subtitle }) => (
   <div
     style={{
       display: 'flex',
@@ -126,68 +127,116 @@ const PlaceholderContent = ({ icon, title }) => (
     }}
   >
     <span style={{ fontSize: 32, opacity: 0.5 }}>{icon}</span>
-    <span style={{ fontSize: 14 }}>{title}</span>
-    <span style={{ fontSize: 12, opacity: 0.6 }}>Content populated from live API</span>
+    <span style={{ fontSize: 14, fontWeight: 500 }}>{title}</span>
+    {subtitle && <span style={{ fontSize: 12, opacity: 0.6 }}>{subtitle}</span>}
   </div>
 );
+
+const Card = ({ children, style = {} }) => (
+  <div
+    style={{
+      background: C.bgCard,
+      borderRadius: 12,
+      border: `1px solid ${C.borderLight}`,
+      padding: 20,
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const CardHeader = ({ children }) => (
+  <div
+    style={{
+      fontSize: 10,
+      fontWeight: 700,
+      color: C.accent,
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 12,
+    }}
+  >
+    {children}
+  </div>
+);
+
+// Table styles
+const thStyle = {
+  padding: '12px 16px',
+  textAlign: 'left',
+  color: C.textMuted,
+  fontWeight: 600,
+  fontSize: 11,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+  borderBottom: `1px solid ${C.borderLight}`,
+  background: 'rgba(30,41,59,0.6)',
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
+};
+
+const tdStyle = {
+  padding: '12px 16px',
+  borderBottom: `1px solid ${C.borderLight}`,
+  fontSize: 13,
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // OVERVIEW SUB-TAB
 // ══════════════════════════════════════════════════════════════════════════════
 
 const OverviewSubTab = ({ data }) => {
-  const type = get(data, 'propertyUseStandardized', 'property_use_standardized', 'propertyUseGroup', 'property_use_group', 'propertyType');
-  const yearBuilt = get(data, 'yearBuilt', 'year_built');
-  const buildingSf = get(data, 'areaBuilding', 'area_building', 'buildingArea');
-  const lotAc = get(data, 'areaLotAcres', 'area_lot_acres', 'lotSize');
-  const lotSf = get(data, 'areaLotSf', 'area_lot_sf');
-  const stories = get(data, 'storiesCount', 'stories_count', 'stories');
-  const buildings = get(data, 'buildingsCount', 'buildings_count', 'buildings');
-  const units = get(data, 'unitsCount', 'units_count', 'units');
-  const zoning = get(data, 'zoning');
-  const construction = get(data, 'constructionType', 'construction_type');
-  const exterior = get(data, 'exteriorWalls', 'exterior_walls');
-  const foundation = get(data, 'foundation');
-  const roof = get(data, 'roofMaterial', 'roof_material', 'roofType', 'roof_type');
-  const hvacCooling = get(data, 'hvacCooling', 'hvac_cooling');
-  const hvacHeating = get(data, 'hvacHeating', 'hvac_heating');
-  const pool = get(data, 'hasPool', 'has_pool', 'pool');
-  const parking = get(data, 'parkingSpaces', 'parking_spaces');
-  const elevator = get(data, 'hasElevator', 'has_elevator', 'elevator');
-  const beds = get(data, 'bedroomsCount', 'bedrooms_count');
-  const baths = get(data, 'bathCount', 'bath_count');
-
-  const lotDisplay = lotAc ? fmt.ac(lotAc) : lotSf ? fmt.sf(lotSf) : '—';
+  const lotDisplay = data.areaLotAcres ? fmt.ac(data.areaLotAcres) : data.areaLotSf ? fmt.num(data.areaLotSf) + ' SF' : '—';
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
       {/* Key Stats Column */}
       <div>
         <SectionHeader>Key Stats</SectionHeader>
-        <DataRow label="Property Type" value={fmt.text(type)} />
-        <DataRow label="Year Built" value={fmt.text(yearBuilt)} />
-        <DataRow label="Building SF" value={fmt.sf(buildingSf)} />
-        <DataRow label="Lot Size" value={lotDisplay} />
-        <DataRow label="Stories" value={fmt.text(stories)} />
-        <DataRow label="Buildings" value={fmt.text(buildings)} />
-        <DataRow label="Units" value={fmt.text(units)} />
-        <DataRow label="Bedrooms" value={fmt.text(beds)} />
-        <DataRow label="Bathrooms" value={fmt.text(baths)} />
-        <DataRow label="Zoning" value={fmt.text(zoning)} />
+        <DataRow label="Property Type" value={fmt.text(data.propertyUseStandardized || data.propertyUseGroup)} />
+        <DataRow label="Year Built" value={fmt.text(data.yearBuilt)} />
+        <DataRow label="Effective Year" value={fmt.text(data.effectiveYearBuilt)} />
+        <DataRow label="Building SF" value={fmt.sf(data.areaBuilding)} />
+        <DataRow label="Gross Area" value={fmt.sf(data.grossArea)} />
+        <DataRow label="Lot Size (SF)" value={fmt.num(data.areaLotSf)} />
+        <DataRow label="Lot Size (Acres)" value={fmt.ac(data.areaLotAcres)} />
+        <DataRow label="Stories" value={fmt.text(data.storiesCount)} />
+        <DataRow label="Buildings" value={fmt.text(data.buildingsCount)} />
+        <DataRow label="Units" value={fmt.text(data.unitsCount)} />
+        <DataRow label="Bedrooms" value={fmt.text(data.bedroomsCount)} />
+        <DataRow label="Bathrooms" value={fmt.text(data.bathCount)} />
+        <DataRow label="Rooms" value={fmt.text(data.roomsCount)} />
+        <DataRow label="Zoning" value={fmt.text(data.zoning)} />
+        <DataRow label="Census Tract" value={fmt.text(data.censusTract)} />
+        <DataRow label="APN" value={fmt.text(data.parcelNumberFormatted)} />
       </div>
 
       {/* Structure Column */}
       <div>
-        <SectionHeader>Structure & Amenities</SectionHeader>
-        <DataRow label="Construction" value={fmt.text(construction)} />
-        <DataRow label="Exterior Walls" value={fmt.text(exterior)} />
-        <DataRow label="Foundation" value={fmt.text(foundation)} />
-        <DataRow label="Roof" value={fmt.text(roof)} />
-        <DataRow label="HVAC Cooling" value={fmt.text(hvacCooling)} />
-        <DataRow label="HVAC Heating" value={fmt.text(hvacHeating)} />
-        <DataRow label="Parking Spaces" value={fmt.text(parking)} />
-        <DataRow label="Pool" value={pool === true || pool === 'Yes' ? 'Yes' : pool === false ? 'No' : '—'} />
-        <DataRow label="Elevator" value={elevator === true || elevator === 'Yes' ? 'Yes' : elevator === false ? 'No' : '—'} />
+        <SectionHeader>Structure</SectionHeader>
+        <DataRow label="Construction" value={fmt.text(data.constructionType)} />
+        <DataRow label="Exterior Walls" value={fmt.text(data.exteriorWalls)} />
+        <DataRow label="Interior Walls" value={fmt.text(data.interiorWalls)} />
+        <DataRow label="Foundation" value={fmt.text(data.foundation)} />
+        <DataRow label="Roof Type" value={fmt.text(data.roofType)} />
+        <DataRow label="Roof Material" value={fmt.text(data.roofMaterial)} />
+        <DataRow label="Floor Type" value={fmt.text(data.floorType)} />
+        <DataRow label="HVAC Cooling" value={fmt.text(data.hvacCooling)} />
+        <DataRow label="HVAC Heating" value={fmt.text(data.hvacHeating)} />
+        <DataRow label="HVAC Fuel" value={fmt.text(data.hvacFuel)} />
+        <DataRow label="Quality Grade" value={fmt.text(data.qualityGrade)} />
+        <DataRow label="Condition" value={fmt.text(data.condition)} />
+
+        <SectionHeader>Amenities</SectionHeader>
+        <DataRow label="Parking Spaces" value={fmt.text(data.parkingSpaces)} />
+        <DataRow label="Garage Type" value={fmt.text(data.garageType)} />
+        <DataRow label="Garage Area" value={fmt.sf(data.garageArea)} />
+        <DataRow label="Pool" value={data.hasPool ? (data.poolType || 'Yes') : 'No'} />
+        <DataRow label="Spa" value={data.hasSpa ? 'Yes' : 'No'} />
+        <DataRow label="Elevator" value={data.hasElevator ? 'Yes' : 'No'} />
+        <DataRow label="Fireplace" value={data.hasFireplace ? `Yes (${data.fireplaceCount || 1})` : 'No'} />
       </div>
     </div>
   );
@@ -198,36 +247,32 @@ const OverviewSubTab = ({ data }) => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 const OwnershipSubTab = ({ data }) => {
-  const ownership = data?.ownership || [];
-  const owner = ownership[0] || {};
-
-  const ownerName = get(owner, 'owner1NameFull', 'owner1_name_full') ||
-    [get(owner, 'owner1NameFirst', 'owner1_name_first'), get(owner, 'owner1NameLast', 'owner1_name_last')].filter(Boolean).join(' ') ||
-    get(data, 'owner1Name', 'ownerName') || '—';
-
-  const ownerType = get(owner, 'ownershipType', 'ownership_type', 'ownerType');
-  const isCorp = get(owner, 'companyFlag', 'company_flag', 'corporateFlag');
-  const isTrust = get(owner, 'trustFlag', 'trust_flag');
-  const isAbsentee = get(owner, 'isAbsenteeOwner', 'is_absentee_owner', 'absenteeOwner');
-  const mailAddress = get(owner, 'mailAddressFull', 'mail_address_full', 'ownerMailingAddress');
-  const transferDate = get(owner, 'ownershipTransferDate', 'ownership_transfer_date');
+  // Extract from nested ownership array
+  const owner = data.ownership?.[0] || {};
+  const ownerName = owner.owner1NameFull || '—';
+  const owner2 = owner.owner2NameFull;
 
   return (
     <div>
       <SectionHeader>Owner Information</SectionHeader>
       <div style={{ padding: '16px 0' }}>
-        <div style={{ fontSize: 18, fontWeight: 600, color: C.text, marginBottom: 12 }}>{ownerName}</div>
+        <div style={{ fontSize: 18, fontWeight: 600, color: C.text, marginBottom: 8 }}>{ownerName}</div>
+        {owner2 && <div style={{ fontSize: 14, color: C.textDim, marginBottom: 12 }}>{owner2}</div>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-          {isCorp && <Badge color="purple">Corporate</Badge>}
-          {isTrust && <Badge color="cyan">Trust</Badge>}
-          {isAbsentee && <Badge color="amber">Absentee</Badge>}
-          {!isCorp && !isTrust && !isAbsentee && <Badge color="green">Owner Occupied</Badge>}
+          {owner.companyFlag && <Badge color="purple">Corporate</Badge>}
+          {owner.trustFlag && <Badge color="cyan">Trust</Badge>}
+          {owner.isAbsenteeOwner && <Badge color="amber">Absentee</Badge>}
+          {owner.isOwnerOccupied && <Badge color="green">Owner Occupied</Badge>}
         </div>
       </div>
 
-      <DataRow label="Owner Type" value={fmt.text(ownerType)} />
-      <DataRow label="Transfer Date" value={transferDate ? new Date(transferDate).toLocaleDateString() : '—'} />
-      <DataRow label="Mailing Address" value={fmt.text(mailAddress)} />
+      <DataRow label="Ownership Type" value={fmt.text(owner.ownershipType)} />
+      <DataRow label="Owner Occupied" value={owner.isOwnerOccupied ? 'Yes' : (owner.isAbsenteeOwner ? 'No (Absentee)' : '—')} />
+      <DataRow label="Transfer Date" value={fmt.date(owner.ownershipTransferDate)} />
+
+      <SectionHeader>Mailing Address</SectionHeader>
+      <DataRow label="Address" value={fmt.text(owner.mailAddressFull)} />
+      <DataRow label="City/State/Zip" value={owner.mailAddressCity ? `${owner.mailAddressCity}, ${owner.mailAddressState || ''} ${owner.mailAddressZip || ''}` : '—'} />
 
       <div
         style={{
@@ -245,6 +290,436 @@ const OwnershipSubTab = ({ data }) => {
           Coming soon - view all properties owned by this entity
         </div>
       </div>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRANSACTIONS SUB-TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+const TransactionsSubTab = ({ data }) => {
+  const sales = data.salesTransactions || [];
+
+  if (sales.length === 0) {
+    return <EmptyState icon="🤝" title="No transaction records found" />;
+  }
+
+  return (
+    <div style={{ overflow: 'auto', maxHeight: '100%' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: font }}>
+        <thead>
+          <tr>
+            <th style={thStyle}>Date</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Price</th>
+            <th style={thStyle}>Doc Type</th>
+            <th style={thStyle}>Grantor</th>
+            <th style={thStyle}>Grantee</th>
+            <th style={thStyle}>Arms Length</th>
+            <th style={thStyle}>Distressed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sales.map((sale, i) => (
+            <tr
+              key={i}
+              style={{ background: i % 2 === 0 ? 'transparent' : C.bgRow }}
+              onMouseEnter={(e) => e.currentTarget.style.background = C.bgRowHover}
+              onMouseLeave={(e) => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : C.bgRow}
+            >
+              <td style={tdStyle}>{fmt.date(sale.recordingDate)}</td>
+              <td style={{ ...tdStyle, textAlign: 'right', color: C.green, fontFamily: fontMono, fontWeight: 600 }}>{fmt.money(sale.salePrice)}</td>
+              <td style={{ ...tdStyle, color: C.textDim }}>{sale.documentType || '—'}</td>
+              <td style={{ ...tdStyle, color: C.text }}>{sale.grantor1NameFull || '—'}</td>
+              <td style={{ ...tdStyle, color: C.text }}>{sale.grantee1NameFull || '—'}</td>
+              <td style={tdStyle}>{sale.isArmsLength ? <Badge color="green">Yes</Badge> : <Badge color="slate">No</Badge>}</td>
+              <td style={tdStyle}>{sale.isDistressed || sale.isForeclosureAuction ? <Badge color="red">Yes</Badge> : <Badge color="slate">No</Badge>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FINANCING SUB-TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+const FinancingSubTab = ({ data }) => {
+  const loans = data.currentLoans || [];
+
+  if (loans.length === 0) {
+    return <EmptyState icon="💰" title="No active loan records" />;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {loans.map((loan, i) => (
+        <Card key={i}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', marginBottom: 4 }}>Loan Amount</div>
+              <div style={{ fontSize: 24, color: C.green, fontFamily: fontMono, fontWeight: 700 }}>{fmt.money(loan.loanAmount)}</div>
+            </div>
+            <Badge color="purple">{loan.loanType || loan.mortgageType || 'Loan'}</Badge>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <DataRow label="Lender" value={fmt.text(loan.lenderNameStandardized)} />
+            <DataRow label="Interest Rate" value={loan.interestRate ? `${loan.interestRate}% ${loan.interestRateType || ''}` : '—'} />
+            <DataRow label="Term" value={loan.loanTerm ? `${loan.loanTerm} months` : '—'} />
+            <DataRow label="Due Date" value={fmt.date(loan.dueDate)} />
+            <DataRow label="Est. Balance" value={fmt.money(loan.estimatedBalance)} valueColor={C.amber} />
+            <DataRow label="Est. Monthly" value={fmt.money(loan.estimatedMonthlyPayment)} />
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DISTRESS SUB-TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+const DistressSubTab = ({ data }) => {
+  const foreclosures = data.foreclosureRecords || [];
+  // Extract from nested taxAssessments array for delinquency
+  const tax = data.taxAssessments?.[0] || {};
+  const taxDelinquent = tax.taxDelinquentYear;
+  const distressedSales = (data.salesTransactions || []).filter(s => s.isDistressed || s.isForeclosureAuction);
+
+  const hasDistress = foreclosures.length > 0 || taxDelinquent || distressedSales.length > 0;
+
+  if (!hasDistress) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          minHeight: 200,
+          padding: 32,
+          background: 'rgba(52,211,153,0.1)',
+          borderRadius: 12,
+          border: `1px solid rgba(52,211,153,0.3)`,
+        }}
+      >
+        <span style={{ fontSize: 48, marginBottom: 16 }}>🛡️</span>
+        <span style={{ fontSize: 16, fontWeight: 600, color: C.green }}>No distress signals detected</span>
+        <span style={{ fontSize: 13, color: C.textDim, marginTop: 8 }}>This property has no foreclosures, tax delinquencies, or distressed sales on record</span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Tax Delinquent */}
+      {taxDelinquent && (
+        <Card style={{ borderColor: 'rgba(248,113,113,0.3)' }}>
+          <CardHeader>Tax Delinquency</CardHeader>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 24 }}>⚠️</span>
+            <div>
+              <div style={{ fontSize: 14, color: C.red, fontWeight: 600 }}>Tax Delinquent Year: {taxDelinquent}</div>
+              <div style={{ fontSize: 12, color: C.textDim, marginTop: 4 }}>Property has unpaid taxes from this year</div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Foreclosure Records */}
+      {foreclosures.length > 0 && (
+        <div>
+          <SectionHeader>Foreclosure Records</SectionHeader>
+          <div style={{ overflow: 'auto', marginTop: 12 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: font }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Type</th>
+                  <th style={thStyle}>Recording Date</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Default Amount</th>
+                  <th style={thStyle}>Auction Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {foreclosures.map((f, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : C.bgRow }}>
+                    <td style={{ ...tdStyle, color: C.red }}>{f.foreclosureType || '—'}</td>
+                    <td style={tdStyle}>{fmt.date(f.recordingDate)}</td>
+                    <td style={{ ...tdStyle, textAlign: 'right', fontFamily: fontMono, color: C.amber }}>{fmt.money(f.defaultAmount)}</td>
+                    <td style={tdStyle}>{fmt.date(f.auctionDate)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Distressed Sales */}
+      {distressedSales.length > 0 && (
+        <div>
+          <SectionHeader>Distressed Sales History</SectionHeader>
+          <div style={{ overflow: 'auto', marginTop: 12 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: font }}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>Date</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Price</th>
+                  <th style={thStyle}>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {distressedSales.map((s, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : C.bgRow }}>
+                    <td style={tdStyle}>{fmt.date(s.recordingDate)}</td>
+                    <td style={{ ...tdStyle, textAlign: 'right', fontFamily: fontMono, color: C.amber }}>{fmt.money(s.salePrice)}</td>
+                    <td style={tdStyle}>{s.isForeclosureAuction ? <Badge color="red">Foreclosure Auction</Badge> : <Badge color="amber">Distressed</Badge>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VALUATION SUB-TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+const ValuationSubTab = ({ data }) => {
+  // Extract nested data
+  const valuation = data.valuations?.[0] || {};
+  const tax = data.taxAssessments?.[0] || {};
+  const avm = valuation.avmValue || valuation.estimatedValue;
+  const avmHigh = valuation.avmHigh;
+  const avmLow = valuation.avmLow;
+  const confidence = valuation.confidenceScore;
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      {/* AVM Card */}
+      <Card>
+        <CardHeader>AVM Estimate</CardHeader>
+        <div style={{ fontSize: 28, color: C.green, fontFamily: fontMono, fontWeight: 700, marginBottom: 16 }}>
+          {fmt.money(avm)}
+        </div>
+        <div style={{ display: 'flex', gap: 24 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Low</div>
+            <div style={{ fontSize: 14, color: C.textDim, fontFamily: fontMono }}>{fmt.money(avmLow)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>High</div>
+            <div style={{ fontSize: 14, color: C.textDim, fontFamily: fontMono }}>{fmt.money(avmHigh)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Confidence</div>
+            <div style={{ fontSize: 14, color: C.accentLight, fontFamily: fontMono }}>{confidence ? `${confidence}/100` : '—'}</div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Assessment Card */}
+      <Card>
+        <CardHeader>Tax Assessment</CardHeader>
+        <DataRow label="Assessed Value" value={fmt.money(tax.assessedValueTotal || data.taxAssessedValueTotal)} valueColor={C.amber} />
+        <DataRow label="Market Value" value={fmt.money(tax.marketValueTotal)} />
+        <DataRow label="Land Value" value={fmt.money(tax.assessedValueLand || tax.marketValueLand)} />
+        <DataRow label="Improvement Value" value={fmt.money(tax.assessedValueImprovements || tax.marketValueImprovements)} />
+      </Card>
+
+      {/* Last Sale Card */}
+      <Card style={{ gridColumn: 'span 2' }}>
+        <CardHeader>Last Sale</CardHeader>
+        <div style={{ display: 'flex', gap: 48 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Sale Price</div>
+            <div style={{ fontSize: 20, color: C.cyan, fontFamily: fontMono, fontWeight: 600 }}>{fmt.money(data.lastSalePrice)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Sale Date</div>
+            <div style={{ fontSize: 16, color: C.text, fontFamily: fontMono }}>{fmt.date(data.lastSaleDate)}</div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TAX SUB-TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+const TaxSubTab = ({ data }) => {
+  // Extract from nested taxAssessments array
+  const tax = data.taxAssessments?.[0] || {};
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      <Card>
+        <CardHeader>Assessment Details</CardHeader>
+        <DataRow label="Tax Year" value={fmt.text(tax.taxYear)} />
+        <DataRow label="Total Assessed" value={fmt.money(tax.assessedValueTotal || data.taxAssessedValueTotal)} valueColor={C.amber} />
+        <DataRow label="Land Assessed" value={fmt.money(tax.assessedValueLand)} />
+        <DataRow label="Improvement Assessed" value={fmt.money(tax.assessedValueImprovements)} />
+      </Card>
+
+      <Card>
+        <CardHeader>Market Values</CardHeader>
+        <DataRow label="Total Market Value" value={fmt.money(tax.marketValueTotal)} valueColor={C.green} />
+        <DataRow label="Land Market Value" value={fmt.money(tax.marketValueLand)} />
+        <DataRow label="Improvement Market Value" value={fmt.money(tax.marketValueImprovements)} />
+      </Card>
+
+      <Card style={{ gridColumn: 'span 2' }}>
+        <CardHeader>Tax Bill</CardHeader>
+        <div style={{ display: 'flex', gap: 48, marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Tax Billed</div>
+            <div style={{ fontSize: 24, color: C.amber, fontFamily: fontMono, fontWeight: 700 }}>{fmt.money(tax.taxAmountBilled)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Tax Rate</div>
+            <div style={{ fontSize: 20, color: C.text, fontFamily: fontMono }}>{fmt.pct(tax.taxRate)}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 24 }}>
+          <div>
+            <span style={{ fontSize: 12, color: C.textDim }}>Delinquent Year: </span>
+            <span style={{ fontSize: 12, color: tax.taxDelinquentYear ? C.red : C.green, fontWeight: 600 }}>
+              {tax.taxDelinquentYear || 'None'}
+            </span>
+          </div>
+          <div>
+            <span style={{ fontSize: 12, color: C.textDim }}>Homeowner Exemption: </span>
+            <span style={{ fontSize: 12, color: C.text }}>{tax.hasHomeownerExemption ? 'Yes' : 'No'}</span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PERMITS SUB-TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+const PermitsSubTab = ({ data }) => {
+  const permits = data.buildingPermits || [];
+
+  if (permits.length === 0) {
+    return <EmptyState icon="🔨" title="No building permits on record" />;
+  }
+
+  return (
+    <div style={{ overflow: 'auto', maxHeight: '100%' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: font }}>
+        <thead>
+          <tr>
+            <th style={thStyle}>Permit #</th>
+            <th style={thStyle}>Type</th>
+            <th style={thStyle}>Status</th>
+            <th style={thStyle}>Issue Date</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>Est. Value</th>
+            <th style={thStyle}>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {permits.map((permit, i) => (
+            <tr
+              key={i}
+              style={{ background: i % 2 === 0 ? 'transparent' : C.bgRow }}
+              onMouseEnter={(e) => e.currentTarget.style.background = C.bgRowHover}
+              onMouseLeave={(e) => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : C.bgRow}
+            >
+              <td style={{ ...tdStyle, fontFamily: fontMono, color: C.accentLight }}>{permit.permitNumber || '—'}</td>
+              <td style={{ ...tdStyle, color: C.text }}>{permit.permitType || '—'}</td>
+              <td style={tdStyle}>
+                <Badge color={permit.permitStatus === 'Completed' || permit.permitStatus === 'Final' ? 'green' : 'amber'}>
+                  {permit.permitStatus || 'Unknown'}
+                </Badge>
+              </td>
+              <td style={{ ...tdStyle, color: C.textDim }}>{fmt.date(permit.issueDate || permit.effectiveDate)}</td>
+              <td style={{ ...tdStyle, textAlign: 'right', fontFamily: fontMono, color: C.green }}>{fmt.money(permit.estimatedValue)}</td>
+              <td style={{ ...tdStyle, color: C.textDim, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {permit.description || '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RISK SUB-TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+const RiskSubTab = ({ data }) => {
+  // Handle climateRisk as array or object
+  const climate = Array.isArray(data.climateRisk) ? data.climateRisk[0] || {} : data.climateRisk || {};
+  const totalRisk = climate.riskScoreTotal || climate.totalRiskScore;
+
+  const riskItems = [
+    { label: 'Total Risk', score: totalRisk, icon: '🌍' },
+    { label: 'Flood Risk', score: climate.floodRiskScore, icon: '🌊' },
+    { label: 'Heat Risk', score: climate.heatRiskScore, icon: '🔥' },
+    { label: 'Storm Risk', score: climate.stormRiskScore, icon: '⛈️' },
+    { label: 'Drought Risk', score: climate.droughtRiskScore, icon: '☀️' },
+    { label: 'Wildfire Risk', score: climate.wildfireRiskScore, icon: '🔥' },
+  ];
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      {riskItems.map((item, i) => {
+        const color = riskColor(item.score);
+        const isTotal = i === 0;
+        return (
+          <Card key={i} style={isTotal ? { gridColumn: 'span 3', borderColor: color } : {}}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: isTotal ? 32 : 24 }}>{item.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: isTotal ? 28 : 20, fontFamily: fontMono, fontWeight: 700, color }}>
+                    {item.score != null ? item.score : '—'}
+                  </span>
+                  {item.score != null && <span style={{ fontSize: 12, color: C.textMuted }}>/100</span>}
+                </div>
+              </div>
+              {item.score != null && (
+                <div
+                  style={{
+                    width: isTotal ? 80 : 60,
+                    height: 8,
+                    background: 'rgba(100,116,139,0.3)',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${item.score}%`,
+                      height: '100%',
+                      background: color,
+                      borderRadius: 4,
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 };
@@ -268,50 +743,39 @@ const SUB_TABS = [
 export default function PropertyTab({ data }) {
   const [activeSubTab, setActiveSubTab] = useState('overview');
 
+  if (!data) return <EmptyState icon="🏠" title="No property selected" />;
+
   // Extract property info for sidebar
-  const address = get(data, 'addressFull', 'address_full', 'propertyAddress') || '—';
-  const city = get(data, 'addressCity', 'address_city', 'city');
-  const state = get(data, 'addressState', 'address_state', 'state');
-  const zip = get(data, 'addressZip', 'address_zip', 'zip');
-  const cityStateZip = [city, state].filter(Boolean).join(', ') + (zip ? ` ${zip}` : '');
+  const address = data.addressFull || '—';
+  const cityStateZip = [data.addressCity, data.addressState].filter(Boolean).join(', ') + (data.addressZip ? ` ${data.addressZip}` : '');
+  const propertyType = (data.propertyUseStandardized || data.propertyUseGroup || 'Property').toUpperCase();
 
-  const propertyType = get(data, 'propertyUseStandardized', 'property_use_standardized', 'propertyUseGroup', 'property_use_group', 'propertyType') || 'Property';
+  // Extract nested data for sidebar
+  const valuation = data.valuations?.[0] || {};
+  const tax = data.taxAssessments?.[0] || {};
+  const avm = valuation.avmValue || valuation.estimatedValue;
+  const assessed = tax.assessedValueTotal || data.taxAssessedValueTotal;
+  const market = tax.marketValueTotal;
+  const lastSale = data.lastSalePrice;
+  const taxBilled = tax.taxAmountBilled;
+  const taxRate = tax.taxRate;
 
-  // Valuation
-  const valuation = data?.valuations?.[0] || data?.valuation;
-  const avm = get(valuation, 'estimatedValue', 'estimated_value') || get(data, 'avmValue');
-  const taxRecord = data?.taxAssessments?.[0];
-  const assessed = get(taxRecord, 'assessedValueTotal', 'assessed_value_total') || get(data, 'assessedValue');
-  const market = get(taxRecord, 'marketValueTotal', 'market_value_total') || get(data, 'marketValue');
-  const taxBilled = get(taxRecord, 'taxAmountBilled', 'tax_amount_billed') || get(data, 'taxBilled');
-  const taxRate = get(data, 'taxRate');
-
-  // Climate
-  const climate = data?.climateRisk || data?.climate_risk;
-  const climateTotal = get(climate, 'totalRiskScore', 'total_risk_score') || get(data, 'climateRiskTotal');
+  // Climate for sidebar (handle array or object)
+  const climate = Array.isArray(data.climateRisk) ? data.climateRisk[0] || {} : data.climateRisk || {};
+  const climateTotal = climate.riskScoreTotal || climate.totalRiskScore;
 
   const renderSubTabContent = () => {
     switch (activeSubTab) {
-      case 'overview':
-        return <OverviewSubTab data={data} />;
-      case 'ownership':
-        return <OwnershipSubTab data={data} />;
-      case 'transactions':
-        return <PlaceholderContent icon="🤝" title="Transaction History" />;
-      case 'financing':
-        return <PlaceholderContent icon="💰" title="Financing & Debt" />;
-      case 'distress':
-        return <PlaceholderContent icon="⚠️" title="Distress Signals" />;
-      case 'valuation':
-        return <PlaceholderContent icon="📊" title="Valuation & Equity" />;
-      case 'tax':
-        return <PlaceholderContent icon="📄" title="Tax Profile" />;
-      case 'permits':
-        return <PlaceholderContent icon="🔨" title="Building Permits" />;
-      case 'risk':
-        return <PlaceholderContent icon="🛡️" title="Climate & Risk" />;
-      default:
-        return null;
+      case 'overview': return <OverviewSubTab data={data} />;
+      case 'ownership': return <OwnershipSubTab data={data} />;
+      case 'transactions': return <TransactionsSubTab data={data} />;
+      case 'financing': return <FinancingSubTab data={data} />;
+      case 'distress': return <DistressSubTab data={data} />;
+      case 'valuation': return <ValuationSubTab data={data} />;
+      case 'tax': return <TaxSubTab data={data} />;
+      case 'permits': return <PermitsSubTab data={data} />;
+      case 'risk': return <RiskSubTab data={data} />;
+      default: return null;
     }
   };
 
@@ -360,16 +824,20 @@ export default function PropertyTab({ data }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, color: C.textDim }}>AVM</span>
+              <span style={{ fontSize: 12, color: C.textDim }}>AVM Estimate</span>
               <span style={{ fontSize: 12, color: C.green, fontFamily: fontMono }}>{fmt.money(avm)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, color: C.textDim }}>Assessed</span>
+              <span style={{ fontSize: 12, color: C.textDim }}>Assessed Value</span>
               <span style={{ fontSize: 12, color: C.text, fontFamily: fontMono }}>{fmt.money(assessed)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 12, color: C.textDim }}>Market</span>
+              <span style={{ fontSize: 12, color: C.textDim }}>Market Value</span>
               <span style={{ fontSize: 12, color: C.text, fontFamily: fontMono }}>{fmt.money(market)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: C.textDim }}>Last Sale</span>
+              <span style={{ fontSize: 12, color: C.cyan, fontFamily: fontMono }}>{fmt.money(lastSale)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, color: C.textDim }}>Tax Billed</span>
@@ -381,7 +849,7 @@ export default function PropertyTab({ data }) {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 12, color: C.textDim }}>Climate Risk</span>
-              <span style={{ fontSize: 12, color: climateTotal >= 50 ? C.red : C.green, fontFamily: fontMono }}>
+              <span style={{ fontSize: 12, color: riskColor(climateTotal), fontFamily: fontMono }}>
                 {climateTotal != null ? `${climateTotal}/100` : '—'}
               </span>
             </div>

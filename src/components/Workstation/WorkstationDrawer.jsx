@@ -24,18 +24,6 @@ const font = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
 const fontMono = "'JetBrains Mono', 'Fira Code', monospace";
 
 // ══════════════════════════════════════════════════════════════════════════════
-// HELPER: get value with fallback
-// ══════════════════════════════════════════════════════════════════════════════
-
-const get = (obj, ...keys) => {
-  if (!obj) return null;
-  for (const k of keys) {
-    if (obj[k] != null) return obj[k];
-  }
-  return null;
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
 // WORKSTATION DRAWER
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -81,10 +69,10 @@ export default function WorkstationDrawer({ data, isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  // Get address for display
-  const address = get(data, 'addressFull', 'address_full', 'propertyAddress') || 'Property';
-  const city = get(data, 'addressCity', 'address_city', 'city');
-  const state = get(data, 'addressState', 'address_state', 'state');
+  // Get address for display - use correct camelCase API field names
+  const address = data?.addressFull || 'Property';
+  const city = data?.addressCity;
+  const state = data?.addressState;
   const addressDisplay = city && state ? `${address}, ${city}, ${state}` : address;
 
   const tabs = [
