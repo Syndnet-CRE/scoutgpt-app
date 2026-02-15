@@ -18,11 +18,15 @@ export default function App() {
   const [themeHovered, setThemeHovered] = useState(false);
 
   // Panel z-index focus state
-  const [frontPanel, setFrontPanel] = useState(null); // 'left' | 'right' | 'workstation' | null
+  const [workstationOnTop, setWorkstationOnTop] = useState(false);
 
   const getPanelZ = (panel) => {
-    const base = 55;
-    return frontPanel === panel ? base + 10 : base;
+    if (panel === 'workstation') {
+      return workstationOnTop ? 65 : 55;
+    }
+    // Left and right panels are always above workstation's base z,
+    // but below workstation when it's brought to front
+    return 60;
   };
   // Layer visibility state
   const [visibleLayers, setVisibleLayers] = useState({
@@ -242,7 +246,7 @@ export default function App() {
           onLayerChange={handleLayerChange}
           onFilterChange={handleFilterChange}
           zIndex={getPanelZ('left')}
-          onBringToFront={() => setFrontPanel('left')}
+          onBringToFront={() => setWorkstationOnTop(false)}
         />
 
         {/* Property Card rendered inside Mapbox popup via portal */}
@@ -277,7 +281,7 @@ export default function App() {
         onHighlightProperties={handleHighlightProperties}
         onNewChat={resetChat}
         zIndex={getPanelZ('right')}
-        onBringToFront={() => setFrontPanel('right')}
+        onBringToFront={() => setWorkstationOnTop(false)}
       />
 
       {/* Bottom Drawer Workstation */}
@@ -286,7 +290,7 @@ export default function App() {
         isOpen={workstationOpen}
         onClose={() => setWorkstationOpen(false)}
         zIndex={getPanelZ('workstation')}
-        onBringToFront={() => setFrontPanel('workstation')}
+        onBringToFront={() => setWorkstationOnTop(true)}
       />
     </div>
   );
