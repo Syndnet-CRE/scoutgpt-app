@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Building, User, Handshake, DollarSign, AlertTriangle, BarChart3, FileText, Hammer, Shield, ShieldCheck, Home, Globe, Waves, Flame, CloudLightning, Sun } from 'lucide-react';
 import { useTheme } from '../../theme.jsx';
+import useIntelligence from '../../hooks/useIntelligence';
+import IntelligenceScorecard from './IntelligenceScorecard';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // FORMATTERS
@@ -766,6 +768,9 @@ export default function PropertyTab({ data }) {
   const { t } = useTheme();
   const [activeSubTab, setActiveSubTab] = useState('overview');
 
+  // Fetch intelligence scores from backend
+  const { intelligence, loading } = useIntelligence(data?.attomId);
+
   if (!data) return <EmptyState t={t} icon={Home} title="No property selected" />;
 
   // Extract property info for sidebar
@@ -924,6 +929,15 @@ export default function PropertyTab({ data }) {
 
       {/* Right Content Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Intelligence Scorecard */}
+        <div style={{ padding: '16px 24px 0', flexShrink: 0 }}>
+          <IntelligenceScorecard
+            scores={intelligence?.scores}
+            equity={intelligence?.equity}
+            loading={loading.intelligence}
+          />
+        </div>
+
         {/* Sub-Tab Navigation */}
         <div
           style={{
