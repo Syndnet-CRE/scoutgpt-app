@@ -432,6 +432,7 @@ export default function ScoutGPTChatPanel({
         @keyframes spin { to{transform:rotate(360deg)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideIn { from{transform:translateX(${PANEL_WIDTH + GAP + 10}px);opacity:0.8} to{transform:translateX(0);opacity:1} }
+        .animate-spin { animation: spin 1s linear infinite; }
         .scout-scroll::-webkit-scrollbar { width: 4px; }
         .scout-scroll::-webkit-scrollbar-track { background: transparent; }
         .scout-scroll::-webkit-scrollbar-thumb { background: ${t.border.subtle}; border-radius: 4px; }
@@ -484,7 +485,7 @@ export default function ScoutGPTChatPanel({
             color: t.text.quaternary, padding: 4, display: "flex", borderRadius: 4,
           }}
             onMouseEnter={e => e.currentTarget.style.color = t.text.primary}
-            onMouseLeave={e => e.currentTarget.style.color = t.text.quaternary}>{Icons.close}</button>
+            onMouseLeave={e => e.currentTarget.style.color = t.text.quaternary}><X size={18} /></button>
         </div>
       </div>
 
@@ -502,7 +503,7 @@ export default function ScoutGPTChatPanel({
               width: 48, height: 48, borderRadius: 12,
               background: t.accent.greenMuted, border: `1px solid ${t.accent.greenBorder}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-            }}>{Icons.sparkle}</div>
+            }}><Sparkles size={24} style={{ color: t.accent.green }} /></div>
             <div style={{ fontSize: 17, fontWeight: 700, color: t.text.primary, marginTop: 4 }}>What can I help you find?</div>
             <div style={{ fontSize: 13, color: t.text.quaternary, textAlign: "center", maxWidth: 260, lineHeight: 1.5 }}>
               Search properties, analyze markets, or explore Travis County parcels
@@ -545,9 +546,7 @@ export default function ScoutGPTChatPanel({
                     background: t.accent.green,
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" fill="white"/>
-                    </svg>
+                    <Sparkles size={10} style={{ color: "white" }} />
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 500, color: t.text.quaternary }}>Scout</span>
                 </div>
@@ -583,7 +582,6 @@ export default function ScoutGPTChatPanel({
                         saved={savedProperties.has(attomId)}
                         onToggleSave={() => toggleSave(attomId)}
                         t={t}
-                        Icons={Icons}
                       />
                     ))}
                     {msg.properties.length > 5 && (
@@ -600,7 +598,7 @@ export default function ScoutGPTChatPanel({
             )}
           </div>
         ))}
-        {loading && <ThinkingIndicator t={t} Icons={Icons} />}
+        {loading && <ThinkingIndicator t={t} />}
       </div>
 
       {/* ── Input Area ── */}
@@ -629,7 +627,7 @@ export default function ScoutGPTChatPanel({
             }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = t.border.strong; e.currentTarget.style.color = t.text.tertiary; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = t.border.default; e.currentTarget.style.color = t.text.quaternary; }}
-            >{Icons.attach}</button>
+            ><Plus size={18} /></button>
             <button onClick={() => handleSend()} disabled={!hasText || loading} style={{
               width: 30, height: 30, borderRadius: 7, border: "none",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -637,7 +635,7 @@ export default function ScoutGPTChatPanel({
               background: hasText && !loading ? t.accent.green : t.bg.tertiary,
               color: hasText && !loading ? "#fff" : t.text.quaternary,
               transition: "all 200ms ease", flexShrink: 0,
-            }}>{loading ? Icons.spinner : Icons.send}</button>
+            }}>{loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowUp size={16} />}</button>
           </div>
         </div>
         <div style={{

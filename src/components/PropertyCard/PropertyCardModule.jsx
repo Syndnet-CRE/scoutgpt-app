@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { X, ChevronDown, ChevronUp, Building, User, Handshake, DollarSign, AlertTriangle, BarChart3, FileText, Hammer, Shield, Camera, Eye, EyeOff, MapPin, Calendar, Home, Briefcase, Phone, Mail, ExternalLink, Check, TrendingUp, LayoutDashboard } from 'lucide-react';
 import { useTheme } from '../../theme.jsx';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -115,49 +116,37 @@ const resolvePropertyType = (code, group) => {
 // ICON COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
 
-const Icon = ({ name, size = 16, className = "" }) => {
-  const icons = {
-    "x": <path d="M18 6L6 18M6 6l12 12" />,
-    "chevron-down": <path d="M6 9l6 6 6-6" />,
-    "chevron-up": <path d="M6 15l6-6 6 6" />,
-    "building": <><path d="M6 22V4a2 2 0 012-2h8a2 2 0 012 2v18" /><path d="M6 12H4a2 2 0 00-2 2v6a2 2 0 002 2h2" /><path d="M18 9h2a2 2 0 012 2v9a2 2 0 01-2 2h-2" /><path d="M10 6h4" /><path d="M10 10h4" /><path d="M10 14h4" /><path d="M10 18h4" /></>,
-    "user": <><circle cx="12" cy="8" r="4" /><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /></>,
-    "handshake": <><path d="M11 17a4 4 0 01-4-4V5" /><path d="M7 5l4 4 4-4" /><path d="M17 13v4a4 4 0 01-4 4" /><path d="M13 21l4-4-4-4" /></>,
-    "dollar-sign": <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></>,
-    "alert-triangle": <><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></>,
-    "bar-chart": <><line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" /></>,
-    "file-text": <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14,2 14,8 20,8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><line x1="10" y1="9" x2="8" y2="9" /></>,
-    "hammer": <><path d="M15 12l-8.5 8.5a2.12 2.12 0 01-3-3L12 9" /><path d="M17.64 15L22 10.64" /><path d="M20.91 11.7a1 1 0 00-.57-.57l-3.66-1.46a1 1 0 01-.57-.57l-1.46-3.66a1 1 0 00-.57-.57L10.42 3.4a1 1 0 00-1.18.28l-2.77 3.08a1 1 0 00.28 1.55l3.18 1.91a1 1 0 01.47.47l1.91 3.18a1 1 0 001.55.28l3.08-2.77a1 1 0 00.28-1.18z" /></>,
-    "shield": <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></>,
-    "camera": <><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" /></>,
-    "eye": <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>,
-    "eye-off": <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></>,
-    "map-pin": <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></>,
-    "calendar": <><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></>,
-    "home": <><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9,22 9,12 15,12 15,22" /></>,
-    "briefcase": <><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" /></>,
-    "phone": <><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" /></>,
-    "mail": <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></>,
-    "external-link": <><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15,3 21,3 21,9" /><line x1="10" y1="14" x2="21" y2="3" /></>,
-    "check": <><polyline points="20,6 9,17 4,12" /></>,
-    "trending-up": <><polyline points="23,6 13.5,15.5 8.5,10.5 1,18" /><polyline points="17,6 23,6 23,12" /></>,
-  };
+const ICON_MAP = {
+  'x': X,
+  'chevron-down': ChevronDown,
+  'chevron-up': ChevronUp,
+  'building': Building,
+  'user': User,
+  'handshake': Handshake,
+  'dollar-sign': DollarSign,
+  'alert-triangle': AlertTriangle,
+  'bar-chart': BarChart3,
+  'file-text': FileText,
+  'hammer': Hammer,
+  'shield': Shield,
+  'camera': Camera,
+  'eye': Eye,
+  'eye-off': EyeOff,
+  'map-pin': MapPin,
+  'calendar': Calendar,
+  'home': Home,
+  'briefcase': Briefcase,
+  'phone': Phone,
+  'mail': Mail,
+  'external-link': ExternalLink,
+  'check': Check,
+  'trending-up': TrendingUp,
+};
 
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      {icons[name] || null}
-    </svg>
-  );
+const Icon = ({ name, size = 16, className = "", ...props }) => {
+  const LucideIcon = ICON_MAP[name];
+  if (!LucideIcon) return null;
+  return <LucideIcon size={size} className={className} {...props} />;
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1169,7 +1158,7 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
               letterSpacing: '0.02em',
             }}
           >
-            <span style={{ fontSize: '16px' }}>&#x2B1C;</span> OPEN IN WORKSTATION
+            <LayoutDashboard size={14} /> OPEN IN WORKSTATION
           </button>
         )}
       </div>

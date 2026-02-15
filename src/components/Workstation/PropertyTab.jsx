@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Building, User, Handshake, DollarSign, AlertTriangle, BarChart3, FileText, Hammer, Shield, ShieldCheck, Home, Globe, Waves, Flame, CloudLightning, Sun } from 'lucide-react';
 import { useTheme } from '../../theme.jsx';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -87,7 +88,7 @@ const Badge = ({ children, color = 'slate', t }) => {
   );
 };
 
-const EmptyState = ({ icon, title, subtitle, t }) => (
+const EmptyState = ({ icon: IconComponent, title, subtitle, t }) => (
   <div
     style={{
       display: 'flex',
@@ -100,7 +101,7 @@ const EmptyState = ({ icon, title, subtitle, t }) => (
       gap: 12,
     }}
   >
-    <span style={{ fontSize: 32, opacity: 0.5 }}>{icon}</span>
+    <span style={{ opacity: 0.5 }}>{IconComponent && <IconComponent size={32} />}</span>
     <span style={{ fontSize: 14, fontWeight: 500 }}>{title}</span>
     {subtitle && <span style={{ fontSize: 12, opacity: 0.6 }}>{subtitle}</span>}
   </div>
@@ -252,7 +253,7 @@ const TransactionsSubTab = ({ data, t }) => {
   const sales = data.salesTransactions || [];
 
   if (sales.length === 0) {
-    return <EmptyState t={t} icon="🤝" title="No transaction records found" />;
+    return <EmptyState t={t} icon={Handshake} title="No transaction records found" />;
   }
 
   const thStyle = {
@@ -321,7 +322,7 @@ const FinancingSubTab = ({ data, t }) => {
   const loans = data.currentLoans || [];
 
   if (loans.length === 0) {
-    return <EmptyState t={t} icon="💰" title="No active loan records" />;
+    return <EmptyState t={t} icon={DollarSign} title="No active loan records" />;
   }
 
   return (
@@ -399,7 +400,7 @@ const DistressSubTab = ({ data, t }) => {
           border: `1px solid ${t.accent.greenBorder}`,
         }}
       >
-        <span style={{ fontSize: 48, marginBottom: 16 }}>🛡️</span>
+        <ShieldCheck size={48} style={{ marginBottom: 16 }} />
         <span style={{ fontSize: 16, fontWeight: 600, color: t.semantic.success }}>No distress signals detected</span>
         <span style={{ fontSize: 13, color: t.text.secondary, marginTop: 8 }}>This property has no foreclosures, tax delinquencies, or distressed sales on record</span>
       </div>
@@ -413,7 +414,7 @@ const DistressSubTab = ({ data, t }) => {
         <Card t={t} style={{ borderColor: t.semantic.error }}>
           <CardHeader t={t}>Tax Delinquency</CardHeader>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 24 }}>⚠️</span>
+            <AlertTriangle size={24} />
             <div>
               <div style={{ fontSize: 14, color: t.semantic.error, fontWeight: 600 }}>Tax Delinquent Year: {taxDelinquent}</div>
               <div style={{ fontSize: 12, color: t.text.secondary, marginTop: 4 }}>Property has unpaid taxes from this year</div>
@@ -607,7 +608,7 @@ const PermitsSubTab = ({ data, t }) => {
   const permits = data.buildingPermits || [];
 
   if (permits.length === 0) {
-    return <EmptyState t={t} icon="🔨" title="No building permits on record" />;
+    return <EmptyState t={t} icon={Hammer} title="No building permits on record" />;
   }
 
   const thStyle = {
@@ -690,12 +691,12 @@ const RiskSubTab = ({ data, t }) => {
   };
 
   const riskItems = [
-    { label: 'Total Risk', score: totalRisk, icon: '🌍' },
-    { label: 'Flood Risk', score: climate.floodRiskScore, icon: '🌊' },
-    { label: 'Heat Risk', score: climate.heatRiskScore, icon: '🔥' },
-    { label: 'Storm Risk', score: climate.stormRiskScore, icon: '⛈️' },
-    { label: 'Drought Risk', score: climate.droughtRiskScore, icon: '☀️' },
-    { label: 'Wildfire Risk', score: climate.wildfireRiskScore, icon: '🔥' },
+    { label: 'Total Risk', score: totalRisk, icon: Globe },
+    { label: 'Flood Risk', score: climate.floodRiskScore, icon: Waves },
+    { label: 'Heat Risk', score: climate.heatRiskScore, icon: Flame },
+    { label: 'Storm Risk', score: climate.stormRiskScore, icon: CloudLightning },
+    { label: 'Drought Risk', score: climate.droughtRiskScore, icon: Sun },
+    { label: 'Wildfire Risk', score: climate.wildfireRiskScore, icon: Flame },
   ];
 
   return (
@@ -706,7 +707,7 @@ const RiskSubTab = ({ data, t }) => {
         return (
           <Card t={t} key={i} style={isTotal ? { gridColumn: 'span 3', borderColor: color } : {}}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: isTotal ? 32 : 24 }}>{item.icon}</span>
+              <item.icon size={isTotal ? 32 : 24} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, color: t.text.tertiary, textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
@@ -750,22 +751,22 @@ const RiskSubTab = ({ data, t }) => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 const SUB_TABS = [
-  { id: 'overview', label: 'Overview', icon: '🏢' },
-  { id: 'ownership', label: 'Ownership', icon: '👤' },
-  { id: 'transactions', label: 'Transactions', icon: '🤝' },
-  { id: 'financing', label: 'Financing', icon: '💰' },
-  { id: 'distress', label: 'Distress', icon: '⚠️' },
-  { id: 'valuation', label: 'Valuation', icon: '📊' },
-  { id: 'tax', label: 'Tax', icon: '📄' },
-  { id: 'permits', label: 'Permits', icon: '🔨' },
-  { id: 'risk', label: 'Risk', icon: '🛡️' },
+  { id: 'overview', label: 'Overview', icon: Building },
+  { id: 'ownership', label: 'Ownership', icon: User },
+  { id: 'transactions', label: 'Transactions', icon: Handshake },
+  { id: 'financing', label: 'Financing', icon: DollarSign },
+  { id: 'distress', label: 'Distress', icon: AlertTriangle },
+  { id: 'valuation', label: 'Valuation', icon: BarChart3 },
+  { id: 'tax', label: 'Tax', icon: FileText },
+  { id: 'permits', label: 'Permits', icon: Hammer },
+  { id: 'risk', label: 'Risk', icon: Shield },
 ];
 
 export default function PropertyTab({ data }) {
   const { t } = useTheme();
   const [activeSubTab, setActiveSubTab] = useState('overview');
 
-  if (!data) return <EmptyState t={t} icon="🏠" title="No property selected" />;
+  if (!data) return <EmptyState t={t} icon={Home} title="No property selected" />;
 
   // Extract property info for sidebar
   const address = data.addressFull || '—';
@@ -955,7 +956,7 @@ export default function PropertyTab({ data }) {
                 transition: 'all 0.15s ease',
               }}
             >
-              <span style={{ fontSize: 14 }}>{tab.icon}</span>
+              {tab.icon && <tab.icon size={14} />}
               {tab.label}
             </button>
           ))}
