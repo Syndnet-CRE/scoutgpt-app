@@ -46,8 +46,8 @@ export default function MultiSelect({
               onMouseEnter={() => setHoveredId(option.id)}
               onMouseLeave={() => setHoveredId(null)}
               style={{
-                padding: '6px 8px',
-                fontSize: 11,
+                padding: '5px 6px',
+                fontSize: 10,
                 fontWeight: 500,
                 fontFamily: t.font.display,
                 borderRadius: 6,
@@ -62,9 +62,8 @@ export default function MultiSelect({
                     ? t.bg.tertiary
                     : t.bg.secondary,
                 color: isSelected ? chipColor : t.text.secondary,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                textAlign: 'center',
+                lineHeight: 1.3,
               }}
             >
               {option.label}

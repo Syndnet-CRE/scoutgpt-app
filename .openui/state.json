@@ -87,6 +87,21 @@
         "x": 264,
         "y": 456
       }
+    },
+    {
+      "nodeId": "node-1771180257656-0",
+      "sessionId": "session-1771180257659-7f1ex52jy",
+      "agentId": "claude",
+      "agentName": "Claude Code",
+      "command": "claude --model opus",
+      "cwd": "/Users/braydonirwin/scoutgpt-app",
+      "createdAt": "2026-02-15T18:30:57.879Z",
+      "customName": "Chat Panel Front",
+      "customColor": "#22C55E",
+      "position": {
+        "x": -312,
+        "y": 720
+      }
     }
   ],
   "categories": [

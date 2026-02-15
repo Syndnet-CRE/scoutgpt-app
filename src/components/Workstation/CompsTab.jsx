@@ -1,17 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTheme } from '../../theme.jsx';
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MOCK DATA
-// ══════════════════════════════════════════════════════════════════════════════
-
-const MOCK_COMPS = [
-  { address: "6800 BURLESON RD", price: 4200000, date: "2024-11-15", sf: 32400, psf: 129.63, lot: 5.2, yr: 1985, type: "Industrial", cap: 7.2, dist: "1.8 mi" },
-  { address: "7209 DECKER LN", price: 2850000, date: "2024-08-22", sf: 18900, psf: 150.79, lot: 3.1, yr: 1992, type: "Commercial", cap: 6.8, dist: "0.4 mi" },
-  { address: "5600 E MLK BLVD", price: 6100000, date: "2024-06-03", sf: 44200, psf: 138.01, lot: 8.7, yr: 1978, type: "Industrial", cap: 7.5, dist: "3.2 mi" },
-  { address: "8100 CAMERON RD", price: 1950000, date: "2025-01-10", sf: 12800, psf: 152.34, lot: 1.8, yr: 2001, type: "Commercial", cap: 6.4, dist: "4.1 mi" },
-  { address: "4900 INDUSTRIAL OAKS", price: 3700000, date: "2024-09-28", sf: 28600, psf: 129.37, lot: 4.5, yr: 1988, type: "Industrial", cap: 7.1, dist: "2.6 mi" },
-];
+import useIntelligence from '../../hooks/useIntelligence';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // FORMATTERS
@@ -36,16 +25,30 @@ const fmt = {
 export default function CompsTab({ data }) {
   const { t } = useTheme();
 
+  // Fetch comps from intelligence hook
+  const { comps, loading, fetchComps } = useIntelligence(data?.attomId);
+
+  // Auto-fetch comps when component mounts or attomId changes
+  useEffect(() => {
+    if (data?.attomId) {
+      fetchComps({ radius: 3, months: 24, limit: 10 });
+    }
+  }, [data?.attomId, fetchComps]);
+
   // Subject property info - use correct camelCase API field names
   const address = data?.addressFull || 'Subject Property';
   const buildingSf = data?.areaBuilding;
   const lotAcres = data?.areaLotAcres;
   const propertyType = data?.propertyUseStandardized || data?.propertyUseGroup || 'Property';
 
-  // Calculate averages from mock data
-  const avgPsf = MOCK_COMPS.reduce((sum, c) => sum + c.psf, 0) / MOCK_COMPS.length;
-  const avgPrice = MOCK_COMPS.reduce((sum, c) => sum + c.price, 0) / MOCK_COMPS.length;
-  const avgCap = MOCK_COMPS.reduce((sum, c) => sum + c.cap, 0) / MOCK_COMPS.length;
+  // Normalize comps data (handle both array and object with comps property)
+  const compsArray = Array.isArray(comps) ? comps : (comps?.comps || []);
+
+  // Calculate averages from real data
+  const hasComps = compsArray.length > 0;
+  const avgPsf = hasComps ? compsArray.reduce((sum, c) => sum + (c.psf || c.pricePerSf || 0), 0) / compsArray.length : 0;
+  const avgPrice = hasComps ? compsArray.reduce((sum, c) => sum + (c.price || c.salePrice || 0), 0) / compsArray.length : 0;
+  const avgCap = hasComps ? compsArray.filter(c => c.cap || c.capRate).reduce((sum, c, _, arr) => sum + (c.cap || c.capRate || 0) / arr.length, 0) : 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -120,6 +123,30 @@ export default function CompsTab({ data }) {
 
       {/* Data Table */}
       <div style={{ flex: 1, overflow: 'auto' }}>
+        {loading.comps ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            height: '100%', color: t.text.tertiary, fontSize: 13,
+          }}>
+            Loading comparable sales...
+          </div>
+        ) : !hasComps ? (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            height: '100%', color: t.text.tertiary, fontSize: 13, gap: 8,
+          }}>
+            <span>No comparable sales found</span>
+            <button
+              onClick={() => fetchComps({ radius: 5, months: 36, limit: 10 })}
+              style={{
+                padding: '8px 16px', background: t.accent.green, border: 'none',
+                borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Expand Search
+            </button>
+          </div>
+        ) : (
         <table
           style={{
             width: '100%',
@@ -146,14 +173,13 @@ export default function CompsTab({ data }) {
               <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Lot (ac)</th>
               <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Built</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Type</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Cap Rate</th>
               <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Dist.</th>
             </tr>
           </thead>
           <tbody>
-            {MOCK_COMPS.map((comp, i) => (
+            {compsArray.map((comp, i) => (
               <tr
-                key={i}
+                key={comp.attomId || i}
                 style={{
                   background: i % 2 === 0 ? 'transparent' : t.bg.secondary,
                   transition: 'background 0.15s ease',
@@ -163,20 +189,20 @@ export default function CompsTab({ data }) {
                 onMouseLeave={(e) => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : t.bg.secondary}
               >
                 <td style={{ padding: '12px 16px', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}` }}>{i + 1}</td>
-                <td style={{ padding: '12px 16px', color: t.text.primary, fontWeight: 500, borderBottom: `1px solid ${t.border.strong}` }}>{comp.address}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.semantic.success, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.money(comp.price)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.date(comp.date)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.semantic.warning, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.psf(comp.psf)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.sf(comp.sf)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.ac(comp.lot)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.yr}</td>
-                <td style={{ padding: '12px 16px', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.type}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.accent.green, fontFamily: t.font.mono, fontWeight: 500, borderBottom: `1px solid ${t.border.strong}` }}>{comp.cap}%</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.dist}</td>
+                <td style={{ padding: '12px 16px', color: t.text.primary, fontWeight: 500, borderBottom: `1px solid ${t.border.strong}` }}>{comp.address || comp.addressFull || '—'}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.semantic.success, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.money(comp.price || comp.salePrice)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.date(comp.date || comp.saleDate)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.semantic.warning, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.psf(comp.psf || comp.pricePerSf)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.sf(comp.sf || comp.areaBuilding)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.ac(comp.lot || comp.areaLotAcres)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.yr || comp.yearBuilt || '—'}</td>
+                <td style={{ padding: '12px 16px', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.type || comp.propertyUseStandardized || '—'}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.dist || comp.distance || '—'}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        )}
       </div>
 
       {/* Summary Bar */}

@@ -4,7 +4,7 @@ import { sendChatMessage } from '../services/api';
 const GREETING = {
   role: 'assistant',
   content:
-    "Hey — I'm Scout, your CRE research assistant. I can search properties, analyze market data, and find opportunities across Travis County. What are you looking for?",
+    "Hey — I'm Scout, your CRE research assistant. I have access to 444K+ properties across Travis County. Ask me anything about properties, ownership, transactions, or market trends.",
   timestamp: new Date(),
 };
 

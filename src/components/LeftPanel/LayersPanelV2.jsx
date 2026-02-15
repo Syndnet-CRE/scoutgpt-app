@@ -477,16 +477,18 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
 
       {/* FILTERS VIEW - New FilterPanel */}
       {view==="filters" && (
-        <FilterPanel
-          filters={filterAPI.filters}
-          setFilter={filterAPI.setFilter}
-          toggleArrayFilter={filterAPI.toggleArrayFilter}
-          clearFilters={filterAPI.clearFilters}
-          count={filterAPI.count}
-          hasActiveFilters={filterAPI.hasActiveFilters}
-          loading={filterAPI.loading}
-          error={filterAPI.error}
-        />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <FilterPanel
+            filters={filterAPI.filters}
+            setFilter={filterAPI.setFilter}
+            toggleArrayFilter={filterAPI.toggleArrayFilter}
+            clearFilters={filterAPI.clearFilters}
+            count={filterAPI.count}
+            hasActiveFilters={filterAPI.hasActiveFilters}
+            loading={filterAPI.loading}
+            error={filterAPI.error}
+          />
+        </div>
       )}
     </div>
 

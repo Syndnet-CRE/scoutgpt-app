@@ -317,6 +317,7 @@ export default function ScoutGPTChatPanel({
     setHistoryOpen(false);
     setInput("");
     setCardData({}); // Clear cached property cards
+    setCardLoading(new Set()); // Clear loading states
     lastFetchedRef.current = new Set(); // Reset fetch tracking
     onHighlightProperties?.([]);
   }, [onNewChat, onHighlightProperties]);
