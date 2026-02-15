@@ -2,33 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme CSS custom properties (fallbacks, overridden by App.jsx) */
+:root {
+  --scout-bg-primary: #1C1C1E;
+  --scout-bg-secondary: #2C2C2E;
+  --scout-bg-tertiary: #3A3A3C;
+  --scout-text-primary: rgba(255, 255, 255, 1.0);
+  --scout-text-secondary: rgba(255, 255, 255, 0.80);
+  --scout-border: rgba(255, 255, 255, 0.12);
+  --scout-border-subtle: rgba(255, 255, 255, 0.08);
+}
+
 /* Mapbox overrides for dark theme */
 .mapboxgl-popup-content {
-  background: #111827 !important;
-  color: #e2e8f0 !important;
-  border: 1px solid #1e293b !important;
+  background: var(--scout-bg-secondary) !important;
+  color: var(--scout-text-primary) !important;
+  border: 1px solid var(--scout-border) !important;
   border-radius: 8px !important;
   padding: 0 !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 }
 
 .mapboxgl-popup-tip {
-  border-top-color: #111827 !important;
+  border-top-color: var(--scout-bg-secondary) !important;
 }
 
 .mapboxgl-popup-close-button {
-  color: #94a3b8 !important;
+  color: var(--scout-text-secondary) !important;
   font-size: 18px !important;
   padding: 4px 8px !important;
 }
 
 .mapboxgl-ctrl-group {
-  background: #111827 !important;
-  border: 1px solid #1e293b !important;
+  background: var(--scout-bg-secondary) !important;
+  border: 1px solid var(--scout-border) !important;
 }
 
 .mapboxgl-ctrl-group button {
-  border-color: #1e293b !important;
+  border-color: var(--scout-border) !important;
+  color: var(--scout-text-primary);
 }
 
 .mapboxgl-ctrl-group button span {
@@ -41,22 +53,22 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: var(--scout-bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--scout-bg-tertiary);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* Smooth transitions */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #334155 #0f172a;
+  scrollbar-color: var(--scout-bg-tertiary) var(--scout-bg-primary);
 }
 
 /* Panel slide animations */
@@ -89,13 +101,14 @@
 
 /* Scout popup — strip Mapbox default popup chrome */
 .scout-popup .mapboxgl-popup-content {
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-  border-radius: 0;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
 }
 .scout-popup .mapboxgl-popup-tip {
-  border-top-color: #1e293b;
+  border-top-color: var(--scout-bg-secondary) !important;
 }
 .scout-popup .mapboxgl-popup-close-button {
   display: none;

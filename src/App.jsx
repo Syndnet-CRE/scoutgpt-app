@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTheme } from './theme.jsx';
 import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import ScoutGPTChatPanel from './components/RightPanel/ScoutGPTChatPanel';
@@ -12,6 +13,8 @@ import { useChat } from './hooks/useChat';
 import { MOCK_FLOOD_GEOJSON, MOCK_SCHOOL_GEOJSON } from './data/mockData';
 
 export default function App() {
+  const { t, toggleTheme, isDark } = useTheme();
+  const [themeHovered, setThemeHovered] = useState(false);
   // Layer visibility state
   const [visibleLayers, setVisibleLayers] = useState({
     parcels: true,
@@ -115,6 +118,18 @@ export default function App() {
     console.log('[APP] highlightedProperties changed:', highlightedProperties.length, highlightedProperties.slice(0, 5));
   }, [highlightedProperties]);
 
+  // Sync theme tokens to CSS custom properties for index.css
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--scout-bg-primary', t.bg.primary);
+    root.style.setProperty('--scout-bg-secondary', t.bg.secondary);
+    root.style.setProperty('--scout-bg-tertiary', t.bg.tertiary);
+    root.style.setProperty('--scout-text-primary', t.text.primary);
+    root.style.setProperty('--scout-text-secondary', t.text.secondary);
+    root.style.setProperty('--scout-border', t.border.default);
+    root.style.setProperty('--scout-border-subtle', t.border.subtle);
+  }, [t]);
+
   // Chat send handler — clear old highlights before sending new query
   const handleChatSend = useCallback((text) => {
     clearHighlights();
@@ -167,7 +182,7 @@ export default function App() {
   }, [selectedProperty, workstationOpen, clearProperty]);
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-scout-bg">
+    <div className="h-screen w-screen flex overflow-hidden" style={{ background: t.bg.primary }}>
       {/* Map — full width */}
       <div className="flex-1 relative">
         <MapContainer
@@ -184,6 +199,50 @@ export default function App() {
           onPopupClose={handlePopupClose}
           mapExpandRef={mapExpandRef}
         />
+
+        {/* Theme toggle button */}
+        <button
+          onClick={toggleTheme}
+          onMouseEnter={() => setThemeHovered(true)}
+          onMouseLeave={() => setThemeHovered(false)}
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: themeHovered ? t.bg.tertiary : t.bg.secondary,
+            border: `1px solid ${t.border.default}`,
+            color: t.text.secondary,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 55,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+            transition: 'background 0.15s ease',
+          }}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          )}
+        </button>
 
         {/* Floating left panel overlay */}
         <LayersPanel
