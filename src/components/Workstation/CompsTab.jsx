@@ -1,29 +1,5 @@
 import React from 'react';
-
-// ══════════════════════════════════════════════════════════════════════════════
-// DESIGN TOKENS
-// ══════════════════════════════════════════════════════════════════════════════
-
-const C = {
-  bg: '#0f172a',
-  bgCard: 'rgba(30,41,59,0.5)',
-  bgRow: 'rgba(30,41,59,0.3)',
-  bgRowHover: 'rgba(51,65,85,0.4)',
-  bgSubject: 'rgba(99,102,241,0.15)',
-  borderLight: 'rgba(51,65,85,0.5)',
-  borderAccent: 'rgba(99,102,241,0.3)',
-  accent: '#6366f1',
-  accentLight: '#a5b4fc',
-  text: '#e2e8f0',
-  textDim: '#94a3b8',
-  textMuted: '#64748b',
-  green: '#34d399',
-  amber: '#fbbf24',
-  red: '#f87171',
-};
-
-const font = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
-const fontMono = "'JetBrains Mono', 'Fira Code', monospace";
+import { useTheme } from '../../theme.jsx';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MOCK DATA
@@ -58,6 +34,8 @@ const fmt = {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export default function CompsTab({ data }) {
+  const { t } = useTheme();
+
   // Subject property info - use correct camelCase API field names
   const address = data?.addressFull || 'Subject Property';
   const buildingSf = data?.areaBuilding;
@@ -75,8 +53,8 @@ export default function CompsTab({ data }) {
       <div
         style={{
           padding: '12px 20px',
-          background: C.bgSubject,
-          borderBottom: `1px solid ${C.borderAccent}`,
+          background: t.accent.greenMuted,
+          borderBottom: `1px solid ${t.accent.greenBorder}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -85,23 +63,23 @@ export default function CompsTab({ data }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div>
-            <div style={{ fontSize: 11, color: C.accentLight, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+            <div style={{ fontSize: 11, color: t.accent.green, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
               Subject Property
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{address}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: t.text.primary }}>{address}</div>
           </div>
           <div style={{ display: 'flex', gap: 16 }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase' }}>SF</div>
-              <div style={{ fontSize: 13, color: C.text, fontFamily: fontMono }}>{fmt.sf(buildingSf)}</div>
+              <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase' }}>SF</div>
+              <div style={{ fontSize: 13, color: t.text.primary, fontFamily: t.font.mono }}>{fmt.sf(buildingSf)}</div>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase' }}>Lot</div>
-              <div style={{ fontSize: 13, color: C.text, fontFamily: fontMono }}>{fmt.ac(lotAcres)}</div>
+              <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase' }}>Lot</div>
+              <div style={{ fontSize: 13, color: t.text.primary, fontFamily: t.font.mono }}>{fmt.ac(lotAcres)}</div>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase' }}>Type</div>
-              <div style={{ fontSize: 13, color: C.accentLight }}>{propertyType}</div>
+              <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase' }}>Type</div>
+              <div style={{ fontSize: 13, color: t.accent.green }}>{propertyType}</div>
             </div>
           </div>
         </div>
@@ -111,12 +89,12 @@ export default function CompsTab({ data }) {
             style={{
               padding: '8px 16px',
               background: 'transparent',
-              border: `1px solid ${C.borderLight}`,
+              border: `1px solid ${t.border.strong}`,
               borderRadius: 6,
-              color: C.textDim,
+              color: t.text.secondary,
               fontSize: 12,
               fontWeight: 500,
-              fontFamily: font,
+              fontFamily: t.font.display,
               cursor: 'pointer',
             }}
           >
@@ -125,13 +103,13 @@ export default function CompsTab({ data }) {
           <button
             style={{
               padding: '8px 16px',
-              background: C.accent,
+              background: t.accent.green,
               border: 'none',
               borderRadius: 6,
-              color: '#fff',
+              color: t.text.primary,
               fontSize: 12,
               fontWeight: 600,
-              fontFamily: font,
+              fontFamily: t.font.display,
               cursor: 'pointer',
             }}
           >
@@ -147,29 +125,29 @@ export default function CompsTab({ data }) {
             width: '100%',
             borderCollapse: 'collapse',
             fontSize: 13,
-            fontFamily: font,
+            fontFamily: t.font.display,
           }}
         >
           <thead>
             <tr
               style={{
-                background: 'rgba(30,41,59,0.6)',
+                background: t.bg.secondary,
                 position: 'sticky',
                 top: 0,
                 zIndex: 1,
               }}
             >
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>#</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Address</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Sale Price</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Date</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>$/SF</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Size (SF)</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Lot (ac)</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Built</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Type</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Cap Rate</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${C.borderLight}` }}>Dist.</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>#</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Address</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Sale Price</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Date</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>$/SF</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Size (SF)</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Lot (ac)</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Built</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Type</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Cap Rate</th>
+              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Dist.</th>
             </tr>
           </thead>
           <tbody>
@@ -177,24 +155,24 @@ export default function CompsTab({ data }) {
               <tr
                 key={i}
                 style={{
-                  background: i % 2 === 0 ? 'transparent' : C.bgRow,
+                  background: i % 2 === 0 ? 'transparent' : t.bg.secondary,
                   transition: 'background 0.15s ease',
                   cursor: 'pointer',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = C.bgRowHover}
-                onMouseLeave={(e) => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : C.bgRow}
+                onMouseEnter={(e) => e.currentTarget.style.background = t.bg.tertiary}
+                onMouseLeave={(e) => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : t.bg.secondary}
               >
-                <td style={{ padding: '12px 16px', color: C.textMuted, borderBottom: `1px solid ${C.borderLight}` }}>{i + 1}</td>
-                <td style={{ padding: '12px 16px', color: C.text, fontWeight: 500, borderBottom: `1px solid ${C.borderLight}` }}>{comp.address}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: C.green, fontFamily: fontMono, fontWeight: 600, borderBottom: `1px solid ${C.borderLight}` }}>{fmt.money(comp.price)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: C.textDim, borderBottom: `1px solid ${C.borderLight}` }}>{fmt.date(comp.date)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: C.amber, fontFamily: fontMono, fontWeight: 600, borderBottom: `1px solid ${C.borderLight}` }}>{fmt.psf(comp.psf)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: C.text, fontFamily: fontMono, borderBottom: `1px solid ${C.borderLight}` }}>{fmt.sf(comp.sf)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: C.text, fontFamily: fontMono, borderBottom: `1px solid ${C.borderLight}` }}>{fmt.ac(comp.lot)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: C.textDim, borderBottom: `1px solid ${C.borderLight}` }}>{comp.yr}</td>
-                <td style={{ padding: '12px 16px', color: C.textDim, borderBottom: `1px solid ${C.borderLight}` }}>{comp.type}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: C.accentLight, fontFamily: fontMono, fontWeight: 500, borderBottom: `1px solid ${C.borderLight}` }}>{comp.cap}%</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: C.textMuted, borderBottom: `1px solid ${C.borderLight}` }}>{comp.dist}</td>
+                <td style={{ padding: '12px 16px', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}` }}>{i + 1}</td>
+                <td style={{ padding: '12px 16px', color: t.text.primary, fontWeight: 500, borderBottom: `1px solid ${t.border.strong}` }}>{comp.address}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.semantic.success, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.money(comp.price)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.date(comp.date)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.semantic.warning, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.psf(comp.psf)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.sf(comp.sf)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.ac(comp.lot)}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.yr}</td>
+                <td style={{ padding: '12px 16px', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.type}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.accent.green, fontFamily: t.font.mono, fontWeight: 500, borderBottom: `1px solid ${t.border.strong}` }}>{comp.cap}%</td>
+                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.dist}</td>
               </tr>
             ))}
           </tbody>
@@ -205,8 +183,8 @@ export default function CompsTab({ data }) {
       <div
         style={{
           padding: '14px 20px',
-          background: 'rgba(30,41,59,0.6)',
-          borderTop: `1px solid ${C.borderLight}`,
+          background: t.bg.secondary,
+          borderTop: `1px solid ${t.border.strong}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -215,20 +193,20 @@ export default function CompsTab({ data }) {
       >
         <div style={{ display: 'flex', gap: 32 }}>
           <div>
-            <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AVG $/SF</div>
-            <div style={{ fontSize: 16, color: C.amber, fontFamily: fontMono, fontWeight: 700 }}>{fmt.psf(avgPsf)}</div>
+            <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AVG $/SF</div>
+            <div style={{ fontSize: 16, color: t.semantic.warning, fontFamily: t.font.mono, fontWeight: 700 }}>{fmt.psf(avgPsf)}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AVG PRICE</div>
-            <div style={{ fontSize: 16, color: C.green, fontFamily: fontMono, fontWeight: 700 }}>{fmt.money(avgPrice)}</div>
+            <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AVG PRICE</div>
+            <div style={{ fontSize: 16, color: t.semantic.success, fontFamily: t.font.mono, fontWeight: 700 }}>{fmt.money(avgPrice)}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AVG CAP</div>
-            <div style={{ fontSize: 16, color: C.accentLight, fontFamily: fontMono, fontWeight: 700 }}>{avgCap.toFixed(1)}%</div>
+            <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AVG CAP</div>
+            <div style={{ fontSize: 16, color: t.accent.green, fontFamily: t.font.mono, fontWeight: 700 }}>{avgCap.toFixed(1)}%</div>
           </div>
         </div>
-        <div style={{ fontSize: 13, color: C.textDim }}>
-          <span style={{ color: C.text, fontWeight: 600 }}>{MOCK_COMPS.length}</span> Comparable Sales
+        <div style={{ fontSize: 13, color: t.text.secondary }}>
+          <span style={{ color: t.text.primary, fontWeight: 600 }}>{MOCK_COMPS.length}</span> Comparable Sales
         </div>
       </div>
     </div>

@@ -1,42 +1,5 @@
 import React, { useState } from 'react';
-
-// ══════════════════════════════════════════════════════════════════════════════
-// DESIGN TOKENS
-// ══════════════════════════════════════════════════════════════════════════════
-
-const C = {
-  bg: '#0f172a',
-  bgCard: 'rgba(30,41,59,0.5)',
-  bgCardHover: 'rgba(51,65,85,0.4)',
-  borderLight: 'rgba(51,65,85,0.5)',
-  borderAccent: 'rgba(99,102,241,0.3)',
-  accent: '#6366f1',
-  accentLight: '#a5b4fc',
-  text: '#e2e8f0',
-  textDim: '#94a3b8',
-  textMuted: '#64748b',
-  green: '#34d399',
-  amber: '#fbbf24',
-  red: '#f87171',
-  cyan: '#22d3ee',
-  purple: '#a78bfa',
-};
-
-const font = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
-const fontMono = "'JetBrains Mono', 'Fira Code', monospace";
-
-// ══════════════════════════════════════════════════════════════════════════════
-// PIPELINE STAGES
-// ══════════════════════════════════════════════════════════════════════════════
-
-const STAGES = [
-  { id: 'prospect', label: 'Prospect', color: '#94a3b8' },
-  { id: 'research', label: 'Research', color: '#6366f1' },
-  { id: 'underwriting', label: 'Underwriting', color: '#8b5cf6' },
-  { id: 'loi', label: 'LOI', color: '#f59e0b' },
-  { id: 'due-diligence', label: 'Due Diligence', color: '#22d3ee' },
-  { id: 'closing', label: 'Closing', color: '#34d399' },
-];
+import { useTheme } from '../../theme.jsx';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // FORMATTERS
@@ -53,7 +16,18 @@ const fmt = {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export default function DealTab({ data }) {
+  const { t } = useTheme();
   const [activeStage, setActiveStage] = useState('research');
+
+  // Pipeline stages using t.charts.neon colors
+  const STAGES = [
+    { id: 'prospect', label: 'Prospect', color: t.text.secondary },
+    { id: 'research', label: 'Research', color: t.charts.neon[0] },
+    { id: 'underwriting', label: 'Underwriting', color: t.charts.neon[4] },
+    { id: 'loi', label: 'LOI', color: t.charts.neon[1] },
+    { id: 'due-diligence', label: 'Due Diligence', color: t.charts.neon[3] },
+    { id: 'closing', label: 'Closing', color: t.semantic.success },
+  ];
 
   // Property info - use correct camelCase API field names
   const address = data?.addressFull || '—';
@@ -71,8 +45,8 @@ export default function DealTab({ data }) {
         <div
           style={{
             padding: '16px 24px',
-            borderBottom: `1px solid ${C.borderLight}`,
-            background: 'rgba(15,23,42,0.5)',
+            borderBottom: `1px solid ${t.border.strong}`,
+            background: t.bg.primary,
             flexShrink: 0,
           }}
         >
@@ -89,12 +63,12 @@ export default function DealTab({ data }) {
                     style={{
                       padding: '10px 20px',
                       borderRadius: 8,
-                      border: isActive ? `2px solid ${stage.color}` : `1px solid ${C.borderLight}`,
-                      background: isActive ? `${stage.color}20` : 'transparent',
-                      color: isActive ? stage.color : isPast ? C.text : C.textMuted,
+                      border: isActive ? `2px solid ${stage.color}` : `1px solid ${t.border.strong}`,
+                      background: isActive ? t.accent.greenMuted : 'transparent',
+                      color: isActive ? stage.color : isPast ? t.text.primary : t.text.tertiary,
                       fontSize: 12,
                       fontWeight: isActive ? 700 : 500,
-                      fontFamily: font,
+                      fontFamily: t.font.display,
                       cursor: 'pointer',
                       opacity: isFuture ? 0.5 : 1,
                       transition: 'all 0.2s ease',
@@ -108,7 +82,7 @@ export default function DealTab({ data }) {
                       style={{
                         width: 24,
                         height: 2,
-                        background: isPast ? C.green : C.borderLight,
+                        background: isPast ? t.semantic.success : t.border.strong,
                         borderRadius: 1,
                       }}
                     />
@@ -125,9 +99,9 @@ export default function DealTab({ data }) {
             {/* Property Card */}
             <div
               style={{
-                background: C.bgCard,
+                background: t.bg.secondary,
                 borderRadius: 12,
-                border: `1px solid ${C.borderLight}`,
+                border: `1px solid ${t.border.strong}`,
                 padding: 20,
               }}
             >
@@ -135,7 +109,7 @@ export default function DealTab({ data }) {
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: C.accent,
+                  color: t.accent.green,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   marginBottom: 12,
@@ -143,19 +117,19 @@ export default function DealTab({ data }) {
               >
                 Property
               </div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: C.text, marginBottom: 8 }}>{address}</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: t.text.primary, marginBottom: 8 }}>{address}</div>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <div>
-                  <span style={{ fontSize: 11, color: C.textMuted }}>Type: </span>
-                  <span style={{ fontSize: 12, color: C.accentLight }}>{propertyType}</span>
+                  <span style={{ fontSize: 11, color: t.text.tertiary }}>Type: </span>
+                  <span style={{ fontSize: 12, color: t.accent.green }}>{propertyType}</span>
                 </div>
                 <div>
-                  <span style={{ fontSize: 11, color: C.textMuted }}>SF: </span>
-                  <span style={{ fontSize: 12, color: C.text, fontFamily: fontMono }}>{fmt.sf(buildingSf)}</span>
+                  <span style={{ fontSize: 11, color: t.text.tertiary }}>SF: </span>
+                  <span style={{ fontSize: 12, color: t.text.primary, fontFamily: t.font.mono }}>{fmt.sf(buildingSf)}</span>
                 </div>
                 <div>
-                  <span style={{ fontSize: 11, color: C.textMuted }}>Lot: </span>
-                  <span style={{ fontSize: 12, color: C.text, fontFamily: fontMono }}>{fmt.ac(lotAc)}</span>
+                  <span style={{ fontSize: 11, color: t.text.tertiary }}>Lot: </span>
+                  <span style={{ fontSize: 12, color: t.text.primary, fontFamily: t.font.mono }}>{fmt.ac(lotAc)}</span>
                 </div>
               </div>
             </div>
@@ -163,9 +137,9 @@ export default function DealTab({ data }) {
             {/* Asking / Offer Card */}
             <div
               style={{
-                background: C.bgCard,
+                background: t.bg.secondary,
                 borderRadius: 12,
-                border: `1px solid ${C.borderLight}`,
+                border: `1px solid ${t.border.strong}`,
                 padding: 20,
               }}
             >
@@ -173,7 +147,7 @@ export default function DealTab({ data }) {
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: C.accent,
+                  color: t.accent.green,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   marginBottom: 12,
@@ -183,25 +157,25 @@ export default function DealTab({ data }) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Asking Price</div>
-                  <div style={{ fontSize: 18, color: C.amber, fontFamily: fontMono, fontWeight: 600 }}>TBD</div>
+                  <div style={{ fontSize: 11, color: t.text.tertiary, marginBottom: 4 }}>Asking Price</div>
+                  <div style={{ fontSize: 18, color: t.semantic.warning, fontFamily: t.font.mono, fontWeight: 600 }}>TBD</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Your Offer</div>
-                  <div style={{ fontSize: 18, color: C.green, fontFamily: fontMono, fontWeight: 600 }}>TBD</div>
+                  <div style={{ fontSize: 11, color: t.text.tertiary, marginBottom: 4 }}>Your Offer</div>
+                  <div style={{ fontSize: 18, color: t.semantic.success, fontFamily: t.font.mono, fontWeight: 600 }}>TBD</div>
                 </div>
               </div>
               <button
                 style={{
                   marginTop: 16,
                   padding: '8px 16px',
-                  background: C.accent,
+                  background: t.accent.green,
                   border: 'none',
                   borderRadius: 6,
-                  color: '#fff',
+                  color: t.text.primary,
                   fontSize: 12,
                   fontWeight: 600,
-                  fontFamily: font,
+                  fontFamily: t.font.display,
                   cursor: 'pointer',
                   width: '100%',
                 }}
@@ -215,9 +189,9 @@ export default function DealTab({ data }) {
           <div
             style={{
               marginTop: 20,
-              background: C.bgCard,
+              background: t.bg.secondary,
               borderRadius: 12,
-              border: `1px solid ${C.borderLight}`,
+              border: `1px solid ${t.border.strong}`,
               padding: 20,
             }}
           >
@@ -225,7 +199,7 @@ export default function DealTab({ data }) {
               style={{
                 fontSize: 10,
                 fontWeight: 700,
-                color: C.accent,
+                color: t.accent.green,
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
                 marginBottom: 12,
@@ -237,10 +211,10 @@ export default function DealTab({ data }) {
               style={{
                 minHeight: 100,
                 padding: 12,
-                background: 'rgba(15,23,42,0.5)',
+                background: t.bg.primary,
                 borderRadius: 8,
-                border: `1px dashed ${C.borderLight}`,
-                color: C.textMuted,
+                border: `1px dashed ${t.border.strong}`,
+                color: t.text.tertiary,
                 fontSize: 13,
                 fontStyle: 'italic',
               }}
@@ -255,20 +229,20 @@ export default function DealTab({ data }) {
       <div
         style={{
           width: 240,
-          borderLeft: `1px solid ${C.borderLight}`,
+          borderLeft: `1px solid ${t.border.strong}`,
           display: 'flex',
           flexDirection: 'column',
-          background: 'rgba(15,23,42,0.5)',
+          background: t.bg.primary,
           flexShrink: 0,
         }}
       >
         {/* Action Buttons */}
-        <div style={{ padding: 16, borderBottom: `1px solid ${C.borderLight}` }}>
+        <div style={{ padding: 16, borderBottom: `1px solid ${t.border.strong}` }}>
           <div
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: C.accent,
+              color: t.accent.green,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               marginBottom: 12,
@@ -288,13 +262,13 @@ export default function DealTab({ data }) {
                 key={i}
                 style={{
                   padding: '10px 0',
-                  background: btn.primary ? C.accent : 'transparent',
-                  border: btn.primary ? 'none' : `1px solid ${C.borderLight}`,
+                  background: btn.primary ? t.accent.green : 'transparent',
+                  border: btn.primary ? 'none' : `1px solid ${t.border.strong}`,
                   borderRadius: 6,
-                  color: btn.primary ? '#fff' : C.textDim,
+                  color: btn.primary ? t.text.primary : t.text.secondary,
                   fontSize: 12,
                   fontWeight: btn.primary ? 600 : 500,
-                  fontFamily: font,
+                  fontFamily: t.font.display,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -311,7 +285,7 @@ export default function DealTab({ data }) {
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: C.accent,
+              color: t.accent.green,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               marginBottom: 12,
@@ -321,20 +295,20 @@ export default function DealTab({ data }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { action: 'Deal created', time: 'Just now', color: C.green },
-              { action: 'Moved to Research', time: 'Just now', color: C.accent },
+              { action: 'Deal created', time: 'Just now', color: t.semantic.success },
+              { action: 'Moved to Research', time: 'Just now', color: t.accent.green },
             ].map((item, i) => (
               <div
                 key={i}
                 style={{
                   padding: 10,
-                  background: 'rgba(30,41,59,0.4)',
+                  background: t.bg.secondary,
                   borderRadius: 6,
                   borderLeft: `3px solid ${item.color}`,
                 }}
               >
-                <div style={{ fontSize: 12, color: C.text }}>{item.action}</div>
-                <div style={{ fontSize: 10, color: C.textMuted, marginTop: 2 }}>{item.time}</div>
+                <div style={{ fontSize: 12, color: t.text.primary }}>{item.action}</div>
+                <div style={{ fontSize: 10, color: t.text.tertiary, marginTop: 2 }}>{item.time}</div>
               </div>
             ))}
           </div>

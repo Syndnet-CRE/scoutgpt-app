@@ -1,33 +1,15 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useTheme } from '../../theme.jsx';
 import PropertyTab from './PropertyTab';
 import CompsTab from './CompsTab';
 import DealTab from './DealTab';
-
-// ══════════════════════════════════════════════════════════════════════════════
-// DESIGN TOKENS
-// ══════════════════════════════════════════════════════════════════════════════
-
-const C = {
-  bg: '#0f172a',
-  bgGradient: 'linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,0.99))',
-  borderAccent: 'rgba(99,102,241,0.2)',
-  borderLight: 'rgba(51,65,85,0.5)',
-  accent: '#6366f1',
-  accentLight: '#a5b4fc',
-  text: '#e2e8f0',
-  textDim: '#94a3b8',
-  textMuted: '#64748b',
-  shadow: '0 -10px 60px rgba(0,0,0,0.4)',
-};
-
-const font = "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif";
-const fontMono = "'JetBrains Mono', 'Fira Code', monospace";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // WORKSTATION DRAWER
 // ══════════════════════════════════════════════════════════════════════════════
 
 export default function WorkstationDrawer({ data, isOpen, onClose }) {
+  const { t } = useTheme();
   const [activeTab, setActiveTab] = useState('property');
   const [height, setHeight] = useState(55); // vh
   const [isDragging, setIsDragging] = useState(false);
@@ -90,14 +72,12 @@ export default function WorkstationDrawer({ data, isOpen, onClose }) {
         right: 0,
         height: `${height}vh`,
         zIndex: 60,
-        background: C.bgGradient,
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        borderTop: `1px solid ${C.borderAccent}`,
-        boxShadow: C.shadow,
+        background: t.bg.primary,
+        borderTop: `1px solid ${t.accent.greenBorder}`,
+        boxShadow: '0 -10px 60px rgba(0,0,0,0.4)',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: font,
+        fontFamily: t.font.display,
         transition: isDragging ? 'none' : 'height 0.3s ease',
       }}
     >
@@ -111,8 +91,8 @@ export default function WorkstationDrawer({ data, isOpen, onClose }) {
           justifyContent: 'space-between',
           padding: '0 16px',
           cursor: 'ns-resize',
-          borderBottom: `1px solid ${C.borderLight}`,
-          background: 'rgba(15,23,42,0.6)',
+          borderBottom: `1px solid ${t.border.strong}`,
+          background: t.bg.primary,
           userSelect: 'none',
           flexShrink: 0,
         }}
@@ -128,11 +108,11 @@ export default function WorkstationDrawer({ data, isOpen, onClose }) {
                 padding: '6px 14px',
                 borderRadius: 6,
                 border: 'none',
-                background: activeTab === tab.id ? C.accent : 'transparent',
-                color: activeTab === tab.id ? '#fff' : C.textDim,
+                background: activeTab === tab.id ? t.accent.green : 'transparent',
+                color: activeTab === tab.id ? t.text.primary : t.text.secondary,
                 fontSize: 12,
                 fontWeight: 600,
-                fontFamily: font,
+                fontFamily: t.font.display,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
               }}
@@ -151,7 +131,7 @@ export default function WorkstationDrawer({ data, isOpen, onClose }) {
             width: 48,
             height: 5,
             borderRadius: 3,
-            background: C.textMuted,
+            background: t.text.tertiary,
             opacity: 0.5,
           }}
         />
@@ -161,7 +141,7 @@ export default function WorkstationDrawer({ data, isOpen, onClose }) {
           <span
             style={{
               fontSize: 12,
-              color: C.textDim,
+              color: t.text.secondary,
               maxWidth: 300,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -176,12 +156,12 @@ export default function WorkstationDrawer({ data, isOpen, onClose }) {
             style={{
               padding: '5px 12px',
               borderRadius: 6,
-              border: `1px solid ${C.borderLight}`,
+              border: `1px solid ${t.border.strong}`,
               background: 'transparent',
-              color: C.textDim,
+              color: t.text.secondary,
               fontSize: 12,
               fontWeight: 500,
-              fontFamily: font,
+              fontFamily: t.font.display,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
