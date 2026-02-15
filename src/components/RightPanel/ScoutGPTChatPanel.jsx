@@ -283,6 +283,8 @@ export default function ScoutGPTChatPanel({
   onHighlightProperties,
   onNewChat,
   onClose,
+  zIndex,
+  onBringToFront,
 }) {
   const { t } = useTheme();
 
@@ -416,14 +418,14 @@ export default function ScoutGPTChatPanel({
   }
 
   return (
-    <div style={{
+    <div onMouseDown={onBringToFront} style={{
       position: "fixed", top: GAP, right: GAP, bottom: GAP, width: PANEL_WIDTH,
       display: "flex", flexDirection: "column", background: t.bg.primary,
       borderRadius: RADIUS, border: `1px solid ${t.border.subtle}`,
       boxShadow: "0 8px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.15)",
       overflow: "hidden",
       fontFamily: t.font.display,
-      color: t.text.secondary, zIndex: 55,
+      color: t.text.secondary, zIndex: zIndex || 55,
       animation: "slideIn 300ms cubic-bezier(0.4, 0, 0.2, 1)",
     }}>
 

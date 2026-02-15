@@ -8,7 +8,7 @@ import DealTab from './DealTab';
 // WORKSTATION DRAWER
 // ══════════════════════════════════════════════════════════════════════════════
 
-export default function WorkstationDrawer({ data, isOpen, onClose }) {
+export default function WorkstationDrawer({ data, isOpen, onClose, zIndex, onBringToFront }) {
   const { t } = useTheme();
   const [activeTab, setActiveTab] = useState('property');
   const [height, setHeight] = useState(55); // vh
@@ -65,13 +65,14 @@ export default function WorkstationDrawer({ data, isOpen, onClose }) {
 
   return (
     <div
+      onMouseDown={onBringToFront}
       style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
         height: `${height}vh`,
-        zIndex: 60,
+        zIndex: zIndex || 55,
         background: t.bg.primary,
         borderTop: `1px solid ${t.accent.greenBorder}`,
         boxShadow: '0 -10px 60px rgba(0,0,0,0.4)',

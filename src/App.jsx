@@ -16,6 +16,14 @@ import { MOCK_FLOOD_GEOJSON, MOCK_SCHOOL_GEOJSON } from './data/mockData';
 export default function App() {
   const { t, toggleTheme, isDark } = useTheme();
   const [themeHovered, setThemeHovered] = useState(false);
+
+  // Panel z-index focus state
+  const [frontPanel, setFrontPanel] = useState(null); // 'left' | 'right' | 'workstation' | null
+
+  const getPanelZ = (panel) => {
+    const base = 55;
+    return frontPanel === panel ? base + 10 : base;
+  };
   // Layer visibility state
   const [visibleLayers, setVisibleLayers] = useState({
     parcels: true,
@@ -233,6 +241,8 @@ export default function App() {
         <LayersPanel
           onLayerChange={handleLayerChange}
           onFilterChange={handleFilterChange}
+          zIndex={getPanelZ('left')}
+          onBringToFront={() => setFrontPanel('left')}
         />
 
         {/* Property Card rendered inside Mapbox popup via portal */}
@@ -266,6 +276,8 @@ export default function App() {
         onShowOnMap={handleShowOnMap}
         onHighlightProperties={handleHighlightProperties}
         onNewChat={resetChat}
+        zIndex={getPanelZ('right')}
+        onBringToFront={() => setFrontPanel('right')}
       />
 
       {/* Bottom Drawer Workstation */}
@@ -273,6 +285,8 @@ export default function App() {
         data={workstationProperty}
         isOpen={workstationOpen}
         onClose={() => setWorkstationOpen(false)}
+        zIndex={getPanelZ('workstation')}
+        onBringToFront={() => setFrontPanel('workstation')}
       />
     </div>
   );

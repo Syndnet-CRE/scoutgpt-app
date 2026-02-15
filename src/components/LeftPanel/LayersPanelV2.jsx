@@ -294,7 +294,7 @@ function RequestModal({ isOpen, onClose, t }) {
 // ── MAIN ──
 // This is the original LayersPanelV2 component with added onLayerChange and onFilterChange callbacks.
 // It notifies the parent (App.jsx) whenever a wired layer or filter changes state.
-export default function LayersPanel({ onLayerChange, onFilterChange }) {
+export default function LayersPanel({ onLayerChange, onFilterChange, zIndex, onBringToFront }) {
   const { t } = useTheme();
   const [isOpen, setIsOpen] = useState(true);
   const [view, setView] = useState("layers");
@@ -378,7 +378,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange }) {
   );
 
   return (<>
-    <div style={{ position: "absolute", top: 12, left: 12, zIndex: 55, width: 350, maxHeight: "calc(100vh - 24px)", background: t.bg.primary, borderRadius: 14, boxShadow: SHADOW, display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: font, border: `1px solid ${t.border.subtle}` }}>
+    <div onMouseDown={onBringToFront} style={{ position: "absolute", top: 12, left: 12, zIndex: zIndex || 55, width: 350, maxHeight: "calc(100vh - 24px)", background: t.bg.primary, borderRadius: 14, boxShadow: SHADOW, display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: font, border: `1px solid ${t.border.subtle}` }}>
       {/* HEADER */}
       <div style={{ padding: "12px 14px 0", borderBottom: `1px solid ${t.border.subtle}`, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
