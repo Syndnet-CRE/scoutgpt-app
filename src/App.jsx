@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Sun, Moon } from 'lucide-react';
 import { useTheme } from './theme.jsx';
+import Header from './components/Header';
 import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import ScoutGPTChatPanel from './components/RightPanel/ScoutGPTChatPanel';
@@ -14,8 +14,7 @@ import { useChat } from './hooks/useChat';
 import { MOCK_FLOOD_GEOJSON, MOCK_SCHOOL_GEOJSON } from './data/mockData';
 
 export default function App() {
-  const { t, toggleTheme, isDark } = useTheme();
-  const [themeHovered, setThemeHovered] = useState(false);
+  const { t } = useTheme();
 
   // Panel z-index focus state
   const [workstationOnTop, setWorkstationOnTop] = useState(false);
@@ -195,10 +194,12 @@ export default function App() {
   }, [selectedProperty, workstationOpen, clearProperty]);
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden" style={{ background: t.bg.primary }}>
-      {/* Map — full width */}
-      <div className="flex-1 relative">
-        <MapContainer
+    <div className="h-screen w-screen flex flex-col overflow-hidden" style={{ background: t.bg.primary }}>
+      <Header />
+      <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
+        {/* Map — full width */}
+        <div className="flex-1 relative">
+          <MapContainer
           floodGeoJSON={MOCK_FLOOD_GEOJSON}
           schoolsGeoJSON={MOCK_SCHOOL_GEOJSON}
           visibleLayers={visibleLayers}
@@ -212,34 +213,6 @@ export default function App() {
           onPopupClose={handlePopupClose}
           mapExpandRef={mapExpandRef}
         />
-
-        {/* Theme toggle button */}
-        <button
-          onClick={toggleTheme}
-          onMouseEnter={() => setThemeHovered(true)}
-          onMouseLeave={() => setThemeHovered(false)}
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            background: themeHovered ? t.bg.tertiary : t.bg.secondary,
-            border: `1px solid ${t.border.default}`,
-            color: t.text.secondary,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            zIndex: 55,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-            transition: 'background 0.15s ease',
-          }}
-          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
 
         {/* Floating left panel overlay */}
         <LayersPanel
@@ -271,27 +244,28 @@ export default function App() {
         )}
       </div>
 
-      {/* Right Panel — Scout AI Chat (floating overlay) */}
-      <ScoutGPTChatPanel
-        messages={messages}
-        loading={chatLoading}
-        onSend={handleChatSend}
-        onSelectProperty={handleSelectProperty}
-        onShowOnMap={handleShowOnMap}
-        onHighlightProperties={handleHighlightProperties}
-        onNewChat={resetChat}
-        zIndex={getPanelZ('right')}
-        onBringToFront={() => setWorkstationOnTop(false)}
-      />
+        {/* Right Panel — Scout AI Chat (floating overlay) */}
+        <ScoutGPTChatPanel
+          messages={messages}
+          loading={chatLoading}
+          onSend={handleChatSend}
+          onSelectProperty={handleSelectProperty}
+          onShowOnMap={handleShowOnMap}
+          onHighlightProperties={handleHighlightProperties}
+          onNewChat={resetChat}
+          zIndex={getPanelZ('right')}
+          onBringToFront={() => setWorkstationOnTop(false)}
+        />
 
-      {/* Bottom Drawer Workstation */}
-      <WorkstationDrawer
-        data={workstationProperty}
-        isOpen={workstationOpen}
-        onClose={() => setWorkstationOpen(false)}
-        zIndex={getPanelZ('workstation')}
-        onBringToFront={() => setWorkstationOnTop(true)}
-      />
+        {/* Bottom Drawer Workstation */}
+        <WorkstationDrawer
+          data={workstationProperty}
+          isOpen={workstationOpen}
+          onClose={() => setWorkstationOpen(false)}
+          zIndex={getPanelZ('workstation')}
+          onBringToFront={() => setWorkstationOnTop(true)}
+        />
+      </div>
     </div>
   );
 }

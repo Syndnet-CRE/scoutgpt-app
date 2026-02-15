@@ -419,7 +419,7 @@ export default function ScoutGPTChatPanel({
 
   return (
     <div onMouseDown={onBringToFront} style={{
-      position: "fixed", top: GAP, right: GAP, bottom: GAP, width: PANEL_WIDTH,
+      position: "fixed", top: 60, right: GAP, bottom: GAP, width: PANEL_WIDTH,
       display: "flex", flexDirection: "column", background: t.bg.primary,
       borderRadius: RADIUS, border: `1px solid ${t.border.subtle}`,
       boxShadow: "0 8px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.15)",
