@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-
-// ══════════════════════════════════════════════════════════════════════════════
-// DESIGN TOKENS
-// ══════════════════════════════════════════════════════════════════════════════
-
-const GLASS = {
-  background: "rgba(15, 23, 42, 0.78)",
-  backdropFilter: "blur(20px)",
-  WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(148, 163, 184, 0.12)",
-};
+import { useTheme } from '../../theme.jsx';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // UTILITIES
@@ -47,13 +37,6 @@ const fmt = {
     const diff = (Date.now() - d.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
     return `${diff.toFixed(1)} yrs`;
   },
-};
-
-const riskColor = (score) => {
-  if (score >= 75) return "#ef4444";
-  if (score >= 50) return "#f59e0b";
-  if (score >= 25) return "#22c55e";
-  return "#6b7280";
 };
 
 const riskLabel = (score) => {
@@ -181,39 +164,74 @@ const Icon = ({ name, size = 16, className = "" }) => {
 // PRIMITIVE COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-const Glass = ({ children, className = "", style = {} }) => (
-  <div
-    className={`rounded-xl ${className}`}
-    style={{ ...GLASS, ...style }}
-  >
-    {children}
-  </div>
-);
+const Glass = ({ children, className = "", style = {} }) => {
+  const { t } = useTheme();
+  return (
+    <div
+      className={`rounded-xl ${className}`}
+      style={{
+        background: t.bg.secondary,
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: `1px solid ${t.border.default}`,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 const Badge = ({ children, color = "slate" }) => {
-  const colors = {
-    slate: "bg-slate-700/60 text-slate-300 border-slate-600/50",
-    indigo: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
-    green: "bg-green-500/20 text-green-300 border-green-500/30",
-    amber: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-    red: "bg-red-500/20 text-red-300 border-red-500/30",
-    purple: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-    cyan: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
-    orange: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+  const { t } = useTheme();
+
+  const getColors = () => {
+    switch (color) {
+      case 'indigo':
+        return { background: t.accent.greenMuted, color: t.accent.green, borderColor: t.accent.greenBorder };
+      case 'green':
+        return { background: `${t.semantic.success}20`, color: t.semantic.success, borderColor: `${t.semantic.success}30` };
+      case 'amber':
+        return { background: `${t.semantic.warning}20`, color: t.semantic.warning, borderColor: `${t.semantic.warning}30` };
+      case 'red':
+        return { background: `${t.semantic.error}20`, color: t.semantic.error, borderColor: `${t.semantic.error}30` };
+      case 'purple':
+        return { background: 'rgba(168, 85, 247, 0.20)', color: 'rgb(216, 180, 254)', borderColor: 'rgba(168, 85, 247, 0.30)' };
+      case 'cyan':
+        return { background: 'rgba(34, 211, 238, 0.20)', color: 'rgb(103, 232, 249)', borderColor: 'rgba(34, 211, 238, 0.30)' };
+      case 'orange':
+        return { background: 'rgba(249, 115, 22, 0.20)', color: 'rgb(253, 186, 116)', borderColor: 'rgba(249, 115, 22, 0.30)' };
+      default: // slate
+        return { background: t.bg.tertiary, color: t.text.primary, borderColor: t.border.strong };
+    }
   };
+
+  const colors = getColors();
+
   return (
-    <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${colors[color] || colors.slate}`}>
+    <span
+      className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
+      style={{
+        background: colors.background,
+        color: colors.color,
+        border: `1px solid ${colors.borderColor}`,
+      }}
+    >
       {children}
     </span>
   );
 };
 
 const DataRow = ({ label, value, highlight = false, sub = false }) => {
+  const { t } = useTheme();
   if (value === null || value === undefined || value === "—" || value === "") return null;
   return (
     <div className={`flex justify-between items-baseline gap-3 ${sub ? "pl-3" : ""}`}>
-      <span className="text-slate-400 text-xs shrink-0">{label}</span>
-      <span className={`text-right text-xs font-mono ${highlight ? "text-white font-semibold" : "text-slate-200"}`}>
+      <span className="text-xs shrink-0" style={{ color: t.text.secondary }}>{label}</span>
+      <span
+        className={`text-right text-xs font-mono ${highlight ? "font-semibold" : ""}`}
+        style={{ color: highlight ? t.text.primary : t.text.primary }}
+      >
         {value}
       </span>
     </div>
@@ -221,12 +239,22 @@ const DataRow = ({ label, value, highlight = false, sub = false }) => {
 };
 
 const RiskBar = ({ label, score }) => {
+  const { t } = useTheme();
   if (score == null) return null;
-  const color = riskColor(score);
+
+  const getRiskColor = (s) => {
+    if (s >= 75) return t.semantic.error;
+    if (s >= 50) return t.semantic.warning;
+    if (s >= 25) return t.semantic.success;
+    return t.text.tertiary;
+  };
+
+  const color = getRiskColor(score);
+
   return (
     <div className="flex items-center gap-2">
-      <span className="text-slate-400 text-xs w-20 shrink-0">{label}</span>
-      <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+      <span className="text-xs w-20 shrink-0" style={{ color: t.text.secondary }}>{label}</span>
+      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: t.bg.tertiary }}>
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${score}%`, backgroundColor: color }}
@@ -237,9 +265,12 @@ const RiskBar = ({ label, score }) => {
   );
 };
 
-const SectionDivider = () => (
-  <div className="border-t border-slate-700/50 my-3" />
-);
+const SectionDivider = () => {
+  const { t } = useTheme();
+  return (
+    <div className="my-3" style={{ borderTop: `1px solid ${t.border.subtle}` }} />
+  );
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECTION COMPONENTS
@@ -247,6 +278,7 @@ const SectionDivider = () => (
 
 // 1. Property Overview
 const PropertyOverview = ({ data }) => {
+  const { t } = useTheme();
   const type = resolvePropertyType(get(data, 'propertyUseStandardized', 'property_use_standardized'), get(data, 'propertyUseGroup', 'property_use_group'));
   const yearBuilt = get(data, 'yearBuilt', 'year_built');
   const beds = get(data, 'bedroomsCount', 'bedrooms_count');
@@ -290,7 +322,7 @@ const PropertyOverview = ({ data }) => {
 
   return (
     <div className="space-y-3">
-      <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Key Stats</div>
+      <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.primary }}>{`Key Stats`}</div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-1">
         <DataRow label="Property Type" value={type} />
         <DataRow label="Year Built" value={yearBuilt} />
@@ -310,7 +342,7 @@ const PropertyOverview = ({ data }) => {
       {(construction || foundation || roof || exterior || floor) && (
         <>
           <SectionDivider />
-          <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Structure</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.primary }}>{`Structure`}</div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-1">
             <DataRow label="Construction" value={construction} />
             <DataRow label="Foundation" value={foundation} />
@@ -325,7 +357,7 @@ const PropertyOverview = ({ data }) => {
       {(pool != null || spa != null || fireplace || elevator != null || garage || parking || hvacCooling || hvacHeating) && (
         <>
           <SectionDivider />
-          <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Amenities</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.primary }}>{`Amenities`}</div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-1">
             <DataRow label="Pool" value={pool ? (poolType || "Yes") : pool === false ? "No" : null} />
             <DataRow label="Spa" value={spa === true ? "Yes" : spa === false ? "No" : null} />
@@ -346,12 +378,14 @@ const PropertyOverview = ({ data }) => {
 
 // 2. Ownership Intel
 const OwnershipIntel = ({ data }) => {
+  const { t } = useTheme();
   const [showContact, setShowContact] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const ownership = data.ownership || [];
   const owner = ownership[0];
 
   if (!owner) {
-    return <div className="text-slate-400 text-sm italic">No ownership data available</div>;
+    return <div className="text-sm italic" style={{ color: t.text.secondary }}>No ownership data available</div>;
   }
 
   const ownerName = get(owner, 'owner1NameFull', 'owner1_name_full') ||
@@ -369,7 +403,7 @@ const OwnershipIntel = ({ data }) => {
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-white font-medium">{ownerName}</div>
+          <div className="font-medium" style={{ color: t.text.primary }}>{ownerName}</div>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {isCorp && <Badge color="purple">Corporate</Badge>}
             {isTrust && <Badge color="cyan">Trust</Badge>}
@@ -391,13 +425,16 @@ const OwnershipIntel = ({ data }) => {
           <SectionDivider />
           <button
             onClick={() => setShowContact(!showContact)}
-            className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            className="flex items-center gap-2 text-xs transition-colors"
+            style={{ color: hovered ? t.accent.green : t.accent.green }}
           >
             <Icon name={showContact ? "eye-off" : "eye"} size={14} />
             {showContact ? "Hide Contact Info" : "Show Contact Info"}
           </button>
           {showContact && (
-            <div className="mt-2 p-2 bg-slate-800/50 rounded-lg">
+            <div className="mt-2 p-2 rounded-lg" style={{ background: t.bg.secondary }}>
               <DataRow label="Mailing Address" value={mailAddress} />
             </div>
           )}
@@ -407,11 +444,11 @@ const OwnershipIntel = ({ data }) => {
       {ownership.length > 1 && (
         <>
           <SectionDivider />
-          <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Ownership History</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.primary }}>{`Ownership History`}</div>
           <div className="space-y-2">
             {ownership.slice(1).map((o, i) => (
-              <div key={i} className="p-2 bg-slate-800/30 rounded-lg space-y-1">
-                <div className="text-slate-200 text-sm">
+              <div key={i} className="p-2 rounded-lg space-y-1" style={{ background: t.bg.secondary }}>
+                <div className="text-sm" style={{ color: t.text.primary }}>
                   {get(o, 'owner1NameFull', 'owner1_name_full') || "Previous Owner"}
                 </div>
                 <DataRow label="Transfer" value={fmt.date(get(o, 'ownershipTransferDate', 'ownership_transfer_date'))} />
@@ -426,10 +463,11 @@ const OwnershipIntel = ({ data }) => {
 
 // 3. Deal History
 const DealHistory = ({ data }) => {
+  const { t } = useTheme();
   const sales = data.salesTransactions || data.sales_transactions || [];
 
   if (sales.length === 0) {
-    return <div className="text-slate-400 text-sm italic">No sales history available</div>;
+    return <div className="text-sm italic" style={{ color: t.text.secondary }}>No sales history available</div>;
   }
 
   return (
@@ -449,11 +487,11 @@ const DealHistory = ({ data }) => {
         const mortgages = sale.mortgages || [];
 
         return (
-          <div key={i} className={`p-3 bg-slate-800/40 rounded-lg space-y-2 ${i > 0 ? 'mt-2' : ''}`}>
+          <div key={i} className={`p-3 rounded-lg space-y-2 ${i > 0 ? 'mt-2' : ''}`} style={{ background: t.bg.secondary }}>
             <div className="flex justify-between items-start">
               <div>
-                <div className="text-white font-semibold">{fmt.dollar(price)}</div>
-                <div className="text-slate-400 text-xs">{fmt.date(date)}</div>
+                <div className="font-semibold" style={{ color: t.text.primary }}>{fmt.dollar(price)}</div>
+                <div className="text-xs" style={{ color: t.text.secondary }}>{fmt.date(date)}</div>
               </div>
               <div className="flex flex-wrap gap-1 justify-end">
                 {armsLength && <Badge color="green">Arms Length</Badge>}
@@ -472,8 +510,8 @@ const DealHistory = ({ data }) => {
             </div>
 
             {mortgages.length > 0 && (
-              <div className="mt-2 ml-2 pl-2 border-l-2 border-slate-600 space-y-2">
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Mortgages</div>
+              <div className="mt-2 ml-2 pl-2 space-y-2" style={{ borderLeft: `2px solid ${t.border.strong}` }}>
+                <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.secondary }}>{`Mortgages`}</div>
                 {mortgages.map((m, mi) => (
                   <div key={mi} className="space-y-1">
                     <DataRow label="Loan Amount" value={fmt.dollar(get(m, 'loanAmount', 'loan_amount'))} highlight />
@@ -494,6 +532,7 @@ const DealHistory = ({ data }) => {
 
 // 4. Financing & Debt
 const FinancingDebt = ({ data }) => {
+  const { t } = useTheme();
   const loans = data.currentLoans || data.current_loans || [];
   const valuation = data.valuations?.[0] || data.valuation;
   const avm = get(valuation, 'estimatedValue', 'estimated_value');
@@ -508,7 +547,7 @@ const FinancingDebt = ({ data }) => {
     <div className="space-y-3">
       {(totalDebt > 0 || estimatedEquity) && (
         <>
-          <div className="p-3 bg-slate-800/40 rounded-lg space-y-1">
+          <div className="p-3 rounded-lg space-y-1" style={{ background: t.bg.secondary }}>
             <DataRow label="Total Debt" value={fmt.dollar(totalDebt)} highlight />
             <DataRow label="AVM Value" value={fmt.dollar(avm)} />
             <DataRow label="Estimated Equity" value={estimatedEquity > 0 ? fmt.dollar(estimatedEquity) : null} highlight />
@@ -518,7 +557,7 @@ const FinancingDebt = ({ data }) => {
       )}
 
       {loans.length === 0 ? (
-        <div className="text-slate-400 text-sm italic">No active loans on record</div>
+        <div className="text-sm italic" style={{ color: t.text.secondary }}>No active loans on record</div>
       ) : (
         <div className="space-y-2">
           {loans.map((loan, i) => {
@@ -533,10 +572,10 @@ const FinancingDebt = ({ data }) => {
             const estMonthly = get(loan, 'estimatedMonthlyPayment', 'estimated_monthly_payment');
 
             return (
-              <div key={i} className="p-3 bg-slate-800/40 rounded-lg space-y-1">
+              <div key={i} className="p-3 rounded-lg space-y-1" style={{ background: t.bg.secondary }}>
                 <div className="flex justify-between items-center mb-2">
                   <Badge color="indigo">Position {position}</Badge>
-                  <span className="text-white font-semibold">{fmt.dollar(amount)}</span>
+                  <span className="font-semibold" style={{ color: t.text.primary }}>{fmt.dollar(amount)}</span>
                 </div>
                 <DataRow label="Loan Type" value={type} />
                 <DataRow label="Lender" value={lender} />
@@ -556,6 +595,7 @@ const FinancingDebt = ({ data }) => {
 
 // 5. Distress Signals
 const DistressSignals = ({ data }) => {
+  const { t } = useTheme();
   const foreclosures = data.foreclosureRecords || data.foreclosure_records || [];
   const taxDelinquentYear = get(data, 'taxDelinquentYear', 'tax_delinquent_year') ||
                             get(data.taxAssessments?.[0], 'taxDelinquentYear', 'tax_delinquent_year');
@@ -564,12 +604,12 @@ const DistressSignals = ({ data }) => {
 
   if (!hasDistress) {
     return (
-      <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-        <div className="flex items-center gap-2 text-green-400">
+      <div className="p-4 rounded-lg" style={{ background: `${t.semantic.success}10`, border: `1px solid ${t.semantic.success}20` }}>
+        <div className="flex items-center gap-2" style={{ color: t.semantic.success }}>
           <Icon name="check" size={18} />
           <span className="font-medium">No active distress signals</span>
         </div>
-        <p className="text-slate-400 text-xs mt-1">This property has no foreclosure filings or tax delinquencies on record.</p>
+        <p className="text-xs mt-1" style={{ color: t.text.secondary }}>This property has no foreclosure filings or tax delinquencies on record.</p>
       </div>
     );
   }
@@ -577,8 +617,8 @@ const DistressSignals = ({ data }) => {
   return (
     <div className="space-y-3">
       {taxDelinquentYear && (
-        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-          <div className="flex items-center gap-2 text-amber-400 mb-2">
+        <div className="p-3 rounded-lg" style={{ background: `${t.semantic.warning}10`, border: `1px solid ${t.semantic.warning}20` }}>
+          <div className="flex items-center gap-2 mb-2" style={{ color: t.semantic.warning }}>
             <Icon name="alert-triangle" size={16} />
             <span className="font-medium">Tax Delinquent</span>
           </div>
@@ -605,9 +645,9 @@ const DistressSignals = ({ data }) => {
         const originalRate = get(f, 'originalLoanInterestRate', 'original_loan_interest_rate');
 
         return (
-          <div key={i} className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg space-y-2">
+          <div key={i} className="p-3 rounded-lg space-y-2" style={{ background: `${t.semantic.error}10`, border: `1px solid ${t.semantic.error}20` }}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-red-400">
+              <div className="flex items-center gap-2" style={{ color: t.semantic.error }}>
                 <Icon name="alert-triangle" size={16} />
                 <span className="font-medium">{recordType || "Foreclosure"}</span>
               </div>
@@ -631,7 +671,7 @@ const DistressSignals = ({ data }) => {
             {auctionDate && (
               <>
                 <SectionDivider />
-                <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Auction Details</div>
+                <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.primary }}>{`Auction Details`}</div>
                 <div className="space-y-1">
                   <DataRow label="Auction Date" value={fmt.date(auctionDate)} highlight />
                   <DataRow label="Opening Bid" value={fmt.dollar(openingBid)} />
@@ -648,12 +688,13 @@ const DistressSignals = ({ data }) => {
 
 // 6. Valuation & Equity
 const ValuationEquity = ({ data }) => {
+  const { t } = useTheme();
   const valuation = data.valuations?.[0] || data.valuation;
   const lastSalePrice = get(data, 'lastSalePrice', 'last_sale_price');
   const buildingSf = get(data, 'areaBuilding', 'area_building');
 
   if (!valuation) {
-    return <div className="text-slate-400 text-sm italic">No valuation data available</div>;
+    return <div className="text-sm italic" style={{ color: t.text.secondary }}>No valuation data available</div>;
   }
 
   const avm = get(valuation, 'estimatedValue', 'estimated_value');
@@ -669,18 +710,24 @@ const ValuationEquity = ({ data }) => {
     ? Number(lastSalePrice) / Number(buildingSf)
     : null;
 
-  const confidenceColor = confidence >= 80 ? "#22c55e" : confidence >= 60 ? "#f59e0b" : "#ef4444";
+  const getConfidenceColor = (c) => {
+    if (c >= 80) return t.semantic.success;
+    if (c >= 60) return t.semantic.warning;
+    return t.semantic.error;
+  };
+
+  const confidenceColor = confidence != null ? getConfidenceColor(confidence) : t.text.tertiary;
 
   return (
     <div className="space-y-3">
-      <div className="p-3 bg-slate-800/40 rounded-lg">
+      <div className="p-3 rounded-lg" style={{ background: t.bg.secondary }}>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-slate-400 text-xs">AVM Estimate</span>
-          <span className="text-white font-bold text-lg">{fmt.dollar(avm)}</span>
+          <span className="text-xs" style={{ color: t.text.secondary }}>AVM Estimate</span>
+          <span className="font-bold text-lg" style={{ color: t.text.primary }}>{fmt.dollar(avm)}</span>
         </div>
 
         {(avmMin || avmMax) && (
-          <div className="text-slate-400 text-xs text-right mb-2">
+          <div className="text-xs text-right mb-2" style={{ color: t.text.secondary }}>
             Range: {fmt.dollarK(avmMin)} — {fmt.dollarK(avmMax)}
           </div>
         )}
@@ -688,10 +735,10 @@ const ValuationEquity = ({ data }) => {
         {confidence != null && (
           <div className="mt-3">
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-slate-400">Confidence</span>
+              <span style={{ color: t.text.secondary }}>Confidence</span>
               <span style={{ color: confidenceColor }}>{Number(confidence).toFixed(0)}%</span>
             </div>
-            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: t.bg.tertiary }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${confidence}%`, backgroundColor: confidenceColor }}
@@ -707,7 +754,7 @@ const ValuationEquity = ({ data }) => {
       </div>
 
       <SectionDivider />
-      <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Investment Metrics</div>
+      <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.primary }}>{`Investment Metrics`}</div>
       <div className="space-y-1">
         <DataRow label="Loan-to-Value" value={fmt.pct(ltv)} />
         <DataRow label="Available Equity" value={fmt.dollar(availableEquity)} highlight />
@@ -719,13 +766,14 @@ const ValuationEquity = ({ data }) => {
 
 // 7. Tax Profile
 const TaxProfile = ({ data }) => {
+  const { t } = useTheme();
   const taxRecords = data.taxAssessments || data.tax_assessments || [];
   const current = taxRecords[0];
   const taxDelinquentYear = get(data, 'taxDelinquentYear', 'tax_delinquent_year') ||
                             get(current, 'taxDelinquentYear', 'tax_delinquent_year');
 
   if (!current && !taxDelinquentYear) {
-    return <div className="text-slate-400 text-sm italic">No tax data available</div>;
+    return <div className="text-sm italic" style={{ color: t.text.secondary }}>No tax data available</div>;
   }
 
   const year = get(current, 'taxYear', 'tax_year');
@@ -744,8 +792,8 @@ const TaxProfile = ({ data }) => {
   return (
     <div className="space-y-3">
       {taxDelinquentYear && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg mb-3">
-          <div className="flex items-center gap-2 text-red-400">
+        <div className="p-3 rounded-lg mb-3" style={{ background: `${t.semantic.error}10`, border: `1px solid ${t.semantic.error}20` }}>
+          <div className="flex items-center gap-2" style={{ color: t.semantic.error }}>
             <Icon name="alert-triangle" size={16} />
             <span className="font-medium">Tax Delinquent: {taxDelinquentYear}</span>
           </div>
@@ -755,7 +803,7 @@ const TaxProfile = ({ data }) => {
       {current && (
         <>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-400 text-xs">Tax Year {year}</span>
+            <span className="text-xs" style={{ color: t.text.secondary }}>Tax Year {year}</span>
             <div className="flex gap-1">
               {homeownerExempt && <Badge color="green">Homeowner</Badge>}
               {seniorExempt && <Badge color="green">Senior</Badge>}
@@ -773,10 +821,10 @@ const TaxProfile = ({ data }) => {
           </div>
 
           <SectionDivider />
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <div className="p-3 rounded-lg" style={{ background: `${t.semantic.warning}10`, border: `1px solid ${t.semantic.warning}20` }}>
             <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-xs">Tax Amount Billed</span>
-              <span className="text-amber-400 font-bold">{fmt.dollar(taxBilled)}</span>
+              <span className="text-xs" style={{ color: t.text.secondary }}>Tax Amount Billed</span>
+              <span className="font-bold" style={{ color: t.semantic.warning }}>{fmt.dollar(taxBilled)}</span>
             </div>
           </div>
         </>
@@ -785,12 +833,12 @@ const TaxProfile = ({ data }) => {
       {taxRecords.length > 1 && (
         <>
           <SectionDivider />
-          <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Assessment History</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.primary }}>{`Assessment History`}</div>
           <div className="space-y-1">
-            {taxRecords.slice(1, 5).map((t, i) => (
+            {taxRecords.slice(1, 5).map((tx, i) => (
               <div key={i} className="flex justify-between text-xs">
-                <span className="text-slate-400">{get(t, 'taxYear', 'tax_year')}</span>
-                <span className="text-slate-200 font-mono">{fmt.dollar(get(t, 'assessedValueTotal', 'assessed_value_total'))}</span>
+                <span style={{ color: t.text.secondary }}>{get(tx, 'taxYear', 'tax_year')}</span>
+                <span className="font-mono" style={{ color: t.text.primary }}>{fmt.dollar(get(tx, 'assessedValueTotal', 'assessed_value_total'))}</span>
               </div>
             ))}
           </div>
@@ -802,10 +850,11 @@ const TaxProfile = ({ data }) => {
 
 // 8. Development Activity
 const DevelopmentActivity = ({ data }) => {
+  const { t } = useTheme();
   const permits = data.buildingPermits || data.building_permits || [];
 
   if (permits.length === 0) {
-    return <div className="text-slate-400 text-sm italic">No building permits on record</div>;
+    return <div className="text-sm italic" style={{ color: t.text.secondary }}>No building permits on record</div>;
   }
 
   const totalJobValue = permits.reduce((sum, p) => {
@@ -815,14 +864,14 @@ const DevelopmentActivity = ({ data }) => {
 
   return (
     <div className="space-y-3">
-      <div className="p-3 bg-slate-800/40 rounded-lg flex justify-between items-center">
+      <div className="p-3 rounded-lg flex justify-between items-center" style={{ background: t.bg.secondary }}>
         <div>
-          <div className="text-slate-400 text-xs">Total Permits</div>
-          <div className="text-white font-semibold">{permits.length}</div>
+          <div className="text-xs" style={{ color: t.text.secondary }}>Total Permits</div>
+          <div className="font-semibold" style={{ color: t.text.primary }}>{permits.length}</div>
         </div>
         <div className="text-right">
-          <div className="text-slate-400 text-xs">Total Job Value</div>
-          <div className="text-white font-semibold">{fmt.dollar(totalJobValue)}</div>
+          <div className="text-xs" style={{ color: t.text.secondary }}>Total Job Value</div>
+          <div className="font-semibold" style={{ color: t.text.primary }}>{fmt.dollar(totalJobValue)}</div>
         </div>
       </div>
 
@@ -842,11 +891,11 @@ const DevelopmentActivity = ({ data }) => {
           const statusColor = status === 'Complete' ? 'green' : status === 'Active' ? 'indigo' : 'slate';
 
           return (
-            <div key={i} className="p-3 bg-slate-800/40 rounded-lg space-y-2">
+            <div key={i} className="p-3 rounded-lg space-y-2" style={{ background: t.bg.secondary }}>
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="text-white font-medium">{permitType || "Permit"}</div>
-                  {subType && <div className="text-slate-400 text-xs">{subType}</div>}
+                  <div className="font-medium" style={{ color: t.text.primary }}>{permitType || "Permit"}</div>
+                  {subType && <div className="text-xs" style={{ color: t.text.secondary }}>{subType}</div>}
                 </div>
                 {status && <Badge color={statusColor}>{status}</Badge>}
               </div>
@@ -861,7 +910,7 @@ const DevelopmentActivity = ({ data }) => {
               </div>
 
               {description && (
-                <p className="text-slate-400 text-xs mt-2 leading-relaxed">{description}</p>
+                <p className="text-xs mt-2 leading-relaxed" style={{ color: t.text.secondary }}>{description}</p>
               )}
             </div>
           );
@@ -873,10 +922,18 @@ const DevelopmentActivity = ({ data }) => {
 
 // 9. Risk & Environment
 const RiskEnvironment = ({ data }) => {
+  const { t } = useTheme();
   const climate = data.climateRisk || data.climate_risk;
 
+  const getRiskColor = (score) => {
+    if (score >= 75) return t.semantic.error;
+    if (score >= 50) return t.semantic.warning;
+    if (score >= 25) return t.semantic.success;
+    return t.text.tertiary;
+  };
+
   if (!climate) {
-    return <div className="text-slate-400 text-sm italic">No climate risk data available</div>;
+    return <div className="text-sm italic" style={{ color: t.text.secondary }}>No climate risk data available</div>;
   }
 
   const total = get(climate, 'totalRiskScore', 'total_risk_score');
@@ -893,17 +950,17 @@ const RiskEnvironment = ({ data }) => {
   return (
     <div className="space-y-3">
       {total != null && (
-        <div className="p-3 bg-slate-800/40 rounded-lg">
+        <div className="p-3 rounded-lg" style={{ background: t.bg.secondary }}>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-slate-400 text-xs">Total Risk Score</span>
-            <span className="font-bold" style={{ color: riskColor(total) }}>
+            <span className="text-xs" style={{ color: t.text.secondary }}>Total Risk Score</span>
+            <span className="font-bold" style={{ color: getRiskColor(total) }}>
               {total}/100 — {riskLabel(total)}
             </span>
           </div>
-          <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-3 rounded-full overflow-hidden" style={{ background: t.bg.tertiary }}>
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${total}%`, backgroundColor: riskColor(total) }}
+              style={{ width: `${total}%`, backgroundColor: getRiskColor(total) }}
             />
           </div>
         </div>
@@ -922,7 +979,7 @@ const RiskEnvironment = ({ data }) => {
       {(floodChanceFuture || femaFloodRisk) && (
         <>
           <SectionDivider />
-          <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Flood Risk Detail</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: t.text.primary }}>{`Flood Risk Detail`}</div>
           <div className="space-y-1">
             <DataRow label="Future Flood Chance" value={floodChanceFuture ? `${floodChanceFuture}%` : null} />
             <DataRow label="FEMA Classification" value={femaFloodRisk} />
@@ -938,6 +995,10 @@ const RiskEnvironment = ({ data }) => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
+  const { t } = useTheme();
+  const [closeHovered, setCloseHovered] = useState(false);
+  const [workstationHovered, setWorkstationHovered] = useState(false);
+
   if (!data) return null;
 
   // Get data with fallbacks for both camelCase and snake_case
@@ -989,8 +1050,8 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
     <Glass className="w-[416px] overflow-hidden shadow-2xl">
       {/* Distress Banner */}
       {(hasForeclosure || hasTaxDelinquent) && (
-        <div className={`px-4 py-2 ${hasForeclosure ? 'bg-red-500/20' : 'bg-amber-500/20'}`}>
-          <div className={`flex items-center gap-2 ${hasForeclosure ? 'text-red-400' : 'text-amber-400'}`}>
+        <div className="px-4 py-2" style={{ background: hasForeclosure ? `${t.semantic.error}20` : `${t.semantic.warning}20` }}>
+          <div className="flex items-center gap-2" style={{ color: hasForeclosure ? t.semantic.error : t.semantic.warning }}>
             <Icon name="alert-triangle" size={14} />
             <span className="text-xs font-semibold uppercase tracking-wider">
               {hasForeclosure ? 'Foreclosure Filed' : `Tax Delinquent ${taxDelinquentYear}`}
@@ -1005,17 +1066,23 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
       )}
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 border-b border-slate-700/50">
+      <div className="px-4 pt-4 pb-3" style={{ borderBottom: `1px solid ${t.border.subtle}` }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="text-white font-semibold text-base leading-tight truncate">{addressFull}</h3>
-            <p className="text-slate-400 text-xs mt-0.5">
+            <h3 className="font-semibold text-base leading-tight truncate" style={{ color: t.text.primary }}>{addressFull}</h3>
+            <p className="text-xs mt-0.5" style={{ color: t.text.secondary }}>
               {[city, state].filter(Boolean).join(', ')} {zip}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            onMouseEnter={() => setCloseHovered(true)}
+            onMouseLeave={() => setCloseHovered(false)}
+            className="shrink-0 p-1.5 rounded-lg transition-colors"
+            style={{
+              background: closeHovered ? 'rgba(255,255,255,0.1)' : 'transparent',
+              color: closeHovered ? t.text.primary : t.text.secondary,
+            }}
           >
             <Icon name="x" size={16} />
           </button>
@@ -1030,38 +1097,38 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
       <div className="px-4 py-3">
         <div className="grid grid-cols-4 gap-3">
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">AVM Value</div>
-            <div className="text-white text-sm font-semibold mt-0.5">{fmt.dollarK(avm)}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>AVM Value</div>
+            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{fmt.dollarK(avm)}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Last Sale</div>
-            <div className="text-white text-sm font-semibold mt-0.5">{fmt.dollarK(lastSalePrice)}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Last Sale</div>
+            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{fmt.dollarK(lastSalePrice)}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Assessed</div>
-            <div className="text-white text-sm font-semibold mt-0.5">{fmt.dollarK(taxTotal)}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Assessed</div>
+            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{fmt.dollarK(taxTotal)}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Year Built</div>
-            <div className="text-white text-sm font-semibold mt-0.5">{yearBuilt || "—"}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Year Built</div>
+            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{yearBuilt || "—"}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Building</div>
-            <div className="text-white text-sm font-semibold mt-0.5">{fmt.sf(buildingSf)}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Building</div>
+            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{fmt.sf(buildingSf)}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Lot Size</div>
-            <div className="text-white text-sm font-semibold mt-0.5">{lotDisplay}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Lot Size</div>
+            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{lotDisplay}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Owner</div>
-            <div className="text-white text-sm font-semibold mt-0.5 truncate" title={ownerName}>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Owner</div>
+            <div className="text-sm font-semibold mt-0.5 truncate" style={{ color: t.text.primary }} title={ownerName}>
               {ownerName.length > 12 ? ownerName.substring(0, 12) + "..." : ownerName}
             </div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Zoning</div>
-            <div className="text-white text-sm font-semibold mt-0.5">{zoning || "—"}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Zoning</div>
+            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{zoning || "—"}</div>
           </div>
         </div>
       </div>
@@ -1070,7 +1137,11 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
       <div className="px-4 pb-4">
         <button
           onClick={onViewDetails}
-          className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+          className="w-full py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+          style={{
+            background: `linear-gradient(to right, ${t.accent.green}, ${t.accent.greenHover})`,
+            color: '#000',
+          }}
         >
           VIEW PROPERTY DETAILS
           <Icon name="chevron-down" size={14} className="rotate-[-90deg]" />
@@ -1078,14 +1149,16 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
         {onOpenWorkstation && (
           <button
             onClick={onOpenWorkstation}
+            onMouseEnter={() => setWorkstationHovered(true)}
+            onMouseLeave={() => setWorkstationHovered(false)}
             style={{
               width: '100%',
               padding: '9px 0',
               marginTop: '6px',
-              background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
+              background: workstationHovered ? t.accent.greenHover : t.accent.green,
               border: 'none',
               borderRadius: '8px',
-              color: '#fff',
+              color: '#000',
               fontSize: '13px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -1121,7 +1194,9 @@ const TABS = [
 ];
 
 const DetailModule = ({ data, onClose }) => {
+  const { t } = useTheme();
   const [activeTab, setActiveTab] = useState('overview');
+  const [closeHovered, setCloseHovered] = useState(false);
 
   if (!data) return null;
 
@@ -1159,14 +1234,19 @@ const DetailModule = ({ data, onClose }) => {
   return (
     <Glass
       className="w-[780px] max-h-[90vh] flex flex-col shadow-2xl"
-      style={{ ...GLASS }}
+      style={{
+        background: t.bg.secondary,
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: `1px solid ${t.border.default}`,
+      }}
     >
       {/* Header */}
-      <div className="px-5 pt-4 pb-3 border-b border-slate-700/50 shrink-0">
+      <div className="px-5 pt-4 pb-3 shrink-0" style={{ borderBottom: `1px solid ${t.border.subtle}` }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-white font-bold text-lg leading-tight">{addressFull}</h2>
-            <p className="text-slate-400 text-sm mt-0.5">
+            <h2 className="font-bold text-lg leading-tight" style={{ color: t.text.primary }}>{addressFull}</h2>
+            <p className="text-sm mt-0.5" style={{ color: t.text.secondary }}>
               {[city, state].filter(Boolean).join(', ')} {zip}
             </p>
             <div className="mt-2">
@@ -1175,7 +1255,13 @@ const DetailModule = ({ data, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="shrink-0 p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            onMouseEnter={() => setCloseHovered(true)}
+            onMouseLeave={() => setCloseHovered(false)}
+            className="shrink-0 p-2 rounded-lg transition-colors"
+            style={{
+              background: closeHovered ? 'rgba(255,255,255,0.1)' : 'transparent',
+              color: closeHovered ? t.text.primary : t.text.secondary,
+            }}
           >
             <Icon name="x" size={18} />
           </button>
@@ -1183,43 +1269,43 @@ const DetailModule = ({ data, onClose }) => {
       </div>
 
       {/* Key Metrics Bar */}
-      <div className="px-5 py-3 bg-slate-800/30 border-b border-slate-700/50 shrink-0">
+      <div className="px-5 py-3 shrink-0" style={{ background: t.bg.secondary, borderBottom: `1px solid ${t.border.subtle}` }}>
         <div className="flex justify-between text-center">
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">AVM</div>
-            <div className="text-white text-sm font-bold">{fmt.dollarK(avm)}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>AVM</div>
+            <div className="text-sm font-bold" style={{ color: t.text.primary }}>{fmt.dollarK(avm)}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Last Sale</div>
-            <div className="text-white text-sm font-bold">{fmt.dollarK(lastSalePrice)}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Last Sale</div>
+            <div className="text-sm font-bold" style={{ color: t.text.primary }}>{fmt.dollarK(lastSalePrice)}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Building</div>
-            <div className="text-white text-sm font-bold">{fmt.sf(buildingSf)}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Building</div>
+            <div className="text-sm font-bold" style={{ color: t.text.primary }}>{fmt.sf(buildingSf)}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Built</div>
-            <div className="text-white text-sm font-bold">{yearBuilt || "—"}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Built</div>
+            <div className="text-sm font-bold" style={{ color: t.text.primary }}>{yearBuilt || "—"}</div>
           </div>
           <div>
-            <div className="text-slate-500 text-[10px] uppercase tracking-wider">Lot</div>
-            <div className="text-white text-sm font-bold">{lotDisplay || "—"}</div>
+            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Lot</div>
+            <div className="text-sm font-bold" style={{ color: t.text.primary }}>{lotDisplay || "—"}</div>
           </div>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="px-2 border-b border-slate-700/50 shrink-0 overflow-x-auto">
+      <div className="px-2 shrink-0 overflow-x-auto" style={{ borderBottom: `1px solid ${t.border.subtle}` }}>
         <div className="flex">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 ${
-                activeTab === tab.id
-                  ? 'text-white border-indigo-500'
-                  : 'text-slate-500 border-transparent hover:text-slate-300'
-              }`}
+              className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-colors"
+              style={{
+                color: activeTab === tab.id ? t.text.primary : t.text.tertiary,
+                borderBottom: activeTab === tab.id ? `2px solid ${t.accent.green}` : '2px solid transparent',
+              }}
             >
               <Icon name={tab.icon} size={14} />
               {tab.label}
