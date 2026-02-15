@@ -70,7 +70,8 @@ export default function FilterPanel({
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      height: '100%',
+      flex: 1,
+      minHeight: 0,
       fontFamily: t.font.display,
     }}>
       {/* Result count header */}
