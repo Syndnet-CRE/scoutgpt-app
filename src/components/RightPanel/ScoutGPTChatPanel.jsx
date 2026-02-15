@@ -1,104 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { ArrowUp, Search, Clock, MessageSquare, FileText, LayoutGrid, TrendingUp, X, Plus, MapPin, Heart, Eye, Sparkles, Loader2, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../theme.jsx';
 import { fetchPropertyDetail } from "../../services/api";
 
 const PANEL_WIDTH = 420;
 const GAP = 10;
 const RADIUS = 8;
-
-// ── Static Icons (use currentColor) ──
-const StaticIcons = {
-  send: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M8 13V3M8 3L3.5 7.5M8 3L12.5 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  search: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
-      <path d="M16 16L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  clock: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
-      <path d="M12 7V12L15 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  chat: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  doc: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" strokeWidth="2"/>
-      <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  grid: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-      <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-      <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-      <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  trendUp: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M23 6l-9.5 9.5-5-5L1 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M17 6h6v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  close: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  attach: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  mapPin: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-  heart: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  eye: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="2"/>
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-    </svg>
-  ),
-};
-
-// Dynamic icons that need theme colors
-const createDynamicIcons = (t) => ({
-  sparkle: (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" fill={t.accent.green} opacity="0.9"/>
-      <path d="M18 14L19 17L22 18L19 19L18 22L17 19L14 18L17 17L18 14Z" fill={t.accent.green} opacity="0.5"/>
-    </svg>
-  ),
-  spinner: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{animation:"spin 1s linear infinite"}}>
-      <circle cx="8" cy="8" r="6" stroke={t.border.default} strokeWidth="2"/>
-      <path d="M8 2a6 6 0 014.9 2.5" stroke={t.accent.green} strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  ),
-  heartFilled: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" fill={t.semantic.error} stroke={t.semantic.error} strokeWidth="2"/>
-    </svg>
-  ),
-});
 
 // ── Quick Actions ──
 const QUICK_ACTIONS = [
@@ -144,7 +51,7 @@ function fmtCurrency(val) {
 }
 
 // ── Chat Property Card (Mini) ──
-function ChatPropertyCard({ property, loading, onShowOnMap, onViewDetails, saved, onToggleSave, t, Icons }) {
+function ChatPropertyCard({ property, loading, onShowOnMap, onViewDetails, saved, onToggleSave, t }) {
   const [h, setH] = useState(false);
 
   if (loading) {
@@ -192,7 +99,7 @@ function ChatPropertyCard({ property, loading, onShowOnMap, onViewDetails, saved
         }}
           onMouseEnter={e => { if (!saved) e.currentTarget.style.color = t.semantic.error; }}
           onMouseLeave={e => { if (!saved) e.currentTarget.style.color = t.text.quaternary; }}
-        >{saved ? Icons.heartFilled : StaticIcons.heart}</button>
+        ><Heart size={14} fill={saved ? "currentColor" : "none"} /></button>
       </div>
 
       {/* Address */}
@@ -222,7 +129,7 @@ function ChatPropertyCard({ property, loading, onShowOnMap, onViewDetails, saved
         }}
           onMouseEnter={e => e.currentTarget.style.background = t.accent.greenBorder}
           onMouseLeave={e => e.currentTarget.style.background = t.accent.greenMuted}
-        ><span style={{ display: "flex" }}>{StaticIcons.mapPin}</span>Show on Map</button>
+        ><MapPin size={14} />Show on Map</button>
         <button onClick={() => onViewDetails?.(property.attomId)} style={{
           flex: 1, padding: "6px 0", borderRadius: 6, border: `1px solid ${t.border.default}`,
           cursor: "pointer", background: "transparent", color: t.text.tertiary, fontSize: 11.5, fontWeight: 600,
@@ -230,19 +137,19 @@ function ChatPropertyCard({ property, loading, onShowOnMap, onViewDetails, saved
         }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = t.border.strong; e.currentTarget.style.color = t.text.primary; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = t.border.default; e.currentTarget.style.color = t.text.tertiary; }}
-        ><span style={{ display: "flex" }}>{StaticIcons.eye}</span>Details</button>
+        ><Eye size={14} />Details</button>
       </div>
     </div>
   );
 }
 
 // ── Thinking Indicator ──
-function ThinkingIndicator({ t, Icons }) {
+function ThinkingIndicator({ t }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0" }}>
       <div style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0,
         background: t.accent.green,
-        display: "flex", alignItems: "center", justifyContent: "center" }}>{Icons.spinner}</div>
+        display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={16} className="animate-spin" style={{ color: "#fff" }} /></div>
       <div style={{ paddingTop: 3 }}>
         <div style={{ display: "flex", gap: 4 }}>
           {[0, 1, 2].map(i => (<div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: t.accent.green,
@@ -257,9 +164,9 @@ function ThinkingIndicator({ t, Icons }) {
 // ── History Drawer ──
 function HistoryDrawer({ open, onClose, sessions, activeId, onSelect, onNewChat, searchQuery, onSearchChange, t }) {
   const ARTIFACTS = [
-    { icon: StaticIcons.doc, label: "Analysis Report", color: t.accent.green },
-    { icon: StaticIcons.grid, label: "Property Comparison", color: t.semantic.success },
-    { icon: StaticIcons.trendUp, label: "Market Trends", color: t.semantic.warning },
+    { icon: FileText, label: "Analysis Report", color: t.accent.green },
+    { icon: LayoutGrid, label: "Property Comparison", color: t.semantic.success },
+    { icon: TrendingUp, label: "Market Trends", color: t.semantic.warning },
   ];
   return (
     <>
@@ -285,11 +192,11 @@ function HistoryDrawer({ open, onClose, sessions, activeId, onSelect, onNewChat,
             <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer",
               color: t.text.quaternary, padding: 4, display: "flex", borderRadius: 6 }}
               onMouseEnter={e => e.currentTarget.style.color = t.text.primary}
-              onMouseLeave={e => e.currentTarget.style.color = t.text.quaternary}>{StaticIcons.close}</button>
+              onMouseLeave={e => e.currentTarget.style.color = t.text.quaternary}><X size={18} /></button>
           </div>
         </div>
         <div style={{ padding: "0 16px 12px", position: "relative" }}>
-          <div style={{ position: "absolute", left: 28, top: 10, color: t.text.quaternary, display: "flex" }}>{StaticIcons.search}</div>
+          <div style={{ position: "absolute", left: 28, top: 10, color: t.text.quaternary, display: "flex" }}><Search size={15} /></div>
           <input value={searchQuery} onChange={e => onSearchChange(e.target.value)} placeholder="Search chats..."
             style={{ width: "100%", background: t.bg.secondary, border: `1px solid ${t.border.default}`,
               borderRadius: 6, padding: "9px 12px 9px 38px", fontSize: 13, color: t.text.secondary,
@@ -310,7 +217,7 @@ function HistoryDrawer({ open, onClose, sessions, activeId, onSelect, onNewChat,
               }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = t.bg.tertiary; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}>
-                <span style={{ color: isActive ? "rgba(255,255,255,0.9)" : t.text.quaternary, display: "flex", flexShrink: 0 }}>{StaticIcons.chat}</span>
+                <span style={{ color: isActive ? "rgba(255,255,255,0.9)" : t.text.quaternary, display: "flex", flexShrink: 0 }}><MessageSquare size={16} /></span>
                 <div style={{ overflow: "hidden", minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: isActive ? "#fff" : t.text.secondary,
                     whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{session.title}</div>
@@ -331,7 +238,7 @@ function HistoryDrawer({ open, onClose, sessions, activeId, onSelect, onNewChat,
                 border: "none", cursor: "pointer", padding: 0 }}
                 onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
                 onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
-                <span style={{ color: item.color, display: "flex" }}>{item.icon}</span>
+                <span style={{ color: item.color, display: "flex" }}><item.icon size={16} /></span>
                 <span style={{ fontSize: 13, fontWeight: 500, color: t.text.secondary }}>{item.label}</span>
               </button>
             ))}
@@ -356,11 +263,7 @@ function ToggleButton({ onClick, t }) {
         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
         transition: "all 200ms ease", zIndex: 55,
       }}>
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"
-          fill={hovered ? "white" : t.text.tertiary} stroke={hovered ? "white" : t.text.tertiary}
-          strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
+      <MessageSquare size={22} fill={hovered ? "white" : t.text.tertiary} color={hovered ? "white" : t.text.tertiary} />
       <div style={{
         position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: "50%",
         background: t.accent.green, border: `2px solid ${t.bg.secondary}`,
@@ -382,7 +285,6 @@ export default function ScoutGPTChatPanel({
   onClose,
 }) {
   const { t } = useTheme();
-  const Icons = { ...StaticIcons, ...createDynamicIcons(t) };
 
   // ── Multi-session state ──
   const [sessions, setSessions] = useState([]);
@@ -564,9 +466,9 @@ export default function ScoutGPTChatPanel({
           }}
             onMouseEnter={e => { e.currentTarget.style.background = t.bg.elevated; e.currentTarget.style.color = t.text.primary; }}
             onMouseLeave={e => { e.currentTarget.style.background = t.bg.tertiary; e.currentTarget.style.color = t.text.tertiary; }}>
-            <span style={{ display: "flex" }}>{Icons.clock}</span>
+            <Clock size={14} />
             History
-            <span style={{ color: t.text.quaternary, fontSize: 10, marginLeft: 1 }}>›</span>
+            <ChevronRight size={14} style={{ color: t.text.quaternary }} />
           </button>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
