@@ -7,6 +7,8 @@ import {
   SlidersHorizontal, Plus, ThumbsUp, Send, MessageSquarePlus,
   DollarSign, Building2, Clock, Train, Filter
 } from "lucide-react";
+import FilterPanel from '../filters/FilterPanel';
+import { useFilterAPI } from '../../hooks/useFilterAPI';
 
 // Static values (shadows, overlays) - not themed
 const SHADOW = "0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)";
@@ -294,7 +296,7 @@ function RequestModal({ isOpen, onClose, t }) {
 // ── MAIN ──
 // This is the original LayersPanelV2 component with added onLayerChange and onFilterChange callbacks.
 // It notifies the parent (App.jsx) whenever a wired layer or filter changes state.
-export default function LayersPanel({ onLayerChange, onFilterChange, zIndex, onBringToFront }) {
+export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, mapRef, zIndex, onBringToFront }) {
   const { t } = useTheme();
   const [isOpen, setIsOpen] = useState(true);
   const [view, setView] = useState("layers");
@@ -305,6 +307,15 @@ export default function LayersPanel({ onLayerChange, onFilterChange, zIndex, onB
   const [ls, setLs] = useState(() => { const i = {}; SECTIONS.forEach(s => s.layers.forEach(l => { i[l.id]=false; })); i.parcelBoundaries=true; i.propertyDots=true; return i; });
   const [op, setOp] = useState({ parcels: 80, zoning: 60 });
   const [fs, setFs] = useState(() => { const i = {}; FILTER_GROUPS.forEach(g => g.filters.forEach(f => { if (f.type==="range") i[f.id]=[f.min,f.max]; else if (f.type==="select") i[f.id]=f.options[0]; else i[f.id]=false; })); return i; });
+
+  // New filter API hook
+  const filterAPI = useFilterAPI(mapRef);
+  const { filteredAttomIds, hasActiveFilters: newFiltersActive, count: filterCount } = filterAPI;
+
+  // Propagate filtered IDs to parent for map highlighting
+  useEffect(() => {
+    onFilteredIdsChange?.(filteredAttomIds);
+  }, [filteredAttomIds, onFilteredIdsChange]);
 
   // Track previous layer/filter state to detect changes and notify parent
   const prevLsRef = useRef(ls);
@@ -366,9 +377,17 @@ export default function LayersPanel({ onLayerChange, onFilterChange, zIndex, onB
   const resetFs = () => { const i={}; FILTER_GROUPS.forEach(g=>g.filters.forEach(f=>{if(f.type==="range")i[f.id]=[f.min,f.max];else if(f.type==="select")i[f.id]=f.options[0];else i[f.id]=false;})); setFs(i); };
   const filtered = search ? SECTIONS.map(s=>({...s,layers:s.layers.filter(l=>l.label.toLowerCase().includes(search.toLowerCase()))})).filter(s=>s.layers.length>0) : SECTIONS;
 
+  // Count of active filters for the new filter system
+  const activeFilterCount = newFiltersActive ? Object.entries(filterAPI.filters).filter(([key, value]) => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'boolean') return value;
+    if (value === '' || value === null || value === undefined) return false;
+    return true;
+  }).length : 0;
+
   if (!isOpen) return (
     <div style={{ position: "absolute", top: 12, left: 12, zIndex: 55, display: "flex", gap: 6 }}>
-      {[["layers",Layers,"Layers",totalLayers],["filters",Filter,"Filters",cntFilters]].map(([v,Ic,lb,cnt]) => (
+      {[["layers",Layers,"Layers",totalLayers],["filters",Filter,"Filters",activeFilterCount]].map(([v,Ic,lb,cnt]) => (
         <button key={v} onClick={() => {setIsOpen(true);setView(v);}} style={{ background: t.bg.primary, color: t.text.primary, border: `1px solid ${t.border.default}`, borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, boxShadow: SHADOW, fontFamily: font }}>
           <Ic size={15} strokeWidth={1.8} />{lb}
           {cnt>0 && <span style={{ background: t.accent.green, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 999, padding: "1px 6px", lineHeight: "16px" }}>{cnt}</span>}
@@ -386,7 +405,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, zIndex, onB
             {view==="layers" ? <Layers size={16} color={t.text.primary} strokeWidth={1.8}/> : <Filter size={16} color={t.text.primary} strokeWidth={1.8}/>}
             <span style={{ fontSize: 14, fontWeight: 600, color: t.text.primary, letterSpacing: "-0.2px" }}>{view==="layers"?"Map Layers":"Filters"}</span>
             {view==="layers"&&totalLayers>0 && <span style={{ background: t.accent.greenMuted, color: t.accent.green, fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "1px 8px", lineHeight: "18px", border: `1px solid ${t.accent.greenBorder}` }}>{totalLayers} active</span>}
-            {view==="filters"&&cntFilters>0 && <span style={{ background: t.accent.greenMuted, color: t.accent.green, fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "1px 8px", lineHeight: "18px", border: `1px solid ${t.accent.greenBorder}` }}>{cntFilters} active</span>}
+            {view==="filters"&&newFiltersActive && <span style={{ background: t.accent.greenMuted, color: t.accent.green, fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "1px 8px", lineHeight: "18px", border: `1px solid ${t.accent.greenBorder}` }}>{filterCount !== null ? filterCount.toLocaleString() : '...'}</span>}
           </div>
           <button onClick={() => setIsOpen(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, borderRadius: 6, display: "flex" }}
             onMouseEnter={e=>{e.currentTarget.style.background=t.bg.tertiary;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
@@ -456,29 +475,19 @@ export default function LayersPanel({ onLayerChange, onFilterChange, zIndex, onB
         </button>
       </div>}
 
-      {/* FILTERS VIEW */}
-      {view==="filters" && <div style={{ flex: 1, overflowY: "auto", padding: "10px 12px" }}>
-        {cntFilters>0 && <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-          <button onClick={resetFs} style={{ fontSize: 11, color: t.accent.green, background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 4 }}><RotateCcw size={11} strokeWidth={2}/>Reset All</button>
-        </div>}
-        {FILTER_GROUPS.map(g => { const Ic=g.icon;
-          return <Section key={g.id} title={g.label.toUpperCase()} icon={Ic} count={g.filters.length}
-            activeCount={g.filters.filter(f=>{const v=fs[f.id];if(f.type==="range")return v[0]!==f.min||v[1]!==f.max;if(f.type==="select")return v!==f.options[0];return v===true;}).length}
-            defaultOpen={g.id==="financial"} t={t}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {g.filters.map(f => {
-                if (f.type==="range") return <RangeFilter key={f.id} filter={f} value={fs[f.id]} onChange={v=>setFs(p=>({...p,[f.id]:v}))} t={t} />;
-                if (f.type==="select") return <SelectFilter key={f.id} filter={f} value={fs[f.id]} onChange={v=>setFs(p=>({...p,[f.id]:v}))} t={t} />;
-                return <ToggleFilter key={f.id} filter={f} value={fs[f.id]} onChange={v=>setFs(p=>({...p,[f.id]:v}))} t={t} />;
-              })}
-            </div>
-          </Section>;
-        })}
-        <button style={{ width: "100%", padding: "10px 0", marginTop: 6, marginBottom: 16, borderRadius: 10, background: t.accent.green, border: "none", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: font, transition: "background 0.15s" }}
-          onMouseEnter={e=>{e.currentTarget.style.background=t.accent.greenHover;}} onMouseLeave={e=>{e.currentTarget.style.background=t.accent.green;}}>
-          Apply Filters {cntFilters>0&&`(${cntFilters})`}
-        </button>
-      </div>}
+      {/* FILTERS VIEW - New FilterPanel */}
+      {view==="filters" && (
+        <FilterPanel
+          filters={filterAPI.filters}
+          setFilter={filterAPI.setFilter}
+          toggleArrayFilter={filterAPI.toggleArrayFilter}
+          clearFilters={filterAPI.clearFilters}
+          count={filterAPI.count}
+          hasActiveFilters={filterAPI.hasActiveFilters}
+          loading={filterAPI.loading}
+          error={filterAPI.error}
+        />
+      )}
     </div>
 
     <RequestModal isOpen={modal} onClose={()=>setModal(false)} t={t} />

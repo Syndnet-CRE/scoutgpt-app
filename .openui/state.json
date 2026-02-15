@@ -1,0 +1,138 @@
+{
+  "nodes": [
+    {
+      "nodeId": "node-1771178453359-0",
+      "sessionId": "session-1771178453367-p9xzfwiph",
+      "agentId": "claude",
+      "agentName": "Claude Code",
+      "command": "claude --modal opus",
+      "cwd": "/Users/braydonirwin/scoutgpt-app",
+      "createdAt": "2026-02-15T18:00:53.571Z",
+      "customName": "GIS",
+      "position": {
+        "x": -312,
+        "y": -120
+      }
+    },
+    {
+      "nodeId": "node-1771178495640-0",
+      "sessionId": "session-1771178495642-f6ci48xap",
+      "agentId": "claude",
+      "agentName": "Claude Code",
+      "command": "claude --model opus",
+      "cwd": "/Users/braydonirwin/scoutgpt-api",
+      "createdAt": "2026-02-15T18:01:35.836Z",
+      "customName": "GIS Back-End",
+      "customColor": "#22C55E",
+      "position": {
+        "x": 264,
+        "y": -120
+      }
+    },
+    {
+      "nodeId": "node-1771178529123-0",
+      "sessionId": "session-1771178529126-z5v0vgj8u",
+      "agentId": "claude",
+      "agentName": "Claude Code",
+      "command": "claude --model opus",
+      "cwd": "/Users/braydonirwin/scoutgpt-app",
+      "createdAt": "2026-02-15T18:02:09.334Z",
+      "customName": "Panel Filter Front",
+      "customColor": "#FBBF24",
+      "position": {
+        "x": -312,
+        "y": 168
+      }
+    },
+    {
+      "nodeId": "node-1771178571305-0",
+      "sessionId": "session-1771178571307-tyuzxyq9x",
+      "agentId": "claude",
+      "agentName": "Claude Code",
+      "command": "claude --model opus",
+      "cwd": "/Users/braydonirwin/scoutgpt-api",
+      "createdAt": "2026-02-15T18:02:51.920Z",
+      "customName": "Panel Filter Back",
+      "customColor": "#3B82F6",
+      "position": {
+        "x": 264,
+        "y": 168
+      }
+    },
+    {
+      "nodeId": "node-1771178637639-0",
+      "sessionId": "session-1771178637641-2l8qn7bui",
+      "agentId": "claude",
+      "agentName": "Claude Code",
+      "command": "claude --model opus",
+      "cwd": "/Users/braydonirwin/scoutgpt-app",
+      "createdAt": "2026-02-15T18:03:57.842Z",
+      "customName": "Remaining Tasks Front",
+      "position": {
+        "x": -312,
+        "y": 456
+      }
+    },
+    {
+      "nodeId": "node-1771178660770-0",
+      "sessionId": "session-1771178660772-0qb4cw3vf",
+      "agentId": "claude",
+      "agentName": "Claude Code",
+      "command": "claude --model opus",
+      "cwd": "/Users/braydonirwin/scoutgpt-api",
+      "createdAt": "2026-02-15T18:04:20.970Z",
+      "customName": "Remaining Tasks Back",
+      "customColor": "#FBBF24",
+      "position": {
+        "x": 264,
+        "y": 456
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "category-1771178701487",
+      "label": "New Category",
+      "color": "#22C55E",
+      "position": {
+        "x": -336,
+        "y": -168
+      },
+      "width": 538,
+      "height": 224
+    },
+    {
+      "id": "category-1771178730002",
+      "label": "New Category",
+      "color": "#FBBF24",
+      "position": {
+        "x": 216,
+        "y": -168
+      },
+      "width": 322,
+      "height": 776
+    },
+    {
+      "id": "category-1771178800852",
+      "label": "New Category",
+      "color": "#3B82F6",
+      "position": {
+        "x": -336,
+        "y": 120
+      },
+      "width": 538,
+      "height": 200
+    },
+    {
+      "id": "category-1771178809718",
+      "label": "New Category",
+      "color": "#FBBF24",
+      "position": {
+        "x": -336,
+        "y": 408
+      },
+      "width": 538,
+      "height": 200
+    }
+  ]
+}

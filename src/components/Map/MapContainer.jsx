@@ -22,6 +22,7 @@ export default function MapContainer({
   onPopupOpen,
   onPopupClose,
   mapExpandRef,
+  mapInstanceRef,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -79,6 +80,11 @@ export default function MapContainer({
     });
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+
+    // Expose map instance to parent via ref
+    if (mapInstanceRef) {
+      mapInstanceRef.current = map;
+    }
 
     map.on('load', () => {
       // --- PARCEL BOUNDARIES FROM VECTOR TILESET ---

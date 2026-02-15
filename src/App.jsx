@@ -46,6 +46,9 @@ export default function App() {
   // Ref for map expand callback
   const mapExpandRef = useRef(null);
 
+  // Ref for map instance (used by filter API)
+  const mapInstanceRef = useRef(null);
+
   // Workstation state
   const [workstationOpen, setWorkstationOpen] = useState(false);
   const [workstationProperty, setWorkstationProperty] = useState(null);
@@ -109,6 +112,11 @@ export default function App() {
 
   const handleLayerChange = useCallback((layerKey, isVisible) => {
     setVisibleLayers(prev => ({ ...prev, [layerKey]: isVisible }));
+  }, []);
+
+  // Handler for new filter panel — receives filtered attom IDs for map highlighting
+  const handleFilteredIdsChange = useCallback((ids) => {
+    setFilterHighlightIds(ids || []);
   }, []);
 
   const handlePopupOpen = useCallback((container) => {
@@ -200,24 +208,27 @@ export default function App() {
         {/* Map — full width */}
         <div className="flex-1 relative">
           <MapContainer
-          floodGeoJSON={MOCK_FLOOD_GEOJSON}
-          schoolsGeoJSON={MOCK_SCHOOL_GEOJSON}
-          visibleLayers={visibleLayers}
-          highlightedProperties={highlightedProperties}
-          chatMarkers={chatMarkers}
-          onParcelClick={handleParcelClick}
-          onBoundsChange={setMapBbox}
-          selectedAttomId={selectedProperty?.attomId}
-          filterHighlightIds={filterHighlightIds}
-          onPopupOpen={handlePopupOpen}
-          onPopupClose={handlePopupClose}
-          mapExpandRef={mapExpandRef}
-        />
+            floodGeoJSON={MOCK_FLOOD_GEOJSON}
+            schoolsGeoJSON={MOCK_SCHOOL_GEOJSON}
+            visibleLayers={visibleLayers}
+            highlightedProperties={highlightedProperties}
+            chatMarkers={chatMarkers}
+            onParcelClick={handleParcelClick}
+            onBoundsChange={setMapBbox}
+            selectedAttomId={selectedProperty?.attomId}
+            filterHighlightIds={filterHighlightIds}
+            onPopupOpen={handlePopupOpen}
+            onPopupClose={handlePopupClose}
+            mapExpandRef={mapExpandRef}
+            mapInstanceRef={mapInstanceRef}
+          />
 
         {/* Floating left panel overlay */}
         <LayersPanel
           onLayerChange={handleLayerChange}
           onFilterChange={handleFilterChange}
+          onFilteredIdsChange={handleFilteredIdsChange}
+          mapRef={mapInstanceRef}
           zIndex={getPanelZ('left')}
           onBringToFront={() => setWorkstationOnTop(false)}
         />
