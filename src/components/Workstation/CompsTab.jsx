@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../theme.jsx';
 import useIntelligence from '../../hooks/useIntelligence';
 
@@ -12,10 +12,17 @@ const fmt = {
   ac: v => v == null ? '—' : Number(v).toFixed(2),
   pct: v => v == null ? '—' : `${Number(v).toFixed(1)}%`,
   psf: v => v == null ? '—' : `$${Number(v).toFixed(2)}`,
+  dist: v => v == null ? '—' : `${Number(v).toFixed(1)} mi`,
+  score: v => v == null ? '—' : `${Math.round(Number(v) * 100)}%`,
   date: v => {
     if (!v) return '—';
     return new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   },
+};
+
+// Helper to get comp field value (handles both snake_case and camelCase)
+const getCompField = (comp, snakeKey, camelKey) => {
+  return comp[snakeKey] ?? comp[camelKey];
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -24,6 +31,7 @@ const fmt = {
 
 export default function CompsTab({ data }) {
   const { t } = useTheme();
+  const [expandedSearch, setExpandedSearch] = useState(false);
 
   // Fetch comps from intelligence hook
   const { comps, loading, fetchComps } = useIntelligence(data?.attomId);
@@ -32,8 +40,15 @@ export default function CompsTab({ data }) {
   useEffect(() => {
     if (data?.attomId) {
       fetchComps({ radius: 3, months: 24, limit: 10 });
+      setExpandedSearch(false); // Reset expanded state on property change
     }
   }, [data?.attomId, fetchComps]);
+
+  // Handle expand search
+  const handleExpandSearch = () => {
+    setExpandedSearch(true);
+    fetchComps({ radius: 10, months: 36, limit: 20 });
+  };
 
   // Subject property info - use correct camelCase API field names
   const address = data?.addressFull || 'Subject Property';
@@ -44,11 +59,11 @@ export default function CompsTab({ data }) {
   // Normalize comps data (handle both array and object with comps property)
   const compsArray = Array.isArray(comps) ? comps : (comps?.comps || []);
 
-  // Calculate averages from real data
+  // Calculate averages from real data (handle snake_case API fields)
   const hasComps = compsArray.length > 0;
-  const avgPsf = hasComps ? compsArray.reduce((sum, c) => sum + (c.psf || c.pricePerSf || 0), 0) / compsArray.length : 0;
-  const avgPrice = hasComps ? compsArray.reduce((sum, c) => sum + (c.price || c.salePrice || 0), 0) / compsArray.length : 0;
-  const avgCap = hasComps ? compsArray.filter(c => c.cap || c.capRate).reduce((sum, c, _, arr) => sum + (c.cap || c.capRate || 0) / arr.length, 0) : 0;
+  const avgPsf = hasComps ? compsArray.reduce((sum, c) => sum + (c.price_per_sf || c.pricePerSf || c.psf || 0), 0) / compsArray.length : 0;
+  const avgPrice = hasComps ? compsArray.reduce((sum, c) => sum + (c.sale_price || c.salePrice || c.price || 0), 0) / compsArray.length : 0;
+  const avgCap = hasComps ? compsArray.filter(c => c.cap || c.capRate || c.cap_rate).reduce((sum, c, _, arr) => sum + (c.cap || c.capRate || c.cap_rate || 0) / arr.length, 0) : 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -89,19 +104,22 @@ export default function CompsTab({ data }) {
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button
+            onClick={handleExpandSearch}
+            disabled={expandedSearch || loading.comps}
             style={{
               padding: '8px 16px',
               background: 'transparent',
-              border: `1px solid ${t.border.strong}`,
+              border: `1px solid ${expandedSearch ? t.border.default : t.border.strong}`,
               borderRadius: 6,
-              color: t.text.secondary,
+              color: expandedSearch ? t.text.quaternary : t.text.secondary,
               fontSize: 12,
               fontWeight: 500,
               fontFamily: t.font.display,
-              cursor: 'pointer',
+              cursor: expandedSearch ? 'default' : 'pointer',
+              opacity: expandedSearch ? 0.6 : 1,
             }}
           >
-            Adjust Criteria
+            {expandedSearch ? 'Search Expanded' : 'Expand Search'}
           </button>
           <button
             style={{
@@ -135,16 +153,18 @@ export default function CompsTab({ data }) {
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             height: '100%', color: t.text.tertiary, fontSize: 13, gap: 8,
           }}>
-            <span>No comparable sales found</span>
-            <button
-              onClick={() => fetchComps({ radius: 5, months: 36, limit: 10 })}
-              style={{
-                padding: '8px 16px', background: t.accent.green, border: 'none',
-                borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              Expand Search
-            </button>
+            <span>{expandedSearch ? 'No comparable sales found in expanded search' : 'No comparable sales found'}</span>
+            {!expandedSearch && (
+              <button
+                onClick={handleExpandSearch}
+                style={{
+                  padding: '8px 16px', background: t.accent.green, border: 'none',
+                  borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Expand Search (10mi, 36mo)
+              </button>
+            )}
           </div>
         ) : (
         <table
@@ -164,42 +184,52 @@ export default function CompsTab({ data }) {
                 zIndex: 1,
               }}
             >
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>#</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Address</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Sale Price</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Date</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>$/SF</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Size (SF)</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Lot (ac)</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Built</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Type</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Dist.</th>
+              <th style={{ padding: '12px 12px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>#</th>
+              <th style={{ padding: '12px 12px', textAlign: 'left', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Address</th>
+              <th style={{ padding: '12px 12px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Sale Price</th>
+              <th style={{ padding: '12px 12px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>$/SF</th>
+              <th style={{ padding: '12px 12px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>SF</th>
+              <th style={{ padding: '12px 12px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Year</th>
+              <th style={{ padding: '12px 12px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Distance</th>
+              <th style={{ padding: '12px 12px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Score</th>
+              <th style={{ padding: '12px 12px', textAlign: 'right', color: t.text.tertiary, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${t.border.strong}` }}>Sale Date</th>
             </tr>
           </thead>
           <tbody>
-            {compsArray.map((comp, i) => (
-              <tr
-                key={comp.attomId || i}
-                style={{
-                  background: i % 2 === 0 ? 'transparent' : t.bg.secondary,
-                  transition: 'background 0.15s ease',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = t.bg.tertiary}
-                onMouseLeave={(e) => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : t.bg.secondary}
-              >
-                <td style={{ padding: '12px 16px', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}` }}>{i + 1}</td>
-                <td style={{ padding: '12px 16px', color: t.text.primary, fontWeight: 500, borderBottom: `1px solid ${t.border.strong}` }}>{comp.address || comp.addressFull || '—'}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.semantic.success, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.money(comp.price || comp.salePrice)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.date(comp.date || comp.saleDate)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.semantic.warning, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.psf(comp.psf || comp.pricePerSf)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.sf(comp.sf || comp.areaBuilding)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}` }}>{fmt.ac(comp.lot || comp.areaLotAcres)}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.yr || comp.yearBuilt || '—'}</td>
-                <td style={{ padding: '12px 16px', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.type || comp.propertyUseStandardized || '—'}</td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}` }}>{comp.dist || comp.distance || '—'}</td>
-              </tr>
-            ))}
+            {compsArray.map((comp, i) => {
+              // Handle both snake_case (API) and camelCase field names
+              const address = comp.address_full || comp.addressFull || comp.address || '—';
+              const salePrice = comp.sale_price || comp.salePrice || comp.price;
+              const pricePerSf = comp.price_per_sf || comp.pricePerSf || comp.psf;
+              const areaBuilding = comp.area_building || comp.areaBuilding || comp.sf;
+              const yearBuilt = comp.year_built || comp.yearBuilt || comp.yr;
+              const distanceMiles = comp.distance_miles || comp.distanceMiles || comp.distance || comp.dist;
+              const similarityScore = comp.similarity_score || comp.similarityScore || comp.score;
+              const recordingDate = comp.recording_date || comp.recordingDate || comp.saleDate || comp.date;
+
+              return (
+                <tr
+                  key={comp.attom_id || comp.attomId || i}
+                  style={{
+                    background: i % 2 === 0 ? 'transparent' : t.bg.secondary,
+                    transition: 'background 0.15s ease',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = t.bg.tertiary}
+                  onMouseLeave={(e) => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : t.bg.secondary}
+                >
+                  <td style={{ padding: '10px 12px', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{i + 1}</td>
+                  <td style={{ padding: '10px 12px', color: t.text.primary, fontWeight: 500, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{address}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.semantic.success, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.money(salePrice)}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.semantic.warning, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.psf(pricePerSf)}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.sf(areaBuilding)}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{yearBuilt || '—'}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.dist(distanceMiles)}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.accent.green, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.score(similarityScore)}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.date(recordingDate)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         )}

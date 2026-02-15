@@ -7,12 +7,25 @@ const PANEL_WIDTH = 420;
 const GAP = 10;
 const RADIUS = 8;
 
+// ── Clean Response Text (strip trailing JSON blocks) ──
+function cleanResponseText(text) {
+  if (!text) return '';
+  // Remove trailing "Properties: [{...}]" blocks
+  let cleaned = text.replace(/\n*Properties:\s*\[[\s\S]*$/i, '');
+  // Remove trailing standalone JSON arrays of attom_ids
+  cleaned = cleaned.replace(/\n*\[\s*\{\s*"attom_id"[\s\S]*$/i, '');
+  // Remove trailing "| attom_id |" table rows
+  cleaned = cleaned.replace(/\n*(\|[^|]*attom_id[^|]*\|[\s\S]*)$/i, '');
+  // Trim trailing whitespace
+  return cleaned.trim();
+}
+
 // ── Quick Actions ──
 const QUICK_ACTIONS = [
-  { text: "Vacant land in 78702" },
-  { text: "Commercial over 2 acres" },
-  { text: "Foreclosures downtown" },
-  { text: "Market stats 78745" },
+  { text: "🏢 Find office buildings in 78701" },
+  { text: "📊 Market stats for 78745" },
+  { text: "🏗️ Recent building permits downtown" },
+  { text: "⚠️ Distressed properties near me" },
 ];
 
 // ── Markdown renderer ──
@@ -26,8 +39,45 @@ function renderInlineBold(text, t) {
 }
 
 function renderMarkdown(text, t) {
-  return text.split("\n").map((line, i) => {
+  const lines = text.split("\n");
+  return lines.map((line, i) => {
     if (!line.trim()) return <div key={i} style={{ height: 8 }} />;
+
+    // Markdown table rows
+    if (line.startsWith('|') && line.endsWith('|')) {
+      // Skip separator rows like |---|---|
+      if (line.match(/^\|[\s-:|]+\|$/)) return null;
+
+      const cells = line.split('|').filter(c => c.trim()).map(c => c.trim());
+      // Check if this is a header row (first table row or after non-table)
+      const isHeader = i === 0 || (lines[i - 1] && !lines[i - 1].startsWith('|'));
+
+      return (
+        <div key={i} style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${cells.length}, 1fr)`,
+          gap: '1px',
+          fontSize: 12,
+          fontFamily: isHeader ? 'inherit' : "'JetBrains Mono', monospace",
+          fontWeight: isHeader ? 600 : 400,
+          background: isHeader ? 'rgba(99,102,241,0.1)' : 'transparent',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          padding: '6px 0',
+        }}>
+          {cells.map((cell, j) => (
+            <div key={j} style={{
+              padding: '2px 8px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: isHeader ? '#a5b4fc' : '#94a3b8',
+            }}>
+              {renderInlineBold(cell, t)}
+            </div>
+          ))}
+        </div>
+      );
+    }
 
     // Bullet lines: "- " or "• " or "* " (not bold **)
     const bulletMatch = line.match(/^\s*(?:[-•]|\*(?!\*))\s+(.*)/);
@@ -499,30 +549,54 @@ export default function ScoutGPTChatPanel({
         {messages.length === 0 && !loading && (
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", height: "100%", gap: 12, paddingBottom: 40,
+            justifyContent: "center", height: "100%", gap: 14, paddingBottom: 40,
             animation: "fadeUp 400ms ease-out",
           }}>
+            {/* Icon + Title */}
             <div style={{
-              width: 48, height: 48, borderRadius: 12,
-              background: t.accent.greenMuted, border: `1px solid ${t.accent.greenBorder}`,
+              width: 52, height: 52, borderRadius: 14,
+              background: `linear-gradient(135deg, ${t.accent.green}22, ${t.accent.green}11)`,
+              border: `1px solid ${t.accent.greenBorder}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-            }}><Sparkles size={24} style={{ color: t.accent.green }} /></div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: t.text.primary, marginTop: 4 }}>What can I help you find?</div>
-            <div style={{ fontSize: 13, color: t.text.quaternary, textAlign: "center", maxWidth: 260, lineHeight: 1.5 }}>
-              Search properties, analyze markets, or explore Travis County parcels
+            }}>
+              <Sparkles size={26} style={{ color: t.accent.green }} />
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 7, marginTop: 8, maxWidth: 340 }}>
+            <div style={{
+              fontSize: 22, fontWeight: 800, marginTop: 2,
+              background: `linear-gradient(135deg, ${t.accent.green}, #60a5fa)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>Scout</div>
+            <div style={{ fontSize: 13, color: t.text.quaternary, textAlign: "center", marginTop: -4 }}>
+              CRE Intelligence for Travis County
+            </div>
+
+            {/* 2x2 Quick Action Grid */}
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
+              marginTop: 12, width: "100%", maxWidth: 340,
+            }}>
               {QUICK_ACTIONS.map((a, i) => (
                 <button key={i} onClick={() => handleSend(a.text)} style={{
-                  background: t.bg.secondary, border: `1px solid ${t.border.strong}`,
-                  borderRadius: 18, padding: "7px 14px", cursor: "pointer",
+                  background: t.bg.secondary, border: `1px solid ${t.border.default}`,
+                  borderRadius: 10, padding: "12px 14px", cursor: "pointer",
                   fontSize: 12, fontWeight: 500, color: t.text.tertiary,
-                  transition: "all 150ms", whiteSpace: "nowrap",
+                  transition: "all 150ms", textAlign: "left",
+                  lineHeight: 1.4,
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = t.border.strong; e.currentTarget.style.background = t.bg.tertiary; e.currentTarget.style.color = t.text.primary; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = t.border.strong; e.currentTarget.style.background = t.bg.secondary; e.currentTarget.style.color = t.text.tertiary; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent.greenBorder; e.currentTarget.style.background = t.bg.tertiary; e.currentTarget.style.color = t.text.primary; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = t.border.default; e.currentTarget.style.background = t.bg.secondary; e.currentTarget.style.color = t.text.tertiary; }}
                 >{a.text}</button>
               ))}
+            </div>
+
+            {/* Stats line */}
+            <div style={{
+              fontSize: 11, color: t.text.quaternary, marginTop: 12,
+              letterSpacing: 0.2,
+            }}>
+              444,312 properties · 14 data tables · Travis County, TX
             </div>
           </div>
         )}
@@ -554,7 +628,7 @@ export default function ScoutGPTChatPanel({
                   <span style={{ fontSize: 11, fontWeight: 500, color: t.text.quaternary }}>Scout</span>
                 </div>
                 <div style={{ fontSize: 14, lineHeight: 1.65, color: t.text.secondary, paddingLeft: 1 }}>
-                  {renderMarkdown(msg.content, t)}
+                  {renderMarkdown(cleanResponseText(msg.content), t)}
                 </div>
 
                 {/* Property count bar + Show all on map */}

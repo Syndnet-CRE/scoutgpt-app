@@ -13,7 +13,8 @@ const fmt = {
   sf: v => (v == null || v === 0 || v === '') ? '—' : `${Number(v).toLocaleString()} SF`,
   ac: v => (v == null || v === 0 || v === '') ? '—' : `${Number(v).toFixed(2)} ac`,
   pct: v => (v == null || v === '') ? '—' : `${Number(v).toFixed(1)}%`,
-  num: v => (v == null || v === 0 || v === '') ? '—' : Number(v).toLocaleString(),
+  // num: allow 0 to display (important for bedrooms, bathrooms, stories, etc.)
+  num: v => (v == null || v === '') ? '—' : Number(v).toLocaleString(),
   psf: v => (v == null || v === 0 || v === '') ? '—' : `$${Number(v).toFixed(2)}/SF`,
   date: v => {
     if (!v) return '—';
@@ -21,7 +22,8 @@ const fmt = {
     if (isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   },
-  text: v => (v == null || v === '') ? '—' : v,
+  // text: allow 0 to display as a string
+  text: v => (v == null || v === '') ? '—' : String(v),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
