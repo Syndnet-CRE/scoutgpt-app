@@ -5,4 +5,4 @@ For more details, please visit https://support.apple.com/kb/HT208050.
 [?1034hbash-3.2$ claude --plugin-dir /Users/braydonirwin/.openui/claude-code-plugin --modal opus
 error: unknown option '--modal'
 (Did you mean --model?)
-[?25hbash-3.2$ [Kbash-3.2$ 
+[?25hbash-3.2$ [Kbash-3.2$ [Kbash-3.2$ 

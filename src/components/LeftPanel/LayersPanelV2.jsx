@@ -477,7 +477,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
 
       {/* FILTERS VIEW - New FilterPanel */}
       {view==="filters" && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <FilterPanel
             filters={filterAPI.filters}
             setFilter={filterAPI.setFilter}
