@@ -228,11 +228,11 @@ export default function CompsTab({ data }) {
           </div>
           <div>
             <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AVG CAP</div>
-            <div style={{ fontSize: 16, color: t.accent.green, fontFamily: t.font.mono, fontWeight: 700 }}>{avgCap.toFixed(1)}%</div>
+            <div style={{ fontSize: 16, color: t.accent.green, fontFamily: t.font.mono, fontWeight: 700 }}>{avgCap > 0 ? `${avgCap.toFixed(1)}%` : '—'}</div>
           </div>
         </div>
         <div style={{ fontSize: 13, color: t.text.secondary }}>
-          <span style={{ color: t.text.primary, fontWeight: 600 }}>{MOCK_COMPS.length}</span> Comparable Sales
+          <span style={{ color: t.text.primary, fontWeight: 600 }}>{compsArray.length}</span> Comparable Sales
         </div>
       </div>
     </div>
