@@ -298,7 +298,7 @@ function RequestModal({ isOpen, onClose, t }) {
 // It notifies the parent (App.jsx) whenever a wired layer or filter changes state.
 export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, mapRef, zIndex, onBringToFront }) {
   const { t } = useTheme();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("layers");
   const [modal, setModal] = useState(false);
   const [search, setSearch] = useState("");

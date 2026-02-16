@@ -146,7 +146,53 @@ const CardHeader = ({ children, t }) => (
 
 const OverviewSubTab = ({ data, t }) => {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+    <div>
+      {/* Legal Description */}
+      {(data.legalDescription || data.legal_description) && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontSize: 9,
+            fontWeight: 700,
+            color: t.text.tertiary,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: 6,
+          }}>
+            LEGAL DESCRIPTION
+          </div>
+          <div style={{
+            fontSize: 12,
+            color: '#94a3b8',
+            lineHeight: 1.5,
+            whiteSpace: 'pre-wrap',
+          }}>
+            {data.legalDescription || data.legal_description}
+          </div>
+        </div>
+      )}
+      {!(data.legalDescription || data.legal_description) && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontSize: 9,
+            fontWeight: 700,
+            color: t.text.tertiary,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: 6,
+          }}>
+            LEGAL DESCRIPTION
+          </div>
+          <div style={{
+            fontSize: 12,
+            color: '#64748b',
+            fontStyle: 'italic',
+          }}>
+            Not available
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
       {/* Key Stats Column */}
       <div>
         <SectionHeader t={t}>Key Stats</SectionHeader>
@@ -192,6 +238,7 @@ const OverviewSubTab = ({ data, t }) => {
         <DataRow t={t} label="Spa" value={data.hasSpa ? 'Yes' : 'No'} />
         <DataRow t={t} label="Elevator" value={data.hasElevator ? 'Yes' : 'No'} />
         <DataRow t={t} label="Fireplace" value={data.hasFireplace ? `Yes (${data.fireplaceCount || 1})` : 'No'} />
+      </div>
       </div>
     </div>
   );

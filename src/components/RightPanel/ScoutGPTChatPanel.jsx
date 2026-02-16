@@ -14,18 +14,18 @@ function cleanResponseText(text) {
   let cleaned = text.replace(/\n*Properties:\s*\[[\s\S]*$/i, '');
   // Remove trailing standalone JSON arrays of attom_ids
   cleaned = cleaned.replace(/\n*\[\s*\{\s*"attom_id"[\s\S]*$/i, '');
-  // Remove trailing "| attom_id |" table rows
-  cleaned = cleaned.replace(/\n*(\|[^|]*attom_id[^|]*\|[\s\S]*)$/i, '');
+  // Remove trailing JSON objects with attom_id
+  cleaned = cleaned.replace(/\n*\[\s*\{[^}]*"attom_id"[^}]*\}[\s\S]*$/i, '');
   // Trim trailing whitespace
   return cleaned.trim();
 }
 
 // ── Quick Actions ──
 const QUICK_ACTIONS = [
-  { text: "🏢 Find office buildings in 78701" },
-  { text: "📊 Market stats for 78745" },
-  { text: "🏗️ Recent building permits downtown" },
-  { text: "⚠️ Distressed properties near me" },
+  { emoji: "🔍", text: "Vacant land in 78702" },
+  { emoji: "🏢", text: "Commercial properties" },
+  { emoji: "🏛️", text: "Properties near me" },
+  { emoji: "📈", text: "Analyze trends" },
 ];
 
 // ── Markdown renderer ──
@@ -57,16 +57,14 @@ function renderMarkdown(text, t) {
           display: 'grid',
           gridTemplateColumns: `repeat(${cells.length}, 1fr)`,
           gap: '1px',
-          fontSize: 12,
+          fontSize: isHeader ? 12 : 11,
           fontFamily: isHeader ? 'inherit' : "'JetBrains Mono', monospace",
           fontWeight: isHeader ? 600 : 400,
-          background: isHeader ? 'rgba(99,102,241,0.1)' : 'transparent',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-          padding: '6px 0',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
         }}>
           {cells.map((cell, j) => (
             <div key={j} style={{
-              padding: '2px 8px',
+              padding: '3px 6px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -343,7 +341,7 @@ export default function ScoutGPTChatPanel({
   const [activeSessionId, setActiveSessionId] = useState(null);
 
   // ── UI state ──
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [input, setInput] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -360,9 +358,21 @@ export default function ScoutGPTChatPanel({
 
   // ── Create new session ──
   const createNewChat = useCallback(() => {
+    // Save current session's messages before clearing (only if there's at least one user message)
+    const hasUserMessage = messages.some(m => m.role === 'user');
+    if (hasUserMessage && activeSessionId) {
+      const firstUserMsg = messages.find(m => m.role === 'user');
+      const title = firstUserMsg ? firstUserMsg.content.slice(0, 40) : "Chat";
+      setSessions(prev => prev.map(s =>
+        s.id === activeSessionId
+          ? { ...s, title, messages: [...messages], timestamp: Date.now() }
+          : s
+      ));
+    }
+
     onNewChat?.(); // Reset parent state (messages, highlights, markers)
     const id = "chat_" + Date.now();
-    setSessions(prev => [{ id, title: "New chat", subtitle: "Just now" }, ...prev]);
+    setSessions(prev => [{ id, title: "New chat", subtitle: "Just now", messages: [], timestamp: Date.now() }, ...prev]);
     setActiveSessionId(id);
     setHistoryOpen(false);
     setInput("");
@@ -370,7 +380,7 @@ export default function ScoutGPTChatPanel({
     setCardLoading(new Set()); // Clear loading states
     lastFetchedRef.current = new Set(); // Reset fetch tracking
     onHighlightProperties?.([]);
-  }, [onNewChat, onHighlightProperties]);
+  }, [onNewChat, onHighlightProperties, messages, activeSessionId]);
 
   // ── Switch session ──
   const switchSession = useCallback((id) => {
@@ -545,58 +555,56 @@ export default function ScoutGPTChatPanel({
       {/* ── Scroll Region ── */}
       <div ref={scrollRef} className="scout-scroll" style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px" }}>
 
-        {/* Welcome */}
-        {messages.length === 0 && !loading && (
+        {/* Welcome Screen */}
+        {(messages.length === 0 || (messages.length === 1 && messages[0].role === 'assistant')) && !loading && (
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", height: "100%", gap: 14, paddingBottom: 40,
+            justifyContent: "center", height: "100%", gap: 16, paddingBottom: 40,
             animation: "fadeUp 400ms ease-out",
           }}>
-            {/* Icon + Title */}
+            {/* Map Pin Icon */}
             <div style={{
-              width: 52, height: 52, borderRadius: 14,
-              background: `linear-gradient(135deg, ${t.accent.green}22, ${t.accent.green}11)`,
-              border: `1px solid ${t.accent.greenBorder}`,
+              width: 44, height: 44, borderRadius: 12,
+              background: "#1e293b",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <Sparkles size={26} style={{ color: t.accent.green }} />
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
             </div>
-            <div style={{
-              fontSize: 22, fontWeight: 800, marginTop: 2,
-              background: `linear-gradient(135deg, ${t.accent.green}, #60a5fa)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>Scout</div>
-            <div style={{ fontSize: 13, color: t.text.quaternary, textAlign: "center", marginTop: -4 }}>
-              CRE Intelligence for Travis County
+
+            {/* Title */}
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0", marginTop: 0 }}>
+              Start a new search
+            </div>
+
+            {/* Subtitle */}
+            <div style={{ fontSize: 13, color: "#64748b", textAlign: "center", marginTop: -6 }}>
+              Ask about properties, analyze parcels, or explore the map
             </div>
 
             {/* 2x2 Quick Action Grid */}
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
-              marginTop: 12, width: "100%", maxWidth: 340,
+              marginTop: 8, width: "100%", maxWidth: 320,
             }}>
               {QUICK_ACTIONS.map((a, i) => (
                 <button key={i} onClick={() => handleSend(a.text)} style={{
-                  background: t.bg.secondary, border: `1px solid ${t.border.default}`,
-                  borderRadius: 10, padding: "12px 14px", cursor: "pointer",
-                  fontSize: 12, fontWeight: 500, color: t.text.tertiary,
-                  transition: "all 150ms", textAlign: "left",
-                  lineHeight: 1.4,
+                  background: "#1e293b",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 20, padding: "8px 16px", cursor: "pointer",
+                  fontSize: 13, fontWeight: 400, color: "#94a3b8",
+                  transition: "all 150ms", textAlign: "center",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = t.accent.greenBorder; e.currentTarget.style.background = t.bg.tertiary; e.currentTarget.style.color = t.text.primary; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = t.border.default; e.currentTarget.style.background = t.bg.secondary; e.currentTarget.style.color = t.text.tertiary; }}
-                >{a.text}</button>
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; e.currentTarget.style.color = "#e2e8f0"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#94a3b8"; }}
+                >
+                  <span>{a.emoji}</span>
+                  <span>{a.text}</span>
+                </button>
               ))}
-            </div>
-
-            {/* Stats line */}
-            <div style={{
-              fontSize: 11, color: t.text.quaternary, marginTop: 12,
-              letterSpacing: 0.2,
-            }}>
-              444,312 properties · 14 data tables · Travis County, TX
             </div>
           </div>
         )}

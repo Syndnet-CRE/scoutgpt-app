@@ -16,7 +16,7 @@ const fmt = {
   score: v => v == null ? '—' : `${Math.round(Number(v) * 100)}%`,
   date: v => {
     if (!v) return '—';
-    return new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return new Date(v).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   },
 };
 
