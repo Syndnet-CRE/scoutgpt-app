@@ -42,6 +42,48 @@ const ASSET_CLASS_COLORS = {
   special_purpose: '#94A3B8',
 };
 
+// Zoom-to-lot_acres thresholds for progressive parcel rendering (17 steps)
+// Must match Mapbox tileset recipe exactly
+const ZOOM_ACRE_THRESHOLDS = [
+  [14, null],      // z14+: show all
+  [13.75, 1.5],
+  [13.5, 3],
+  [13.25, 5],
+  [13, 9],
+  [12.75, 14],
+  [12.5, 20],
+  [12.25, 30],
+  [12, 40],
+  [11.75, 55],
+  [11.5, 75],
+  [11.25, 100],
+  [11, 125],
+  [10.75, 160],
+  [10.5, 200],
+  [10.25, 275],
+  [10, 350],
+];
+
+// Get the appropriate filter for parcels based on current zoom level
+function getParcelZoomFilter(zoom) {
+  if (zoom < 10) return ['==', 1, 0]; // hide all (impossible condition)
+  for (const [minZoom, acres] of ZOOM_ACRE_THRESHOLDS) {
+    if (zoom >= minZoom) {
+      if (acres === null) return null; // show all
+      return ['>=', ['coalesce', ['get', 'lot_acres'], 0], acres];
+    }
+  }
+  return ['==', 1, 0]; // fallback hide
+}
+
+// Base parcel layers that use zoom-dependent filtering
+const ZOOM_FILTERED_PARCEL_LAYERS = [
+  'parcels-fill',
+  'parcels-base-outline',
+  'parcels-asset-fill',
+  'parcels-asset-outline',
+];
+
 export default function MapContainer({
   floodGeoJSON,
   schoolsGeoJSON,
@@ -69,6 +111,10 @@ export default function MapContainer({
   const gisFetchTimeoutRef = useRef(null);
   const visibleGisLayersRef = useRef(visibleGisLayers);
   const lastFetchBoundsRef = useRef({}); // Track last fetch bounds per layer to reduce spam
+
+  // Parcel zoom filter refs
+  const parcelToggleRef = useRef(true); // Track parcel visibility toggle state
+  const zoomDebounceRef = useRef(null); // Debounce timer for zoom handler
 
   // Handle popup expand — re-pan map to center larger DetailModule
   const handlePopupExpand = () => {
@@ -295,20 +341,7 @@ export default function MapContainer({
         generateId: true,
       });
 
-      // Zoom-dependent opacity expression for lot_acres thresholds
-      // Used by multiple layers to progressively show parcels at higher zooms
-      const zoomLotAcresOpacity = (visibleOpacity) => [
-        'step', ['zoom'],
-        0,       // Below zoom 10: hidden
-        10, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 100], visibleOpacity, 0],
-        11, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 25], visibleOpacity, 0],
-        12, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 5], visibleOpacity, 0],
-        13, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 1], visibleOpacity, 0],
-        14, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 0.25], visibleOpacity, 0],
-        14.5, visibleOpacity  // zoom 14.5+: show all (including null lot_acres)
-      ];
-
-      // Base fill — invisible but zoom-filtered for click/hover detection
+      // Base fill — transparent but receives click events (filter controls visibility)
       map.addLayer({
         id: 'parcels-fill',
         type: 'fill',
@@ -316,13 +349,11 @@ export default function MapContainer({
         'source-layer': TILESET_LAYER,
         paint: {
           'fill-color': '#000000',
-          // Use tiny opacity so parcels are "rendered" for click detection
-          // but only at appropriate zoom levels based on lot_acres
-          'fill-opacity': zoomLotAcresOpacity(0.001),
+          'fill-opacity': 0, // Transparent — click target only
         },
       });
 
-      // Base outline — visible parcel boundaries with zoom-dependent rendering
+      // Base outline — visible parcel boundaries (filter controls visibility)
       map.addLayer({
         id: 'parcels-base-outline',
         type: 'line',
@@ -331,7 +362,7 @@ export default function MapContainer({
         paint: {
           'line-color': '#64748b',  // Subtle slate gray
           'line-width': 0.5,
-          'line-opacity': zoomLotAcresOpacity(0.4),
+          'line-opacity': 0.4,
         },
       });
 
@@ -344,7 +375,7 @@ export default function MapContainer({
         filter: ['==', ['get', 'use_code'], -9999], // Initially hidden (no match)
         paint: {
           'fill-color': '#888888', // Will be updated dynamically
-          'fill-opacity': zoomLotAcresOpacity(0.4),
+          'fill-opacity': 0.4,
         },
       });
 
@@ -358,7 +389,7 @@ export default function MapContainer({
         paint: {
           'line-color': '#888888', // Will be updated dynamically to match fill
           'line-width': 1.5,
-          'line-opacity': zoomLotAcresOpacity(0.8),
+          'line-opacity': 0.8,
         },
       });
 
@@ -604,6 +635,29 @@ export default function MapContainer({
         });
       }
 
+      // --- ZOOM-DEPENDENT PARCEL FILTERING ---
+      // Debounced zoom handler updates filters on base parcel layers
+      map.on('zoom', () => {
+        clearTimeout(zoomDebounceRef.current);
+        zoomDebounceRef.current = setTimeout(() => {
+          if (!parcelToggleRef.current) return; // Parcels toggled off, skip
+          const filter = getParcelZoomFilter(map.getZoom());
+          ZOOM_FILTERED_PARCEL_LAYERS.forEach(layerId => {
+            if (map.getLayer(layerId)) {
+              map.setFilter(layerId, filter);
+            }
+          });
+        }, 100);
+      });
+
+      // Apply initial zoom filter
+      const initialFilter = getParcelZoomFilter(map.getZoom());
+      ZOOM_FILTERED_PARCEL_LAYERS.forEach(layerId => {
+        if (map.getLayer(layerId)) {
+          map.setFilter(layerId, initialFilter);
+        }
+      });
+
       setMapLoaded(true);
     });
 
@@ -685,7 +739,12 @@ export default function MapContainer({
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
-    const vis = visibleLayers?.parcels !== false ? 'visible' : 'none';
+    const isVisible = visibleLayers?.parcels !== false;
+    const vis = isVisible ? 'visible' : 'none';
+
+    // Update ref for zoom handler to check
+    parcelToggleRef.current = isVisible;
+
     const parcelLayers = [
       'parcels-fill', 'parcels-base-outline',
       'parcels-asset-fill', 'parcels-asset-outline',
@@ -696,6 +755,16 @@ export default function MapContainer({
     ];
     for (const id of parcelLayers) {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
+    }
+
+    // When toggling ON, re-apply zoom filter to base parcel layers
+    if (isVisible) {
+      const filter = getParcelZoomFilter(map.getZoom());
+      ZOOM_FILTERED_PARCEL_LAYERS.forEach(layerId => {
+        if (map.getLayer(layerId)) {
+          map.setFilter(layerId, filter);
+        }
+      });
     }
   }, [mapLoaded, visibleLayers?.parcels]);
 
