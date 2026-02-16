@@ -94,5 +94,5 @@ export function useChat() {
     setChatMarkers([]);
   }, []);
 
-  return { messages, loading, send, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers, resetChat };
+  return { messages, setMessages, loading, send, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers, resetChat };
 }

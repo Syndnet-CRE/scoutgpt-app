@@ -60,7 +60,7 @@ export default function App() {
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
 
   // Chat state
-  const { messages, loading: chatLoading, send: sendChat, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers, resetChat } = useChat();
+  const { messages, setMessages, loading: chatLoading, send: sendChat, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers, resetChat } = useChat();
 
   // Properties for current viewport
   const { properties } = useProperties(mapBbox, {});
@@ -264,6 +264,7 @@ export default function App() {
           onShowOnMap={handleShowOnMap}
           onHighlightProperties={handleHighlightProperties}
           onNewChat={resetChat}
+          onLoadSession={setMessages}
           zIndex={getPanelZ('right')}
           onBringToFront={() => setWorkstationOnTop(false)}
         />

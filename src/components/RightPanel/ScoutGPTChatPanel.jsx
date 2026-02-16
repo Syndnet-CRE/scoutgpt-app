@@ -330,6 +330,7 @@ export default function ScoutGPTChatPanel({
   onShowOnMap,
   onHighlightProperties,
   onNewChat,
+  onLoadSession,
   onClose,
   zIndex,
   onBringToFront,
@@ -384,10 +385,31 @@ export default function ScoutGPTChatPanel({
 
   // ── Switch session ──
   const switchSession = useCallback((id) => {
+    // Save current session before switching
+    const hasUserMessage = messages.some(m => m.role === 'user');
+    if (hasUserMessage && activeSessionId) {
+      const firstUserMsg = messages.find(m => m.role === 'user');
+      const title = firstUserMsg ? firstUserMsg.content.slice(0, 40) : "Chat";
+      setSessions(prev => prev.map(s =>
+        s.id === activeSessionId
+          ? { ...s, title, messages: [...messages], timestamp: Date.now() }
+          : s
+      ));
+    }
+
+    // Load the selected session's messages
+    const session = sessions.find(s => s.id === id);
+    if (session?.messages?.length > 0 && onLoadSession) {
+      onLoadSession(session.messages);
+    }
+
     setActiveSessionId(id);
     setHistoryOpen(false);
     setHistorySearch("");
-  }, []);
+    setCardData({});
+    setCardLoading(new Set());
+    lastFetchedRef.current = new Set();
+  }, [messages, activeSessionId, sessions, onLoadSession]);
 
   // Init first session
   useEffect(() => { if (sessions.length === 0) createNewChat(); }, []); // eslint-disable-line

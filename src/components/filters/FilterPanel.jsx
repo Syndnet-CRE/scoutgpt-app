@@ -223,6 +223,7 @@ export default function FilterPanel({
       {/* Tab content */}
       <div style={{
         flex: 1,
+        minHeight: 0,
         overflowY: 'auto',
         padding: '0 16px',
       }} className="scout-scroll">
