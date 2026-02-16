@@ -42,48 +42,6 @@ const ASSET_CLASS_COLORS = {
   special_purpose: '#94A3B8',
 };
 
-// Zoom-to-lot_acres thresholds for progressive parcel rendering (17 steps)
-// Must match Mapbox tileset recipe exactly
-const ZOOM_ACRE_THRESHOLDS = [
-  [14, null],      // z14+: show all
-  [13.75, 1.5],
-  [13.5, 3],
-  [13.25, 5],
-  [13, 9],
-  [12.75, 14],
-  [12.5, 20],
-  [12.25, 30],
-  [12, 40],
-  [11.75, 55],
-  [11.5, 75],
-  [11.25, 100],
-  [11, 125],
-  [10.75, 160],
-  [10.5, 200],
-  [10.25, 275],
-  [10, 350],
-];
-
-// Get the appropriate filter for parcels based on current zoom level
-function getParcelZoomFilter(zoom) {
-  if (zoom < 10) return ['==', 1, 0]; // hide all (impossible condition)
-  for (const [minZoom, acres] of ZOOM_ACRE_THRESHOLDS) {
-    if (zoom >= minZoom) {
-      if (acres === null) return null; // show all
-      return ['>=', ['coalesce', ['get', 'lot_acres'], 0], acres];
-    }
-  }
-  return ['==', 1, 0]; // fallback hide
-}
-
-// Base parcel layers that use zoom-dependent filtering
-const ZOOM_FILTERED_PARCEL_LAYERS = [
-  'parcels-fill',
-  'parcels-base-outline',
-  'parcels-asset-fill',
-  'parcels-asset-outline',
-];
-
 export default function MapContainer({
   floodGeoJSON,
   schoolsGeoJSON,
@@ -111,10 +69,6 @@ export default function MapContainer({
   const gisFetchTimeoutRef = useRef(null);
   const visibleGisLayersRef = useRef(visibleGisLayers);
   const lastFetchBoundsRef = useRef({}); // Track last fetch bounds per layer to reduce spam
-
-  // Parcel zoom filter refs
-  const parcelToggleRef = useRef(true); // Track parcel visibility toggle state
-  const zoomDebounceRef = useRef(null); // Debounce timer for zoom handler
 
   // Handle popup expand — re-pan map to center larger DetailModule
   const handlePopupExpand = () => {
@@ -350,19 +304,6 @@ export default function MapContainer({
         paint: {
           'fill-color': '#000000',
           'fill-opacity': 0, // Transparent — click target only
-        },
-      });
-
-      // Base outline — visible parcel boundaries (filter controls visibility)
-      map.addLayer({
-        id: 'parcels-base-outline',
-        type: 'line',
-        source: 'parcels',
-        'source-layer': TILESET_LAYER,
-        paint: {
-          'line-color': '#64748b',  // Subtle slate gray
-          'line-width': 0.5,
-          'line-opacity': 0.4,
         },
       });
 
@@ -635,29 +576,6 @@ export default function MapContainer({
         });
       }
 
-      // --- ZOOM-DEPENDENT PARCEL FILTERING ---
-      // Debounced zoom handler updates filters on base parcel layers
-      map.on('zoom', () => {
-        clearTimeout(zoomDebounceRef.current);
-        zoomDebounceRef.current = setTimeout(() => {
-          if (!parcelToggleRef.current) return; // Parcels toggled off, skip
-          const filter = getParcelZoomFilter(map.getZoom());
-          ZOOM_FILTERED_PARCEL_LAYERS.forEach(layerId => {
-            if (map.getLayer(layerId)) {
-              map.setFilter(layerId, filter);
-            }
-          });
-        }, 100);
-      });
-
-      // Apply initial zoom filter
-      const initialFilter = getParcelZoomFilter(map.getZoom());
-      ZOOM_FILTERED_PARCEL_LAYERS.forEach(layerId => {
-        if (map.getLayer(layerId)) {
-          map.setFilter(layerId, initialFilter);
-        }
-      });
-
       setMapLoaded(true);
     });
 
@@ -735,37 +653,31 @@ export default function MapContainer({
     };
   }, []);
 
-  // Toggle parcel visibility
+  // Toggle parcel visibility (includes Studio style 'parcels' layer + code layers)
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
     const isVisible = visibleLayers?.parcels !== false;
     const vis = isVisible ? 'visible' : 'none';
 
-    // Update ref for zoom handler to check
-    parcelToggleRef.current = isVisible;
-
+    // All parcel-related layers to toggle
+    // 'parcels' = Studio style layer (base boundary rendering from MTS)
+    // 'parcels-fill' = transparent click target
+    // Others = interactive highlighting layers
     const parcelLayers = [
-      'parcels-fill', 'parcels-base-outline',
+      'parcels',  // Studio style layer (base boundary rendering)
+      'parcels-fill',
       'parcels-asset-fill', 'parcels-asset-outline',
       'parcels-filter-fill', 'parcels-filter-outline',
       'parcels-highlight-fill', 'parcels-highlight-outline',
       'parcels-selected-fill', 'parcels-selected-outline',
       'chat-markers-circle', 'chat-markers-dot',
     ];
-    for (const id of parcelLayers) {
-      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
-    }
-
-    // When toggling ON, re-apply zoom filter to base parcel layers
-    if (isVisible) {
-      const filter = getParcelZoomFilter(map.getZoom());
-      ZOOM_FILTERED_PARCEL_LAYERS.forEach(layerId => {
-        if (map.getLayer(layerId)) {
-          map.setFilter(layerId, filter);
-        }
-      });
-    }
+    parcelLayers.forEach(id => {
+      if (map.getLayer(id)) {
+        map.setLayoutProperty(id, 'visibility', vis);
+      }
+    });
   }, [mapLoaded, visibleLayers?.parcels]);
 
   // Flood zone layer (GeoJSON from API) - bypass if ArcGIS floodplains is active
