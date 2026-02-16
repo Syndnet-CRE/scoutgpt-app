@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import FilterPanel from '../filters/FilterPanel';
 import { useFilterAPI } from '../../hooks/useFilterAPI';
+import { ZONING_LEGEND } from '../../config/gisLayers';
 
 // Static values (shadows, overlays) - not themed
 const SHADOW = "0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)";
@@ -68,6 +69,7 @@ const SECTIONS = [
   { id: "utilities", title: "UTILITIES", icon: Wrench, layers: [
     { id: "waterMains", label: "Water Mains", sym: sym("solid","#3B82F6"), hasData: true },
     { id: "sewerMains", label: "Sewer Mains", sym: sym("dashed","#B45309"), hasData: true },
+    { id: "stormwaterLines", label: "Storm Water", sym: sym("solid","#06b6d4"), hasData: true },
     { id: "waterServiceAreas", label: "Water Service Areas", sym: sym("solid","#60a5fa"), hasData: true },
     { id: "sewerServiceAreas", label: "Sewer Service Areas", sym: sym("solid","#C2956A"), hasData: true },
     { id: "electricServiceAreas", label: "Electric Service Areas", sym: sym("solid","#D97706"), hasData: true },
@@ -296,7 +298,7 @@ function RequestModal({ isOpen, onClose, t }) {
 // ── MAIN ──
 // This is the original LayersPanelV2 component with added onLayerChange and onFilterChange callbacks.
 // It notifies the parent (App.jsx) whenever a wired layer or filter changes state.
-export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, mapRef, zIndex, onBringToFront }) {
+export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, mapRef, zIndex, onBringToFront }) {
   const { t } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("layers");
@@ -343,7 +345,22 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
         onLayerChange?.(appKey, ls[panelId]);
       }
     }
-  }, [ls, onLayerChange]);
+
+    // Map panel layer IDs → GIS layer keys (ArcGIS endpoints)
+    const GIS_LAYER_MAP = {
+      waterMains: 'water_lines',
+      sewerMains: 'wastewater_lines',
+      stormwaterLines: 'stormwater_lines',
+      zoningDistricts: 'zoning_districts',
+      floodZones: 'floodplains',
+    };
+
+    for (const [panelId, gisKey] of Object.entries(GIS_LAYER_MAP)) {
+      if (prev[panelId] !== ls[panelId]) {
+        onGisLayerChange?.(gisKey, ls[panelId]);
+      }
+    }
+  }, [ls, onLayerChange, onGisLayerChange]);
 
   // Notify parent when filters change (for wired filters only)
   useEffect(() => {
@@ -464,6 +481,16 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
                 onChange={sec.type==="radio"?()=>selRadio(sec.id,layer.id):()=>tog(layer.id)}
                 isRadio={sec.type==="radio"} disabled={!layer.hasData&&!layer.gradient&&layer.badge!=="Live"} t={t} />
             ))}
+            {sec.id === 'zoning' && ls.zoningDistricts && (
+              <div style={{ padding: '4px 4px 8px 36px' }}>
+                {ZONING_LEGEND.map(cat => (
+                  <div key={cat.label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0' }}>
+                    <div style={{ width: 12, height: 12, borderRadius: 3, background: cat.color, opacity: 0.7, flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, color: t.text.secondary }}>{cat.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {sec.hasOpacity && cntActive(sec)>0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 2px 36px" }}>
                 <Eye size={12} color={t.text.tertiary}/>

@@ -34,6 +34,9 @@ export default function App() {
     schools: false,
   });
 
+  // GIS layer visibility state (ArcGIS endpoints)
+  const [visibleGisLayers, setVisibleGisLayers] = useState({});
+
   // Map viewport bbox
   const [mapBbox, setMapBbox] = useState(null);
 
@@ -115,6 +118,11 @@ export default function App() {
 
   const handleLayerChange = useCallback((layerKey, isVisible) => {
     setVisibleLayers(prev => ({ ...prev, [layerKey]: isVisible }));
+  }, []);
+
+  // Handler for GIS layer toggles (ArcGIS endpoints)
+  const handleGisLayerChange = useCallback((layerKey, isVisible) => {
+    setVisibleGisLayers(prev => ({ ...prev, [layerKey]: isVisible }));
   }, []);
 
   // Handler for new filter panel — receives filtered attom IDs for map highlighting
@@ -237,6 +245,7 @@ export default function App() {
             floodGeoJSON={MOCK_FLOOD_GEOJSON}
             schoolsGeoJSON={MOCK_SCHOOL_GEOJSON}
             visibleLayers={visibleLayers}
+            visibleGisLayers={visibleGisLayers}
             highlightedProperties={highlightedProperties}
             chatMarkers={chatMarkers}
             onParcelClick={handleParcelClick}
@@ -256,6 +265,7 @@ export default function App() {
           onFilterChange={handleFilterChange}
           onFilteredIdsChange={handleFilteredIdsChange}
           onAssetClassChange={handleAssetClassChange}
+          onGisLayerChange={handleGisLayerChange}
           mapRef={mapInstanceRef}
           zIndex={getPanelZ('left')}
           onBringToFront={() => setWorkstationOnTop(false)}

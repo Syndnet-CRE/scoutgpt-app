@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
+import { GIS_LAYERS, ZONING_COLORS, FLOOD_COLORS, DIAMETER_ALIASES, fetchGisLayer } from '../../config/gisLayers';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.placeholder';
 
@@ -45,6 +46,7 @@ export default function MapContainer({
   floodGeoJSON,
   schoolsGeoJSON,
   visibleLayers,
+  visibleGisLayers,
   highlightedProperties,
   chatMarkers,
   onParcelClick,
@@ -61,6 +63,11 @@ export default function MapContainer({
   const mapRef = useRef(null);
   const popupRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // GIS layer refs
+  const gisDataRef = useRef({});
+  const gisFetchTimeoutRef = useRef(null);
+  const visibleGisLayersRef = useRef(visibleGisLayers);
 
   // Handle popup expand — re-pan map to center larger DetailModule
   const handlePopupExpand = () => {
@@ -96,6 +103,86 @@ export default function MapContainer({
   // Expose handlePopupExpand via ref
   if (mapExpandRef) {
     mapExpandRef.current = handlePopupExpand;
+  }
+
+  // Keep visibleGisLayersRef in sync (for use in moveend handler)
+  useEffect(() => { visibleGisLayersRef.current = visibleGisLayers; }, [visibleGisLayers]);
+
+  // Helper: build diameter-based color expression for utility lines
+  function buildDiameterColorExpr(gradient, thresholds) {
+    const getExprs = DIAMETER_ALIASES.map(f => ['get', f]);
+    const coalesced = ['coalesce', ...getExprs, 0];
+    return [
+      'interpolate', ['linear'], ['to-number', coalesced, 0],
+      0, gradient[0],
+      thresholds[0], gradient[0],
+      thresholds[1], gradient[1],
+      thresholds[2], gradient[2],
+      thresholds[3], gradient[3]
+    ];
+  }
+
+  // Helper: add GIS map layers for a given layerKey
+  function addGisMapLayers(map, layerKey, config) {
+    const sourceId = `gis-${layerKey}`;
+    if (config.geometryType === 'line') {
+      map.addLayer({
+        id: `${sourceId}-line`,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': buildDiameterColorExpr(config.gradient, config.thresholds),
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 14, 2, 18, 4],
+          'line-opacity': 0.85
+        },
+        layout: { 'line-cap': 'round', 'line-join': 'round' }
+      }, 'parcels-fill');
+    } else if (config.geometryType === 'fill' && layerKey === 'zoning_districts') {
+      const matchExpr = ['match', ['get', '_zone_code']];
+      for (const [code, color] of Object.entries(ZONING_COLORS)) {
+        matchExpr.push(code, color);
+      }
+      matchExpr.push('#a855f7');
+      map.addLayer({
+        id: `${sourceId}-fill`,
+        type: 'fill',
+        source: sourceId,
+        paint: { 'fill-color': matchExpr, 'fill-opacity': 0.45 }
+      }, 'parcels-fill');
+      map.addLayer({
+        id: `${sourceId}-outline`,
+        type: 'line',
+        source: sourceId,
+        paint: { 'line-color': '#ec4899', 'line-width': 1, 'line-opacity': 0.7 }
+      }, 'parcels-fill');
+    } else if (config.geometryType === 'fill' && layerKey === 'floodplains') {
+      const matchExpr = ['match', ['get', '_flood_zone']];
+      for (const [code, color] of Object.entries(FLOOD_COLORS)) {
+        matchExpr.push(code, color);
+      }
+      matchExpr.push('#ef4444');
+      map.addLayer({
+        id: `${sourceId}-fill`,
+        type: 'fill',
+        source: sourceId,
+        paint: { 'fill-color': matchExpr, 'fill-opacity': 0.45 }
+      }, 'parcels-fill');
+      map.addLayer({
+        id: `${sourceId}-outline`,
+        type: 'line',
+        source: sourceId,
+        paint: { 'line-color': '#ef4444', 'line-width': 1, 'line-opacity': 0.7 }
+      }, 'parcels-fill');
+    }
+  }
+
+  // Helper: remove GIS map layers for a given layerKey
+  function removeGisMapLayers(map, layerKey) {
+    const sourceId = `gis-${layerKey}`;
+    for (const suffix of ['-line', '-fill', '-outline']) {
+      if (map.getLayer(sourceId + suffix)) map.removeLayer(sourceId + suffix);
+    }
+    if (map.getSource(sourceId)) map.removeSource(sourceId);
   }
 
   // Initialize map
@@ -450,6 +537,26 @@ export default function MapContainer({
           north: bounds.getNorth(),
         });
       }
+
+      // Re-fetch active GIS layers on viewport change (debounced)
+      clearTimeout(gisFetchTimeoutRef.current);
+      gisFetchTimeoutRef.current = setTimeout(() => {
+        const currentGisLayers = visibleGisLayersRef.current;
+        if (!currentGisLayers) return;
+        for (const [layerKey, isVisible] of Object.entries(currentGisLayers)) {
+          if (!isVisible) continue;
+          const sourceId = `gis-${layerKey}`;
+          fetchGisLayer(layerKey, map.getBounds()).then(geojson => {
+            if (!geojson || !mapRef.current) return;
+            const m = mapRef.current;
+            const src = m.getSource(sourceId);
+            if (src) {
+              src.setData(geojson);
+              gisDataRef.current[layerKey] = geojson;
+            }
+          }).catch(() => {});
+        }
+      }, 500);
     });
 
     mapRef.current = map;
@@ -478,9 +585,11 @@ export default function MapContainer({
     }
   }, [mapLoaded, visibleLayers?.parcels]);
 
-  // Flood zone layer (GeoJSON from API)
+  // Flood zone layer (GeoJSON from API) - bypass if ArcGIS floodplains is active
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
+    // Only use Neon flood if ArcGIS floodplains is NOT active
+    if (visibleGisLayers?.floodplains) return;
     const map = mapRef.current;
 
     if (floodGeoJSON && !map.getSource('flood')) {
@@ -516,16 +625,18 @@ export default function MapContainer({
     } else if (floodGeoJSON && map.getSource('flood')) {
       map.getSource('flood').setData(floodGeoJSON);
     }
-  }, [mapLoaded, floodGeoJSON]);
+  }, [mapLoaded, floodGeoJSON, visibleGisLayers?.floodplains]);
 
-  // Toggle flood visibility
+  // Toggle flood visibility - bypass if ArcGIS floodplains is active
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
+    // Only use Neon flood if ArcGIS floodplains is NOT active
+    if (visibleGisLayers?.floodplains) return;
     const map = mapRef.current;
     const vis = visibleLayers?.flood ? 'visible' : 'none';
     if (map.getLayer('flood-fill')) map.setLayoutProperty('flood-fill', 'visibility', vis);
     if (map.getLayer('flood-outline')) map.setLayoutProperty('flood-outline', 'visibility', vis);
-  }, [mapLoaded, visibleLayers?.flood]);
+  }, [mapLoaded, visibleLayers?.flood, visibleGisLayers?.floodplains]);
 
   // School district layer (GeoJSON from API)
   useEffect(() => {
@@ -588,6 +699,38 @@ export default function MapContainer({
     if (map.getLayer('schools-outline')) map.setLayoutProperty('schools-outline', 'visibility', vis);
     if (map.getLayer('schools-label')) map.setLayoutProperty('schools-label', 'visibility', vis);
   }, [mapLoaded, visibleLayers?.schools]);
+
+  // Handle GIS layer toggle changes
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+
+    if (!visibleGisLayers) return;
+
+    for (const [layerKey, isVisible] of Object.entries(visibleGisLayers)) {
+      const config = GIS_LAYERS[layerKey];
+      if (!config) continue;
+      const sourceId = `gis-${layerKey}`;
+
+      if (isVisible && !map.getSource(sourceId)) {
+        // Toggle ON — fetch and add
+        fetchGisLayer(layerKey, map.getBounds()).then(geojson => {
+          if (!geojson || !mapRef.current) return;
+          // Check it's still supposed to be visible (user might have toggled off during fetch)
+          if (!visibleGisLayersRef.current?.[layerKey]) return;
+          const m = mapRef.current;
+          if (m.getSource(sourceId)) return; // already added
+          gisDataRef.current[layerKey] = geojson;
+          m.addSource(sourceId, { type: 'geojson', data: geojson });
+          addGisMapLayers(m, layerKey, config);
+        }).catch(err => console.warn(`[GIS] Error loading ${layerKey}:`, err));
+      } else if (!isVisible && map.getSource(sourceId)) {
+        // Toggle OFF — remove
+        removeGisMapLayers(map, layerKey);
+        delete gisDataRef.current[layerKey];
+      }
+    }
+  }, [mapLoaded, visibleGisLayers]);
 
   // Highlight properties from chat results (filter-based — attom_id is numeric in tiles)
   useEffect(() => {
