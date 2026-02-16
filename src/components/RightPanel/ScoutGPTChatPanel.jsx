@@ -623,7 +623,7 @@ export default function ScoutGPTChatPanel({
             {/* Map Pin Icon */}
             <div style={{
               width: 40, height: 40, borderRadius: 10,
-              background: "#1e293b",
+              background: t.bg.secondary,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1877F2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -633,12 +633,12 @@ export default function ScoutGPTChatPanel({
             </div>
 
             {/* Title */}
-            <div style={{ fontSize: 17, fontWeight: 700, color: "#e2e8f0", marginTop: 12 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: t.text.primary, marginTop: 12 }}>
               Start a new search
             </div>
 
             {/* Subtitle */}
-            <div style={{ fontSize: 13, color: "#64748b", textAlign: "center", marginTop: 4, marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: t.text.tertiary, textAlign: "center", marginTop: 4, marginBottom: 20 }}>
               Ask about properties, analyze parcels, or explore the map
             </div>
 
