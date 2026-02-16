@@ -40,6 +40,9 @@ export default function App() {
   // Filter-highlighted attom_ids (separate from chat highlights)
   const [filterHighlightIds, setFilterHighlightIds] = useState([]);
 
+  // Active asset class filters for tile-side coloring
+  const [activeAssetClasses, setActiveAssetClasses] = useState([]);
+
   // Popup container for portal rendering
   const [popupContainer, setPopupContainer] = useState(null);
 
@@ -117,6 +120,11 @@ export default function App() {
   // Handler for new filter panel — receives filtered attom IDs for map highlighting
   const handleFilteredIdsChange = useCallback((ids) => {
     setFilterHighlightIds(ids || []);
+  }, []);
+
+  // Handler for asset class changes — tile-side coloring (no API call)
+  const handleAssetClassChange = useCallback((assetClasses) => {
+    setActiveAssetClasses(assetClasses || []);
   }, []);
 
   const handlePopupOpen = useCallback((container) => {
@@ -217,6 +225,7 @@ export default function App() {
             onBoundsChange={setMapBbox}
             selectedAttomId={selectedProperty?.attomId}
             filterHighlightIds={filterHighlightIds}
+            activeAssetClasses={activeAssetClasses}
             onPopupOpen={handlePopupOpen}
             onPopupClose={handlePopupClose}
             mapExpandRef={mapExpandRef}
@@ -228,6 +237,7 @@ export default function App() {
           onLayerChange={handleLayerChange}
           onFilterChange={handleFilterChange}
           onFilteredIdsChange={handleFilteredIdsChange}
+          onAssetClassChange={handleAssetClassChange}
           mapRef={mapInstanceRef}
           zIndex={getPanelZ('left')}
           onBringToFront={() => setWorkstationOnTop(false)}

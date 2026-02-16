@@ -6,8 +6,40 @@ mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.placeholder';
 const AUSTIN_CENTER = [-97.7431, 30.2672];
 const INITIAL_ZOOM = 12;
 
-const TILESET_ID = 'bradyirwin.travis-parcels';
+const TILESET_ID = 'bradyirwin.travis-parcels-v2';
 const TILESET_LAYER = 'parcels'; // source-layer name from MTS recipe
+
+// Asset class to use_code mapping for tile-side filtering
+const ASSET_CLASS_USE_CODES = {
+  single_family: [385, 373, 375, 369, 381],
+  condo: [401, 366],
+  multifamily: [386, 378, 383, 388, 368, 359, 370],
+  mixed_use: [155, 358],
+  office: [139, 172, 184],
+  retail: [169, 167, 148, 166, 194],
+  industrial: [238, 135, 171, 175, 210, 229, 212, 231, 220, 280],
+  hospitality: [178],
+  senior_living: [339],
+  land: [120, 270, 117, 109],
+  developments: [402, 383],
+  special_purpose: [126, 124, 146, 160, 150, 159],
+};
+
+// Asset class colors (must match filterAPI.js ASSET_CLASSES)
+const ASSET_CLASS_COLORS = {
+  single_family: '#4ADE80',
+  condo: '#60A5FA',
+  multifamily: '#F472B6',
+  mixed_use: '#C084FC',
+  office: '#38BDF8',
+  retail: '#FBBF24',
+  industrial: '#FB923C',
+  hospitality: '#E879F9',
+  senior_living: '#FB7185',
+  land: '#A3E635',
+  developments: '#2DD4BF',
+  special_purpose: '#94A3B8',
+};
 
 export default function MapContainer({
   floodGeoJSON,
@@ -19,6 +51,7 @@ export default function MapContainer({
   onBoundsChange,
   selectedAttomId,
   filterHighlightIds,
+  activeAssetClasses,
   onPopupOpen,
   onPopupClose,
   mapExpandRef,
@@ -103,6 +136,52 @@ export default function MapContainer({
         paint: {
           'fill-color': '#000000',
           'fill-opacity': 0,
+        },
+      });
+
+      // Asset class coloring layer — shows colored parcels when asset filters active
+      // Zoom-dependent: larger parcels appear first at lower zooms
+      map.addLayer({
+        id: 'parcels-asset-fill',
+        type: 'fill',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        filter: ['==', ['get', 'use_code'], -9999], // Initially hidden (no match)
+        paint: {
+          'fill-color': '#888888', // Will be updated dynamically
+          'fill-opacity': [
+            'step', ['zoom'],
+            0,       // Below zoom 10: hidden
+            10, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 100], 0.55, 0],
+            11, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 25], 0.55, 0],
+            12, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 5], 0.55, 0],
+            13, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 1], 0.55, 0],
+            14, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 0.25], 0.55, 0],
+            14.5, 0.55  // zoom 14.5+: show all
+          ],
+        },
+      });
+
+      // Asset class outline layer
+      map.addLayer({
+        id: 'parcels-asset-outline',
+        type: 'line',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        filter: ['==', ['get', 'use_code'], -9999], // Initially hidden
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 1,
+          'line-opacity': [
+            'step', ['zoom'],
+            0,
+            10, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 100], 0.4, 0],
+            11, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 25], 0.4, 0],
+            12, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 5], 0.4, 0],
+            13, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 1], 0.4, 0],
+            14, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 0.25], 0.4, 0],
+            14.5, 0.4
+          ],
         },
       });
 
@@ -379,6 +458,7 @@ export default function MapContainer({
     const vis = visibleLayers?.parcels !== false ? 'visible' : 'none';
     const parcelLayers = [
       'parcels-fill',
+      'parcels-asset-fill', 'parcels-asset-outline',
       'parcels-highlight-fill', 'parcels-highlight-outline',
       'parcels-selected-fill', 'parcels-selected-outline',
       'parcels-filter-fill', 'parcels-filter-outline',
@@ -538,6 +618,51 @@ export default function MapContainer({
       if (map.getLayer('parcels-filter-outline')) map.setFilter('parcels-filter-outline', emptyFilter);
     }
   }, [mapLoaded, filterHighlightIds]);
+
+  // Asset class coloring — tile-side filtering by use_code
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+
+    if (activeAssetClasses && activeAssetClasses.length > 0) {
+      // Build list of all use_codes for selected asset classes
+      const useCodes = activeAssetClasses.flatMap(ac => ASSET_CLASS_USE_CODES[ac] || []);
+
+      // Build filter: show parcels with matching use_codes
+      const filterExpr = ['in', ['get', 'use_code'], ['literal', useCodes]];
+
+      // Build color expression: match use_code to asset class color
+      const colorExpr = ['case'];
+      activeAssetClasses.forEach(ac => {
+        const codes = ASSET_CLASS_USE_CODES[ac] || [];
+        const color = ASSET_CLASS_COLORS[ac] || '#888888';
+        if (codes.length > 0) {
+          colorExpr.push(['in', ['get', 'use_code'], ['literal', codes]]);
+          colorExpr.push(color);
+        }
+      });
+      colorExpr.push('#888888'); // fallback
+
+      // Update fill layer
+      if (map.getLayer('parcels-asset-fill')) {
+        map.setFilter('parcels-asset-fill', filterExpr);
+        map.setPaintProperty('parcels-asset-fill', 'fill-color', colorExpr);
+      }
+
+      // Update outline layer (use same filter, white outline)
+      if (map.getLayer('parcels-asset-outline')) {
+        map.setFilter('parcels-asset-outline', filterExpr);
+      }
+
+      console.log('[MAP] Asset class filter active:', activeAssetClasses, 'use_codes:', useCodes.length);
+    } else {
+      // No asset class filters — hide asset layers
+      const noMatch = ['==', ['get', 'use_code'], -9999];
+      if (map.getLayer('parcels-asset-fill')) map.setFilter('parcels-asset-fill', noMatch);
+      if (map.getLayer('parcels-asset-outline')) map.setFilter('parcels-asset-outline', noMatch);
+      console.log('[MAP] Asset class filter cleared');
+    }
+  }, [mapLoaded, activeAssetClasses]);
 
   // Close popup when property is deselected
   useEffect(() => {

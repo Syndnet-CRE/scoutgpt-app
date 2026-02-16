@@ -296,7 +296,7 @@ function RequestModal({ isOpen, onClose, t }) {
 // ── MAIN ──
 // This is the original LayersPanelV2 component with added onLayerChange and onFilterChange callbacks.
 // It notifies the parent (App.jsx) whenever a wired layer or filter changes state.
-export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, mapRef, zIndex, onBringToFront }) {
+export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, mapRef, zIndex, onBringToFront }) {
   const { t } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("layers");
@@ -316,6 +316,11 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
   useEffect(() => {
     onFilteredIdsChange?.(filteredAttomIds);
   }, [filteredAttomIds, onFilteredIdsChange]);
+
+  // Propagate asset class selection to parent for tile-side coloring
+  useEffect(() => {
+    onAssetClassChange?.(filterAPI.filters.assetClass);
+  }, [filterAPI.filters.assetClass, onAssetClassChange]);
 
   // Track previous layer/filter state to detect changes and notify parent
   const prevLsRef = useRef(ls);
