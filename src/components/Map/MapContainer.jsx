@@ -68,6 +68,7 @@ export default function MapContainer({
   const gisDataRef = useRef({});
   const gisFetchTimeoutRef = useRef(null);
   const visibleGisLayersRef = useRef(visibleGisLayers);
+  const lastFetchBoundsRef = useRef({}); // Track last fetch bounds per layer to reduce spam
 
   // Handle popup expand — re-pan map to center larger DetailModule
   const handlePopupExpand = () => {
@@ -122,15 +123,32 @@ export default function MapContainer({
     ];
   }
 
+  // Helper: reorder GIS layers to enforce z-order
+  // Order (bottom to top): floodplains → zoning → parcels → utility lines
+  function reorderGisLayers(map) {
+    const zOrder = [
+      'gis-floodplains-fill', 'gis-floodplains-outline',
+      'gis-zoning_districts-fill', 'gis-zoning_districts-outline',
+      // Parcels are added separately and stay in place
+      'gis-water_lines-line', 'gis-wastewater_lines-line', 'gis-stormwater_lines-line'
+    ];
+
+    // Move utility lines to top (after all parcels)
+    const utilityLayers = ['gis-water_lines-line', 'gis-wastewater_lines-line', 'gis-stormwater_lines-line'];
+    for (const layerId of utilityLayers) {
+      if (map.getLayer(layerId)) {
+        map.moveLayer(layerId); // Move to top
+      }
+    }
+  }
+
   // Helper: add GIS map layers for a given layerKey
-  // Note: GIS layers added without beforeId so they work independently of parcel layer state
+  // Note: GIS layers added with z-ordering: flood (bottom) → zoning → parcels → utilities (top)
   function addGisMapLayers(map, layerKey, config) {
     const sourceId = `gis-${layerKey}`;
 
-    // Determine beforeId only if parcels-fill exists and is visible
-    const beforeId = map.getLayer('parcels-fill') ? 'parcels-fill' : undefined;
-
     if (config.geometryType === 'line') {
+      // Utility lines go on TOP (no beforeId = add to top)
       map.addLayer({
         id: `${sourceId}-line`,
         type: 'line',
@@ -141,44 +159,102 @@ export default function MapContainer({
           'line-opacity': 1.0
         },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
-      }, beforeId);
+      });
     } else if (config.geometryType === 'fill' && layerKey === 'zoning_districts') {
-      const matchExpr = ['match', ['get', '_zone_code']];
+      // Zoning: use coalesce to try multiple field names
+      const zoneValue = ['coalesce',
+        ['get', 'ZONING_ZTYPE'], ['get', 'ZONING_ZTYP'], ['get', 'ZONING'],
+        ['get', 'ZONE_CODE'], ['get', 'ZONE_DESIG'], ['get', 'ZoningDesignation'],
+        ['get', 'ZONING_BASE'], ['get', '_zone_code'], ''
+      ];
+
+      // Build match expression for zone colors
+      const matchExpr = ['match', zoneValue];
       for (const [code, color] of Object.entries(ZONING_COLORS)) {
         matchExpr.push(code, color);
       }
-      matchExpr.push('#9ca3af'); // Gray fallback for unknown zones
+      matchExpr.push('#6b7280'); // Gray fallback for unknown zones
+
+      // Add below parcels-fill if it exists
+      const beforeId = map.getLayer('parcels-fill') ? 'parcels-fill' : undefined;
+
       map.addLayer({
         id: `${sourceId}-fill`,
         type: 'fill',
         source: sourceId,
-        paint: { 'fill-color': matchExpr, 'fill-opacity': 0.45 }
+        paint: { 'fill-color': matchExpr, 'fill-opacity': 0.35 }
       }, beforeId);
       map.addLayer({
         id: `${sourceId}-outline`,
         type: 'line',
         source: sourceId,
-        paint: { 'line-color': '#ec4899', 'line-width': 1, 'line-opacity': 0.7 }
+        paint: { 'line-color': '#e2e8f0', 'line-width': 1, 'line-opacity': 0.4 }
       }, beforeId);
     } else if (config.geometryType === 'fill' && layerKey === 'floodplains') {
-      const matchExpr = ['match', ['get', '_flood_zone']];
-      for (const [code, color] of Object.entries(FLOOD_COLORS)) {
-        matchExpr.push(code, color);
-      }
-      matchExpr.push('rgba(191,219,254,0.3)'); // Light blue transparent fallback for unknown zones
+      // Flood: use coalesce to try multiple field names
+      const floodValue = ['coalesce',
+        ['get', 'FEMA_FLOOD_ZONE'], ['get', 'FLD_ZONE'], ['get', 'FLOOD_ZONE'],
+        ['get', 'ZONE_'], ['get', 'FloodZone'], ['get', '_flood_zone'], ''
+      ];
+
+      // Build case expression for flood colors with both exact matches and long string matches
+      const colorExpr = ['case',
+        // High risk exact matches (100-year floodplain)
+        ['in', floodValue, ['literal', ['A', 'AE', 'AH', 'AO', 'V', 'VE', 'AR', 'A99']]], '#ef4444',
+        // High risk long string matches (Austin FloodPro)
+        ['==', floodValue, 'City of Austin Fully Developed 100-Year Floodplain'], '#ef4444',
+        ['==', floodValue, '100-Year Floodplain'], '#ef4444',
+        // Moderate risk exact matches (500-year)
+        ['in', floodValue, ['literal', ['X500', 'B', 'D', '0.2 PCT']]], '#f97316',
+        // Moderate risk long string matches
+        ['==', floodValue, 'City of Austin Fully Developed 25-Year Floodplain'], '#f97316',
+        ['==', floodValue, '500-Year Floodplain'], '#f97316',
+        // Minimal risk exact matches
+        ['in', floodValue, ['literal', ['X', 'C']]], '#3b82f6',
+        // Unknown/unmatched = completely transparent (don't render)
+        'rgba(0,0,0,0)'
+      ];
+
+      // Floodplains go at the BOTTOM - below zoning if it exists, otherwise below parcels
+      const zoningFill = map.getLayer('gis-zoning_districts-fill');
+      const beforeId = zoningFill ? 'gis-zoning_districts-fill' :
+                       (map.getLayer('parcels-fill') ? 'parcels-fill' : undefined);
+
       map.addLayer({
         id: `${sourceId}-fill`,
         type: 'fill',
         source: sourceId,
-        paint: { 'fill-color': matchExpr, 'fill-opacity': 0.45 }
+        paint: {
+          'fill-color': colorExpr,
+          'fill-opacity': ['case',
+            ['in', floodValue, ['literal', ['A', 'AE', 'AH', 'AO', 'V', 'VE', 'AR', 'A99']]], 0.4,
+            ['==', floodValue, 'City of Austin Fully Developed 100-Year Floodplain'], 0.4,
+            ['in', floodValue, ['literal', ['X500', 'B', 'D']]], 0.3,
+            ['in', floodValue, ['literal', ['X', 'C']]], 0.15,
+            0 // Transparent for unmatched
+          ]
+        }
       }, beforeId);
       map.addLayer({
         id: `${sourceId}-outline`,
         type: 'line',
         source: sourceId,
-        paint: { 'line-color': '#3b82f6', 'line-width': 1, 'line-opacity': 0.5 }
+        paint: {
+          'line-color': colorExpr,
+          'line-width': 1,
+          'line-opacity': ['case',
+            ['in', floodValue, ['literal', ['A', 'AE', 'AH', 'AO', 'V', 'VE', 'AR', 'A99']]], 0.5,
+            ['==', floodValue, 'City of Austin Fully Developed 100-Year Floodplain'], 0.5,
+            ['in', floodValue, ['literal', ['X500', 'B', 'D']]], 0.4,
+            ['in', floodValue, ['literal', ['X', 'C']]], 0.25,
+            0 // Transparent for unmatched
+          ]
+        }
       }, beforeId);
     }
+
+    // After adding, reorder to enforce z-order
+    reorderGisLayers(map);
   }
 
   // Helper: remove GIS map layers for a given layerKey
@@ -543,15 +619,48 @@ export default function MapContainer({
         });
       }
 
-      // Re-fetch active GIS layers on viewport change (debounced)
+      // Re-fetch active GIS layers on viewport change (debounced, with viewport change threshold)
       clearTimeout(gisFetchTimeoutRef.current);
       gisFetchTimeoutRef.current = setTimeout(() => {
         const currentGisLayers = visibleGisLayersRef.current;
         if (!currentGisLayers) return;
+        const currentBounds = map.getBounds();
+
         for (const [layerKey, isVisible] of Object.entries(currentGisLayers)) {
           if (!isVisible) continue;
+
+          // Check if viewport has changed significantly (>20%) since last fetch
+          const lastBounds = lastFetchBoundsRef.current[layerKey];
+          if (lastBounds) {
+            const lastWidth = lastBounds.getEast() - lastBounds.getWest();
+            const lastHeight = lastBounds.getNorth() - lastBounds.getSouth();
+            const currWidth = currentBounds.getEast() - currentBounds.getWest();
+            const currHeight = currentBounds.getNorth() - currentBounds.getSouth();
+
+            // Calculate overlap percentage
+            const overlapWest = Math.max(lastBounds.getWest(), currentBounds.getWest());
+            const overlapEast = Math.min(lastBounds.getEast(), currentBounds.getEast());
+            const overlapSouth = Math.max(lastBounds.getSouth(), currentBounds.getSouth());
+            const overlapNorth = Math.min(lastBounds.getNorth(), currentBounds.getNorth());
+
+            if (overlapEast > overlapWest && overlapNorth > overlapSouth) {
+              const overlapArea = (overlapEast - overlapWest) * (overlapNorth - overlapSouth);
+              const currArea = currWidth * currHeight;
+              const overlapRatio = overlapArea / currArea;
+
+              // Skip re-fetch if >80% overlap (viewport changed <20%)
+              // Use stricter threshold for expensive layers like floodplains
+              const threshold = (layerKey === 'floodplains') ? 0.7 : 0.8;
+              if (overlapRatio > threshold) {
+                continue;
+              }
+            }
+          }
+
           const sourceId = `gis-${layerKey}`;
-          fetchGisLayer(layerKey, map.getBounds()).then(geojson => {
+          lastFetchBoundsRef.current[layerKey] = currentBounds;
+
+          fetchGisLayer(layerKey, currentBounds).then(geojson => {
             if (!geojson || !mapRef.current) return;
             const m = mapRef.current;
             const src = m.getSource(sourceId);

@@ -7,42 +7,64 @@ const DIAMETER_ALIASES = [
   'DIAMETER_INCHES', 'PIPESIZE_', 'PIPE_DIA'
 ];
 
+// Zoning field aliases - ZONING_ZTYPE is the primary field for Austin
 const ZONING_ALIASES = [
-  'ZONING_ZTYP', 'ZONE_DESCR', 'ZONE_CODE', 'ZONING', 'ZONE_TYPE',
-  'ZONING_CODE', 'ZONE', 'ZONINGCODE', 'ZONING_DESIGNATION'
+  'ZONING_ZTYPE', 'ZONING_ZTYP', 'ZONING', 'ZONE_CODE', 'ZONE_DESIG',
+  'ZoningDesignation', 'ZONING_BASE', 'ZONE_DESCR', 'ZONE_TYPE', 'ZONINGCODE'
 ];
 
+// Flood zone field aliases - FEMA_FLOOD_ZONE and FLOOD_ZONE are primary
 const FLOOD_ALIASES = [
-  'FLD_ZONE', 'FLOOD_ZONE', 'ZONE', 'SFHA_TF', 'ZONE_SUBTY', 'FLOODZONE', 'FZONE'
+  'FEMA_FLOOD_ZONE', 'FLD_ZONE', 'FLOOD_ZONE', 'ZONE_', 'FloodZone',
+  'ZONE', 'SFHA_TF', 'ZONE_SUBTY', 'FLOODZONE', 'FZONE'
 ];
 
+// Zoning colors by category (matching real ArcGIS ZONING_ZTYPE values)
 export const ZONING_COLORS = {
-  'SF-1': '#2563eb', 'SF-2': '#3b82f6', 'SF-3': '#60a5fa', 'SF-4A': '#93c5fd', 'SF-5': '#bfdbfe', 'SF-6': '#dbeafe',
-  'MF-1': '#7c3aed', 'MF-2': '#8b5cf6', 'MF-3': '#a78bfa', 'MF-4': '#c4b5fd', 'MF-5': '#ddd6fe', 'MF-6': '#ede9fe',
-  'LO': '#f59e0b', 'GO': '#f97316', 'GR': '#fb923c', 'CR': '#ef4444', 'CS': '#dc2626', 'CS-1': '#b91c1c', 'CH': '#991b1b',
-  'LI': '#6b7280', 'MI': '#4b5563', 'W/LO': '#9ca3af', 'IP': '#78716c',
-  'CBD': '#ec4899', 'DMU': '#f472b6', 'PUD': '#a855f7', 'P': '#22c55e', 'AG': '#15803d',
-  'RR': '#0ea5e9', 'DR': '#38bdf8', 'I-1': '#475569', 'I-2': '#334155',
-  'NO': '#84cc16', 'LR': '#facc15', 'CC': '#f87171', 'HC': '#b91c1c', 'TOD': '#d946ef'
+  // Single Family (light blue #93c5fd)
+  'SF-1': '#93c5fd', 'SF-2': '#93c5fd', 'SF-3': '#93c5fd', 'SF-4A': '#93c5fd',
+  'SF-5': '#93c5fd', 'SF-6': '#93c5fd', 'RR': '#93c5fd', 'LA': '#93c5fd',
+  // Multi-Family (purple #c084fc)
+  'MF-1': '#c084fc', 'MF-2': '#c084fc', 'MF-3': '#c084fc', 'MF-4': '#c084fc',
+  'MF-5': '#c084fc', 'MF-6': '#c084fc', 'MH': '#c084fc',
+  // Office (amber #fbbf24)
+  'LO': '#fbbf24', 'GO': '#fbbf24', 'NO': '#fbbf24', 'W/LO': '#fbbf24',
+  // Commercial (red #f87171)
+  'LR': '#f87171', 'GR': '#f87171', 'CR': '#f87171', 'CS': '#f87171',
+  'CS-1': '#f87171', 'CH': '#f87171', 'CBD': '#f87171',
+  // Industrial (gray #94a3b8)
+  'IP': '#94a3b8', 'MI': '#94a3b8', 'LI': '#94a3b8',
+  // Mixed Use / Downtown (pink #f472b6)
+  'DMU': '#f472b6', 'MU': '#f472b6', 'TOD': '#f472b6', 'TND': '#f472b6', 'PDA': '#f472b6',
+  // Planned / PUD (violet #a78bfa)
+  'PUD': '#a78bfa',
+  // Parks / Public (green #4ade80)
+  'P': '#4ade80',
+  // Agricultural (lime #a3e635)
+  'AG': '#a3e635',
 };
 
 export const ZONING_LEGEND = [
-  { label: 'Single Family', codes: ['SF-1','SF-2','SF-3','SF-4A','SF-5','SF-6'], color: '#3b82f6' },
-  { label: 'Multi-Family', codes: ['MF-1','MF-2','MF-3','MF-4','MF-5','MF-6'], color: '#8b5cf6' },
-  { label: 'Office', codes: ['LO','GO'], color: '#f59e0b' },
-  { label: 'Commercial', codes: ['GR','CR','CS','CS-1','CH','LR','CC','HC'], color: '#ef4444' },
-  { label: 'Industrial', codes: ['LI','MI','W/LO','IP','I-1','I-2'], color: '#6b7280' },
-  { label: 'Mixed Use / Downtown', codes: ['CBD','DMU','TOD'], color: '#ec4899' },
-  { label: 'Planned / PUD', codes: ['PUD'], color: '#a855f7' },
-  { label: 'Parks / Public', codes: ['P'], color: '#22c55e' },
-  { label: 'Agricultural', codes: ['AG'], color: '#15803d' },
-  { label: 'Rural / Other', codes: ['RR','DR','NO'], color: '#0ea5e9' },
+  { label: 'Single Family', codes: ['SF-1','SF-2','SF-3','SF-4A','SF-5','SF-6','RR','LA'], color: '#93c5fd' },
+  { label: 'Multi-Family', codes: ['MF-1','MF-2','MF-3','MF-4','MF-5','MF-6','MH'], color: '#c084fc' },
+  { label: 'Office', codes: ['LO','GO','NO','W/LO'], color: '#fbbf24' },
+  { label: 'Commercial', codes: ['LR','GR','CR','CS','CS-1','CH','CBD'], color: '#f87171' },
+  { label: 'Industrial', codes: ['IP','MI','LI'], color: '#94a3b8' },
+  { label: 'Mixed Use', codes: ['DMU','MU','TOD','TND','PDA'], color: '#f472b6' },
+  { label: 'Planned / PUD', codes: ['PUD'], color: '#a78bfa' },
+  { label: 'Parks / Public', codes: ['P'], color: '#4ade80' },
+  { label: 'Agricultural', codes: ['AG'], color: '#a3e635' },
 ];
 
+// Flood zone colors - only high-risk zones get red, others are subtle or transparent
 export const FLOOD_COLORS = {
-  'A': '#ef4444', 'AE': '#dc2626', 'AH': '#b91c1c', 'AO': '#991b1b',
-  'V': '#7f1d1d', 'VE': '#450a0a', 'X': '#1e40af', 'D': '#6b7280',
-  'A99': '#f87171', 'AR': '#fb923c'
+  // High risk (red) - 100-year floodplain
+  'A': '#ef4444', 'AE': '#ef4444', 'AH': '#ef4444', 'AO': '#ef4444',
+  'V': '#ef4444', 'VE': '#ef4444', 'AR': '#ef4444', 'A99': '#ef4444',
+  // Moderate risk (orange) - 500-year floodplain
+  'X500': '#f97316', 'B': '#f97316', 'D': '#f97316',
+  // Minimal risk (blue) - outside floodplain
+  'X': '#3b82f6', 'C': '#3b82f6',
 };
 
 export const GIS_LAYERS = {
@@ -242,7 +264,6 @@ async function fetchEndpoint(endpointUrl, bounds, layerKey) {
   let offset = 0;
   const max = 1000;
   const maxPages = 7; // Reduced from 10 to avoid CORS issues on paginated requests
-  let debugLogged = false;
   try {
     for (let page = 0; page < maxPages; page++) {
       const url = buildQueryUrl(endpointUrl, bounds, offset, max);
@@ -252,20 +273,13 @@ async function fetchEndpoint(endpointUrl, bounds, layerKey) {
       if (raw.length === 0) break;
       const geomType = data.geometryType || 'esriGeometryPolyline';
 
-      // Debug: log first 5 features' properties for zoning/flood to see actual field names
-      if (!debugLogged && (layerKey === 'zoning_districts' || layerKey === 'floodplains')) {
-        const sample = raw.slice(0, 5).map(f => f.attributes);
-        console.log(`[GIS DEBUG] ${layerKey} sample properties from ${new URL(endpointUrl).hostname}:`, sample);
-        debugLogged = true;
-      }
-
       for (const f of raw) {
         const gj = arcgisToGeoJSON(f, geomType);
         if (gj) {
           if (layerKey === 'zoning_districts') {
-            gj.properties._zone_code = extractField(gj.properties, ZONING_ALIASES) || 'Unknown';
+            gj.properties._zone_code = extractField(gj.properties, ZONING_ALIASES) || '';
           } else if (layerKey === 'floodplains') {
-            gj.properties._flood_zone = extractField(gj.properties, FLOOD_ALIASES) || 'Unknown';
+            gj.properties._flood_zone = extractField(gj.properties, FLOOD_ALIASES) || '';
           }
           features.push(gj);
         }
