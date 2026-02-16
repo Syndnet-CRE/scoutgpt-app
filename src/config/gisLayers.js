@@ -48,9 +48,9 @@ export const FLOOD_COLORS = {
 export const GIS_LAYERS = {
   water_lines: {
     name: 'Water Lines',
-    color: '#3b82f6',
+    color: '#00bfff',
     geometryType: 'line',
-    gradient: ['#93c5fd', '#60a5fa', '#3b82f6', '#1e3a5f'],
+    gradient: ['#7dd3fc', '#38bdf8', '#00bfff', '#0284c7'],
     thresholds: [6, 12, 24, 48],
     endpoints: [
       'https://coagiswebadaptor.austintexas.gov/awgisago/rest/services/RAAS/RAAS_Water_Service/MapServer/17',
@@ -115,7 +115,7 @@ export const GIS_LAYERS = {
       'https://maps.austintexas.gov/arcgis/rest/services/FloodPro/FloodPro/MapServer/4',
       'https://maps.austintexas.gov/arcgis/rest/services/FloodPro/FloodPro/MapServer/9',
       'https://gis.georgetown.org/arcgis/rest/services/Planning/PlanningDevelopmentNew_WebMap/MapServer/60',
-      'https://maps.co.bastrop.tx.us/server/rest/services/Emergency_Management/FEMA_Flood_Hazard_Areas/MapServer/0',
+      // Bastrop County endpoint removed - CORS completely broken
       'https://gis.cedarparktexas.gov/mapping/rest/services/VIEW/Flood_Zones/MapServer/0',
       'https://smgis.sanmarcostx.gov/arcgis/rest/services/CityRegulatedFloodplains/MapServer/2'
     ]
@@ -241,7 +241,8 @@ async function fetchEndpoint(endpointUrl, bounds, layerKey) {
   const features = [];
   let offset = 0;
   const max = 1000;
-  const maxPages = 10;
+  const maxPages = 7; // Reduced from 10 to avoid CORS issues on paginated requests
+  let debugLogged = false;
   try {
     for (let page = 0; page < maxPages; page++) {
       const url = buildQueryUrl(endpointUrl, bounds, offset, max);
@@ -250,6 +251,14 @@ async function fetchEndpoint(endpointUrl, bounds, layerKey) {
       const raw = data.features || [];
       if (raw.length === 0) break;
       const geomType = data.geometryType || 'esriGeometryPolyline';
+
+      // Debug: log first 5 features' properties for zoning/flood to see actual field names
+      if (!debugLogged && (layerKey === 'zoning_districts' || layerKey === 'floodplains')) {
+        const sample = raw.slice(0, 5).map(f => f.attributes);
+        console.log(`[GIS DEBUG] ${layerKey} sample properties from ${new URL(endpointUrl).hostname}:`, sample);
+        debugLogged = true;
+      }
+
       for (const f of raw) {
         const gj = arcgisToGeoJSON(f, geomType);
         if (gj) {

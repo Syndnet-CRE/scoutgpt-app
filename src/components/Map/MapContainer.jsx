@@ -123,8 +123,13 @@ export default function MapContainer({
   }
 
   // Helper: add GIS map layers for a given layerKey
+  // Note: GIS layers added without beforeId so they work independently of parcel layer state
   function addGisMapLayers(map, layerKey, config) {
     const sourceId = `gis-${layerKey}`;
+
+    // Determine beforeId only if parcels-fill exists and is visible
+    const beforeId = map.getLayer('parcels-fill') ? 'parcels-fill' : undefined;
+
     if (config.geometryType === 'line') {
       map.addLayer({
         id: `${sourceId}-line`,
@@ -132,47 +137,47 @@ export default function MapContainer({
         source: sourceId,
         paint: {
           'line-color': buildDiameterColorExpr(config.gradient, config.thresholds),
-          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 14, 2, 18, 4],
-          'line-opacity': 0.85
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 3, 18, 5],
+          'line-opacity': 1.0
         },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
-      }, 'parcels-fill');
+      }, beforeId);
     } else if (config.geometryType === 'fill' && layerKey === 'zoning_districts') {
       const matchExpr = ['match', ['get', '_zone_code']];
       for (const [code, color] of Object.entries(ZONING_COLORS)) {
         matchExpr.push(code, color);
       }
-      matchExpr.push('#a855f7');
+      matchExpr.push('#9ca3af'); // Gray fallback for unknown zones
       map.addLayer({
         id: `${sourceId}-fill`,
         type: 'fill',
         source: sourceId,
         paint: { 'fill-color': matchExpr, 'fill-opacity': 0.45 }
-      }, 'parcels-fill');
+      }, beforeId);
       map.addLayer({
         id: `${sourceId}-outline`,
         type: 'line',
         source: sourceId,
         paint: { 'line-color': '#ec4899', 'line-width': 1, 'line-opacity': 0.7 }
-      }, 'parcels-fill');
+      }, beforeId);
     } else if (config.geometryType === 'fill' && layerKey === 'floodplains') {
       const matchExpr = ['match', ['get', '_flood_zone']];
       for (const [code, color] of Object.entries(FLOOD_COLORS)) {
         matchExpr.push(code, color);
       }
-      matchExpr.push('#ef4444');
+      matchExpr.push('rgba(191,219,254,0.3)'); // Light blue transparent fallback for unknown zones
       map.addLayer({
         id: `${sourceId}-fill`,
         type: 'fill',
         source: sourceId,
         paint: { 'fill-color': matchExpr, 'fill-opacity': 0.45 }
-      }, 'parcels-fill');
+      }, beforeId);
       map.addLayer({
         id: `${sourceId}-outline`,
         type: 'line',
         source: sourceId,
-        paint: { 'line-color': '#ef4444', 'line-width': 1, 'line-opacity': 0.7 }
-      }, 'parcels-fill');
+        paint: { 'line-color': '#3b82f6', 'line-width': 1, 'line-opacity': 0.5 }
+      }, beforeId);
     }
   }
 
