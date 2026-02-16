@@ -22,7 +22,7 @@ const sym = (type, color) => ({ type, color });
 const LAYER_PACKS = [
   { id: "site", label: "Site", icon: MapPin },
   { id: "dd", label: "DD", icon: Search },
-  { id: "invest", label: "Invest", icon: BarChart3, default: true },
+  { id: "invest", label: "Invest", icon: BarChart3 },
   { id: "develop", label: "Dev", icon: Construction },
   { id: "risk", label: "Risk", icon: AlertTriangle },
   { id: "demo", label: "Demo", icon: Users },
@@ -304,9 +304,9 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
   const [view, setView] = useState("layers");
   const [modal, setModal] = useState(false);
   const [search, setSearch] = useState("");
-  const [pack, setPack] = useState("invest");
+  const [pack, setPack] = useState(null);
   const [baseMap, setBaseMap] = useState("streets");
-  const [ls, setLs] = useState(() => { const i = {}; SECTIONS.forEach(s => s.layers.forEach(l => { i[l.id]=false; })); i.parcelBoundaries=true; i.propertyDots=true; return i; });
+  const [ls, setLs] = useState(() => { const i = {}; SECTIONS.forEach(s => s.layers.forEach(l => { i[l.id]=false; })); i.parcelBoundaries=true; return i; });
   const [op, setOp] = useState({ parcels: 80, zoning: 60 });
   const [fs, setFs] = useState(() => { const i = {}; FILTER_GROUPS.forEach(g => g.filters.forEach(f => { if (f.type==="range") i[f.id]=[f.min,f.max]; else if (f.type==="select") i[f.id]=f.options[0]; else i[f.id]=false; })); return i; });
 
@@ -475,7 +475,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
         </div>
 
         {filtered.map(sec => (
-          <Section key={sec.id} title={sec.title} icon={sec.icon} count={sec.layers.length} activeCount={cntActive(sec)} defaultOpen={sec.id==="parcels"} t={t}>
+          <Section key={sec.id} title={sec.title} icon={sec.icon} count={sec.layers.length} activeCount={cntActive(sec)} defaultOpen={false} t={t}>
             {sec.layers.map(layer => (
               <LayerRow key={layer.id} layer={layer} checked={ls[layer.id]||false}
                 onChange={sec.type==="radio"?()=>selRadio(sec.id,layer.id):()=>tog(layer.id)}
