@@ -127,7 +127,20 @@ export default function MapContainer({
         generateId: true,
       });
 
-      // Base fill — invisible, kept for click/hover detection
+      // Zoom-dependent opacity expression for lot_acres thresholds
+      // Used by multiple layers to progressively show parcels at higher zooms
+      const zoomLotAcresOpacity = (visibleOpacity) => [
+        'step', ['zoom'],
+        0,       // Below zoom 10: hidden
+        10, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 100], visibleOpacity, 0],
+        11, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 25], visibleOpacity, 0],
+        12, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 5], visibleOpacity, 0],
+        13, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 1], visibleOpacity, 0],
+        14, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 0.25], visibleOpacity, 0],
+        14.5, visibleOpacity  // zoom 14.5+: show all (including null lot_acres)
+      ];
+
+      // Base fill — invisible but zoom-filtered for click/hover detection
       map.addLayer({
         id: 'parcels-fill',
         type: 'fill',
@@ -135,12 +148,26 @@ export default function MapContainer({
         'source-layer': TILESET_LAYER,
         paint: {
           'fill-color': '#000000',
-          'fill-opacity': 0,
+          // Use tiny opacity so parcels are "rendered" for click detection
+          // but only at appropriate zoom levels based on lot_acres
+          'fill-opacity': zoomLotAcresOpacity(0.001),
+        },
+      });
+
+      // Base outline — visible parcel boundaries with zoom-dependent rendering
+      map.addLayer({
+        id: 'parcels-base-outline',
+        type: 'line',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        paint: {
+          'line-color': '#64748b',  // Subtle slate gray
+          'line-width': 0.5,
+          'line-opacity': zoomLotAcresOpacity(0.4),
         },
       });
 
       // Asset class coloring layer — shows colored parcels when asset filters active
-      // Zoom-dependent: larger parcels appear first at lower zooms
       map.addLayer({
         id: 'parcels-asset-fill',
         type: 'fill',
@@ -149,20 +176,11 @@ export default function MapContainer({
         filter: ['==', ['get', 'use_code'], -9999], // Initially hidden (no match)
         paint: {
           'fill-color': '#888888', // Will be updated dynamically
-          'fill-opacity': [
-            'step', ['zoom'],
-            0,       // Below zoom 10: hidden
-            10, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 100], 0.55, 0],
-            11, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 25], 0.55, 0],
-            12, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 5], 0.55, 0],
-            13, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 1], 0.55, 0],
-            14, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 0.25], 0.55, 0],
-            14.5, 0.55  // zoom 14.5+: show all
-          ],
+          'fill-opacity': zoomLotAcresOpacity(0.4),
         },
       });
 
-      // Asset class outline layer
+      // Asset class outline layer — color matches fill (updated dynamically)
       map.addLayer({
         id: 'parcels-asset-outline',
         type: 'line',
@@ -170,22 +188,39 @@ export default function MapContainer({
         'source-layer': TILESET_LAYER,
         filter: ['==', ['get', 'use_code'], -9999], // Initially hidden
         paint: {
-          'line-color': '#ffffff',
-          'line-width': 1,
-          'line-opacity': [
-            'step', ['zoom'],
-            0,
-            10, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 100], 0.4, 0],
-            11, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 25], 0.4, 0],
-            12, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 5], 0.4, 0],
-            13, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 1], 0.4, 0],
-            14, ['case', ['>=', ['coalesce', ['get', 'lot_acres'], -1], 0.25], 0.4, 0],
-            14.5, 0.4
-          ],
+          'line-color': '#888888', // Will be updated dynamically to match fill
+          'line-width': 1.5,
+          'line-opacity': zoomLotAcresOpacity(0.8),
         },
       });
 
-      // Highlight fill — chat results (red)
+      // --- FILTER HIGHLIGHT LAYERS (green/teal) — below highlight/selected ---
+      map.addLayer({
+        id: 'parcels-filter-fill',
+        type: 'fill',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        paint: {
+          'fill-color': '#1877F2',
+          'fill-opacity': 0.35,
+        },
+        filter: ['in', ['get', 'attom_id'], ['literal', []]],
+      });
+
+      map.addLayer({
+        id: 'parcels-filter-outline',
+        type: 'line',
+        source: 'parcels',
+        'source-layer': TILESET_LAYER,
+        paint: {
+          'line-color': '#1877F2',
+          'line-width': 2,
+          'line-opacity': 0.9,
+        },
+        filter: ['in', ['get', 'attom_id'], ['literal', []]],
+      });
+
+      // Highlight fill — chat results (red) — above filter layers
       map.addLayer({
         id: 'parcels-highlight-fill',
         type: 'fill',
@@ -212,7 +247,7 @@ export default function MapContainer({
         },
       });
 
-      // Selected fill — clicked parcel (red)
+      // Selected fill — clicked parcel (red) — ON TOP
       map.addLayer({
         id: 'parcels-selected-fill',
         type: 'fill',
@@ -225,7 +260,7 @@ export default function MapContainer({
         },
       });
 
-      // Selected outline — clicked parcel (red)
+      // Selected outline — clicked parcel (red) — ON TOP
       map.addLayer({
         id: 'parcels-selected-outline',
         type: 'line',
@@ -237,32 +272,6 @@ export default function MapContainer({
           'line-width': 2.5,
           'line-opacity': 1,
         },
-      });
-
-      // --- FILTER HIGHLIGHT LAYERS (green/teal) ---
-      map.addLayer({
-        id: 'parcels-filter-fill',
-        type: 'fill',
-        source: 'parcels',
-        'source-layer': TILESET_LAYER,
-        paint: {
-          'fill-color': '#10b981',
-          'fill-opacity': 0.35,
-        },
-        filter: ['in', ['get', 'attom_id'], ['literal', []]],
-      });
-
-      map.addLayer({
-        id: 'parcels-filter-outline',
-        type: 'line',
-        source: 'parcels',
-        'source-layer': TILESET_LAYER,
-        paint: {
-          'line-color': '#10b981',
-          'line-width': 2,
-          'line-opacity': 0.9,
-        },
-        filter: ['in', ['get', 'attom_id'], ['literal', []]],
       });
 
       // --- CHAT RESULT MARKERS (GeoJSON points) ---
@@ -457,11 +466,11 @@ export default function MapContainer({
     const map = mapRef.current;
     const vis = visibleLayers?.parcels !== false ? 'visible' : 'none';
     const parcelLayers = [
-      'parcels-fill',
+      'parcels-fill', 'parcels-base-outline',
       'parcels-asset-fill', 'parcels-asset-outline',
+      'parcels-filter-fill', 'parcels-filter-outline',
       'parcels-highlight-fill', 'parcels-highlight-outline',
       'parcels-selected-fill', 'parcels-selected-outline',
-      'parcels-filter-fill', 'parcels-filter-outline',
       'chat-markers-circle', 'chat-markers-dot',
     ];
     for (const id of parcelLayers) {
@@ -649,9 +658,10 @@ export default function MapContainer({
         map.setPaintProperty('parcels-asset-fill', 'fill-color', colorExpr);
       }
 
-      // Update outline layer (use same filter, white outline)
+      // Update outline layer (same filter, matching color)
       if (map.getLayer('parcels-asset-outline')) {
         map.setFilter('parcels-asset-outline', filterExpr);
+        map.setPaintProperty('parcels-asset-outline', 'line-color', colorExpr);
       }
 
       console.log('[MAP] Asset class filter active:', activeAssetClasses, 'use_codes:', useCodes.length);

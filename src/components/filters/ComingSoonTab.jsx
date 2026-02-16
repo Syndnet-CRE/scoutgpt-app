@@ -138,7 +138,7 @@ export default function ComingSoonTab({ tabKey }) {
                 width: 6,
                 height: 6,
                 borderRadius: '50%',
-                background: t.accent.green,
+                background: t.accent.primary,
                 opacity: 0.5,
               }} />
               {feature}
@@ -157,10 +157,10 @@ export default function ComingSoonTab({ tabKey }) {
           fontSize: 13,
           fontWeight: 500,
           fontFamily: t.font.display,
-          background: notifyClicked ? t.accent.greenMuted : 'transparent',
-          border: `1px solid ${notifyClicked ? t.accent.green : t.border.default}`,
+          background: notifyClicked ? t.accent.primaryMuted : 'transparent',
+          border: `1px solid ${notifyClicked ? t.accent.primary : t.border.default}`,
           borderRadius: 8,
-          color: notifyClicked ? t.accent.green : t.text.secondary,
+          color: notifyClicked ? t.accent.primary : t.text.secondary,
           cursor: notifyClicked ? 'default' : 'pointer',
           display: 'flex',
           alignItems: 'center',

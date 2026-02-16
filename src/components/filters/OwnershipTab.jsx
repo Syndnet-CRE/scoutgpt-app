@@ -50,7 +50,7 @@ export default function OwnershipTab({ filters, setFilter, toggleArrayFilter }) 
               fontSize: 13,
               fontFamily: t.font.display,
               background: t.bg.secondary,
-              border: `1px solid ${searchFocused ? t.accent.green : t.border.default}`,
+              border: `1px solid ${searchFocused ? t.accent.primary : t.border.default}`,
               borderRadius: 6,
               color: t.text.primary,
               outline: 'none',

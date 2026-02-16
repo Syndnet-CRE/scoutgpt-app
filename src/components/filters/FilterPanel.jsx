@@ -85,13 +85,13 @@ export default function FilterPanel({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {loading ? (
-            <Loader2 size={14} style={{ color: t.accent.green, animation: 'spin 1s linear infinite' }} />
+            <Loader2 size={14} style={{ color: t.accent.primary, animation: 'spin 1s linear infinite' }} />
           ) : (
             <div style={{
               width: 8,
               height: 8,
               borderRadius: '50%',
-              background: hasActiveFilters ? t.accent.green : t.text.quaternary,
+              background: hasActiveFilters ? t.accent.primary : t.text.quaternary,
             }} />
           )}
           <span style={{
@@ -186,15 +186,15 @@ export default function FilterPanel({
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 border: isActive
-                  ? `1px solid ${t.accent.green}`
+                  ? `1px solid ${t.accent.primary}`
                   : `1px solid ${isHovered ? t.border.strong : t.border.default}`,
                 background: isActive
-                  ? t.accent.greenMuted
+                  ? t.accent.primaryMuted
                   : isHovered
                     ? t.bg.tertiary
                     : 'transparent',
                 color: isActive
-                  ? t.accent.green
+                  ? t.accent.primary
                   : isDisabled
                     ? t.text.quaternary
                     : t.text.secondary,

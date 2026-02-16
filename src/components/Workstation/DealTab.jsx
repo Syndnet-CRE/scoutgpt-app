@@ -64,7 +64,7 @@ export default function DealTab({ data }) {
                       padding: '10px 20px',
                       borderRadius: 8,
                       border: isActive ? `2px solid ${stage.color}` : `1px solid ${t.border.strong}`,
-                      background: isActive ? t.accent.greenMuted : 'transparent',
+                      background: isActive ? t.accent.primaryMuted : 'transparent',
                       color: isActive ? stage.color : isPast ? t.text.primary : t.text.tertiary,
                       fontSize: 12,
                       fontWeight: isActive ? 700 : 500,
@@ -109,7 +109,7 @@ export default function DealTab({ data }) {
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: t.accent.green,
+                  color: t.accent.primary,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   marginBottom: 12,
@@ -121,7 +121,7 @@ export default function DealTab({ data }) {
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <div>
                   <span style={{ fontSize: 11, color: t.text.tertiary }}>Type: </span>
-                  <span style={{ fontSize: 12, color: t.accent.green }}>{propertyType}</span>
+                  <span style={{ fontSize: 12, color: t.accent.primary }}>{propertyType}</span>
                 </div>
                 <div>
                   <span style={{ fontSize: 11, color: t.text.tertiary }}>SF: </span>
@@ -147,7 +147,7 @@ export default function DealTab({ data }) {
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: t.accent.green,
+                  color: t.accent.primary,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   marginBottom: 12,
@@ -169,7 +169,7 @@ export default function DealTab({ data }) {
                 style={{
                   marginTop: 16,
                   padding: '8px 16px',
-                  background: t.accent.green,
+                  background: t.accent.primary,
                   border: 'none',
                   borderRadius: 6,
                   color: t.text.primary,
@@ -199,7 +199,7 @@ export default function DealTab({ data }) {
               style={{
                 fontSize: 10,
                 fontWeight: 700,
-                color: t.accent.green,
+                color: t.accent.primary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
                 marginBottom: 12,
@@ -242,7 +242,7 @@ export default function DealTab({ data }) {
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: t.accent.green,
+              color: t.accent.primary,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               marginBottom: 12,
@@ -262,7 +262,7 @@ export default function DealTab({ data }) {
                 key={i}
                 style={{
                   padding: '10px 0',
-                  background: btn.primary ? t.accent.green : 'transparent',
+                  background: btn.primary ? t.accent.primary : 'transparent',
                   border: btn.primary ? 'none' : `1px solid ${t.border.strong}`,
                   borderRadius: 6,
                   color: btn.primary ? t.text.primary : t.text.secondary,
@@ -285,7 +285,7 @@ export default function DealTab({ data }) {
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: t.accent.green,
+              color: t.accent.primary,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               marginBottom: 12,
@@ -296,7 +296,7 @@ export default function DealTab({ data }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
               { action: 'Deal created', time: 'Just now', color: t.semantic.success },
-              { action: 'Moved to Research', time: 'Just now', color: t.accent.green },
+              { action: 'Moved to Research', time: 'Just now', color: t.accent.primary },
             ].map((item, i) => (
               <div
                 key={i}

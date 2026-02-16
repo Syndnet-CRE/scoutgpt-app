@@ -57,11 +57,11 @@ const SECTIONS = [
     { id: "marketValue", label: "Market Value", gradient: ["#ea580c","#dc2626","#991b1b"] },
     { id: "valuePerAcre", label: "Value per Acre", gradient: ["#1e3a5f","#6366f1","#c084fc"] },
     { id: "assessedValue", label: "Assessed Value", gradient: ["#1e40af","#3b82f6","#93c5fd"] },
-    { id: "landValue", label: "Land Value", gradient: ["#166534","#22c55e","#86efac"] },
+    { id: "landValue", label: "Land Value", gradient: ["#1e3a5f","#1877F2","#93c5fd"] },
     { id: "improvementValue", label: "Improvement Value", gradient: ["#ea580c","#ef4444","#fca5a5"] },
   ]},
   { id: "incentives", title: "INCENTIVES & OPPORTUNITY", icon: Target, layers: [
-    { id: "opportunityZones", label: "Opportunity Zones", sym: sym("fill","#22c55e"), hasData: false, badge: "Soon" },
+    { id: "opportunityZones", label: "Opportunity Zones", sym: sym("fill","#1877F2"), hasData: false, badge: "Soon" },
     { id: "tifDistricts", label: "TIF Districts", sym: sym("dashed","#f59e0b"), hasData: false, badge: "Later" },
     { id: "enterpriseZones", label: "Enterprise Zones", sym: sym("fill","#8B5CF6"), hasData: false, badge: "Later" },
   ]},
@@ -77,7 +77,7 @@ const SECTIONS = [
     { id: "fireHydrants", label: "Fire Hydrants", sym: sym("point","#EF4444"), hasData: true },
   ]},
   { id: "development", title: "DEVELOPMENT ACTIVITY", icon: Construction, layers: [
-    { id: "buildingPermits", label: "Building Permits", sym: sym("point","#22c55e"), hasData: false, badge: "Soon" },
+    { id: "buildingPermits", label: "Building Permits", sym: sym("point","#1877F2"), hasData: false, badge: "Soon" },
     { id: "activeDevelopments", label: "Active Developments", sym: sym("fill","#f59e0b"), hasData: true },
     { id: "demolitionPermits", label: "Demolition Permits", sym: sym("point","#EF4444"), hasData: false, badge: "Later" },
   ]},
@@ -89,20 +89,20 @@ const SECTIONS = [
   ]},
   { id: "demographics", title: "DEMOGRAPHICS", icon: Users, layers: [
     { id: "censusTract", label: "Census Tracts", sym: sym("solid","#6366f1"), hasData: false, badge: "Soon" },
-    { id: "medianIncome", label: "Median Income", sym: sym("fill","#22c55e"), hasData: false, badge: "Later" },
+    { id: "medianIncome", label: "Median Income", sym: sym("fill","#1877F2"), hasData: false, badge: "Later" },
     { id: "populationDensity", label: "Population Density", sym: sym("fill","#f59e0b"), hasData: false, badge: "Later" },
   ]},
   { id: "poi", title: "POINTS OF INTEREST", icon: Bookmark, layers: [
     { id: "restaurants", label: "Restaurants", sym: sym("point","#F97316"), hasData: true },
     { id: "retail", label: "Retail", sym: sym("point","#8B5CF6"), hasData: true },
     { id: "schools", label: "Schools", sym: sym("point","#3B82F6"), hasData: true },
-    { id: "transitStops", label: "Transit Stops", sym: sym("point","#22c55e"), hasData: true },
-    { id: "parks", label: "Parks", sym: sym("fill","#16a34a"), hasData: true },
+    { id: "transitStops", label: "Transit Stops", sym: sym("point","#1877F2"), hasData: true },
+    { id: "parks", label: "Parks", sym: sym("fill","#1565D8"), hasData: true },
   ]},
   { id: "transportation", title: "TRANSPORTATION", icon: Navigation, layers: [
     { id: "trafficAADT", label: "Traffic (AADT)", sym: sym("solid","#EF4444"), hasData: false, badge: "Soon" },
     { id: "majorRoads", label: "Major Roads", sym: sym("solid","#f59e0b"), hasData: false, badge: "Later" },
-    { id: "bikeRoutes", label: "Bike Routes", sym: sym("dashed","#22c55e"), hasData: false, badge: "Later" },
+    { id: "bikeRoutes", label: "Bike Routes", sym: sym("dashed","#1877F2"), hasData: false, badge: "Later" },
     { id: "sidewalks", label: "Sidewalks", sym: sym("dotted","#a0a0a0"), hasData: false, badge: "Later" },
   ]},
 ];
@@ -148,14 +148,14 @@ const INITIAL_REQUESTED = [
 // ── ATOMS ──
 function Toggle({ checked, onChange, size = "default", t }) {
   const w = size === "small" ? 30 : 34, h = size === "small" ? 16 : 18, th = size === "small" ? 12 : 14;
-  return (<button onClick={() => onChange(!checked)} style={{ width: w, height: h, borderRadius: 999, cursor: "pointer", background: checked ? t.accent.green : t.bg.tertiary, border: "none", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+  return (<button onClick={() => onChange(!checked)} style={{ width: w, height: h, borderRadius: 999, cursor: "pointer", background: checked ? t.accent.primary : t.bg.tertiary, border: "none", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
     <div style={{ width: th, height: th, borderRadius: "50%", background: "#fff", position: "absolute", top: (h-th)/2, left: checked ? w-th-2 : 2, transition: "left 0.2s", boxShadow: "0 1px 2px rgba(0,0,0,0.3)" }} />
   </button>);
 }
 
 function Radiob({ selected, onChange, t }) {
-  return (<button onClick={onChange} style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${selected ? t.accent.green : t.text.tertiary}`, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
-    {selected && <div style={{ width: 7, height: 7, borderRadius: "50%", background: t.accent.green }} />}
+  return (<button onClick={onChange} style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${selected ? t.accent.primary : t.text.tertiary}`, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
+    {selected && <div style={{ width: 7, height: 7, borderRadius: "50%", background: t.accent.primary }} />}
   </button>);
 }
 
@@ -163,7 +163,7 @@ function Badge({ type, t }) {
   const m = {
     Soon: { bg: t.bg.tertiary, c: t.text.quaternary, b: t.border.default },
     Later: { bg: t.bg.tertiary, c: t.text.quaternary, b: t.border.default },
-    Live: { bg: t.accent.greenMuted, c: t.accent.green, b: t.accent.greenBorder }
+    Live: { bg: t.accent.primaryMuted, c: t.accent.primary, b: t.accent.primaryBorder }
   };
   const s = m[type] || m.Later;
   return <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.6px", textTransform: "uppercase", padding: "1px 6px", borderRadius: 999, lineHeight: "16px", background: s.bg, color: s.c, border: `1px solid ${s.b}`, whiteSpace: "nowrap" }}>{type}</span>;
@@ -225,11 +225,11 @@ function RangeFilter({ filter, value, onChange, t }) {
   return (<div style={{ padding: "6px 0" }}>
     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
       <span style={{ fontSize: 12, color: t.text.primary }}>{filter.label}</span>
-      <span style={{ fontSize: 11, color: t.accent.green, fontVariantNumeric: "tabular-nums" }}>{fmt(lo)} — {fmt(hi)}</span>
+      <span style={{ fontSize: 11, color: t.accent.primary, fontVariantNumeric: "tabular-nums" }}>{fmt(lo)} — {fmt(hi)}</span>
     </div>
     <div style={{ display: "flex", gap: 8 }}>
-      <input type="range" min={filter.min} max={filter.max} step={filter.step} value={lo} onChange={e => { const v=Number(e.target.value); onChange([Math.min(v,hi),hi]); }} style={{ flex: 1, height: 3, accentColor: t.accent.green, cursor: "pointer" }} />
-      <input type="range" min={filter.min} max={filter.max} step={filter.step} value={hi} onChange={e => { const v=Number(e.target.value); onChange([lo,Math.max(v,lo)]); }} style={{ flex: 1, height: 3, accentColor: t.accent.green, cursor: "pointer" }} />
+      <input type="range" min={filter.min} max={filter.max} step={filter.step} value={lo} onChange={e => { const v=Number(e.target.value); onChange([Math.min(v,hi),hi]); }} style={{ flex: 1, height: 3, accentColor: t.accent.primary, cursor: "pointer" }} />
+      <input type="range" min={filter.min} max={filter.max} step={filter.step} value={hi} onChange={e => { const v=Number(e.target.value); onChange([lo,Math.max(v,lo)]); }} style={{ flex: 1, height: 3, accentColor: t.accent.primary, cursor: "pointer" }} />
     </div>
   </div>);
 }
@@ -262,7 +262,7 @@ function RequestModal({ isOpen, onClose, t }) {
   return (<div onClick={onClose} style={{ position: "fixed", inset: 0, background: MODAL_OVERLAY, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
     <div onClick={e => e.stopPropagation()} style={{ width: 380, maxHeight: "80vh", background: t.bg.primary, borderRadius: 16, boxShadow: SHADOW, display: "flex", flexDirection: "column", border: `1px solid ${t.border.subtle}`, overflow: "hidden", fontFamily: font }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 12px", borderBottom: `1px solid ${t.border.subtle}`, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}><MessageSquarePlus size={16} color={t.accent.green} strokeWidth={1.8} /><span style={{ fontSize: 14, fontWeight: 600, color: t.text.primary }}>Request a Layer</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}><MessageSquarePlus size={16} color={t.accent.primary} strokeWidth={1.8} /><span style={{ fontSize: 14, fontWeight: 600, color: t.text.primary }}>Request a Layer</span></div>
         <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, borderRadius: 6, display: "flex" }}><X size={16} color={t.text.tertiary} strokeWidth={1.8} /></button>
       </div>
       <div style={{ padding: "12px 16px", borderBottom: `1px solid ${t.border.subtle}`, flexShrink: 0 }}>
@@ -270,8 +270,8 @@ function RequestModal({ isOpen, onClose, t }) {
         <div style={{ display: "flex", gap: 6 }}>
           <input ref={ref} type="text" placeholder="Suggest a layer..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key==="Enter"&&submit()}
             style={{ flex: 1, height: 34, background: t.bg.secondary, border: `1px solid ${t.border.default}`, borderRadius: 8, padding: "0 10px", color: t.text.primary, fontSize: 13, outline: "none", fontFamily: font }}
-            onFocus={e => { e.target.style.borderColor=t.accent.green; }} onBlur={e => { e.target.style.borderColor=t.border.default; }} />
-          <button onClick={submit} disabled={!input.trim()} style={{ width: 34, height: 34, borderRadius: 8, border: "none", background: input.trim() ? t.accent.green : t.bg.tertiary, cursor: input.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            onFocus={e => { e.target.style.borderColor=t.accent.primary; }} onBlur={e => { e.target.style.borderColor=t.border.default; }} />
+          <button onClick={submit} disabled={!input.trim()} style={{ width: 34, height: 34, borderRadius: 8, border: "none", background: input.trim() ? t.accent.primary : t.bg.tertiary, cursor: input.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Send size={14} color="#fff" strokeWidth={2} />
           </button>
         </div>
@@ -282,9 +282,9 @@ function RequestModal({ isOpen, onClose, t }) {
             onMouseEnter={e => { e.currentTarget.style.background=t.bg.tertiary; }} onMouseLeave={e => { e.currentTarget.style.background="transparent"; }}>
             <span style={{ fontSize: 12, color: t.text.tertiary, width: 18, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{i+1}</span>
             <span style={{ flex: 1, fontSize: 13, color: t.text.primary }}>{r.name}</span>
-            <button onClick={() => vote(r.id)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, border: `1px solid ${r.voted?t.accent.green:t.border.default}`, background: r.voted?t.accent.greenMuted:"transparent", cursor: "pointer", transition: "all 0.15s" }}>
-              <ThumbsUp size={12} color={r.voted?t.accent.green:t.text.tertiary} strokeWidth={2} fill={r.voted?t.accent.green:"none"} />
-              <span style={{ fontSize: 11, fontWeight: 600, color: r.voted?t.accent.green:t.text.tertiary, fontVariantNumeric: "tabular-nums" }}>{r.votes}</span>
+            <button onClick={() => vote(r.id)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, border: `1px solid ${r.voted?t.accent.primary:t.border.default}`, background: r.voted?t.accent.primaryMuted:"transparent", cursor: "pointer", transition: "all 0.15s" }}>
+              <ThumbsUp size={12} color={r.voted?t.accent.primary:t.text.tertiary} strokeWidth={2} fill={r.voted?t.accent.primary:"none"} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: r.voted?t.accent.primary:t.text.tertiary, fontVariantNumeric: "tabular-nums" }}>{r.votes}</span>
             </button>
           </div>
         ))}
@@ -395,7 +395,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
       {[["layers",Layers,"Layers",totalLayers],["filters",Filter,"Filters",activeFilterCount]].map(([v,Ic,lb,cnt]) => (
         <button key={v} onClick={() => {setIsOpen(true);setView(v);}} style={{ background: t.bg.primary, color: t.text.primary, border: `1px solid ${t.border.default}`, borderRadius: 10, padding: "8px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, boxShadow: SHADOW, fontFamily: font }}>
           <Ic size={15} strokeWidth={1.8} />{lb}
-          {cnt>0 && <span style={{ background: t.accent.green, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 999, padding: "1px 6px", lineHeight: "16px" }}>{cnt}</span>}
+          {cnt>0 && <span style={{ background: t.accent.primary, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 999, padding: "1px 6px", lineHeight: "16px" }}>{cnt}</span>}
         </button>
       ))}
     </div>
@@ -409,8 +409,8 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {view==="layers" ? <Layers size={16} color={t.text.primary} strokeWidth={1.8}/> : <Filter size={16} color={t.text.primary} strokeWidth={1.8}/>}
             <span style={{ fontSize: 14, fontWeight: 600, color: t.text.primary, letterSpacing: "-0.2px" }}>{view==="layers"?"Map Layers":"Filters"}</span>
-            {view==="layers"&&totalLayers>0 && <span style={{ background: t.accent.greenMuted, color: t.accent.green, fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "1px 8px", lineHeight: "18px", border: `1px solid ${t.accent.greenBorder}` }}>{totalLayers} active</span>}
-            {view==="filters"&&newFiltersActive && <span style={{ background: t.accent.greenMuted, color: t.accent.green, fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "1px 8px", lineHeight: "18px", border: `1px solid ${t.accent.greenBorder}` }}>{filterCount !== null ? filterCount.toLocaleString() : '...'}</span>}
+            {view==="layers"&&totalLayers>0 && <span style={{ background: t.accent.primaryMuted, color: t.accent.primary, fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "1px 8px", lineHeight: "18px", border: `1px solid ${t.accent.primaryBorder}` }}>{totalLayers} active</span>}
+            {view==="filters"&&newFiltersActive && <span style={{ background: t.accent.primaryMuted, color: t.accent.primary, fontSize: 11, fontWeight: 600, borderRadius: 999, padding: "1px 8px", lineHeight: "18px", border: `1px solid ${t.accent.primaryBorder}` }}>{filterCount !== null ? filterCount.toLocaleString() : '...'}</span>}
           </div>
           <button onClick={() => setIsOpen(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, borderRadius: 6, display: "flex" }}
             onMouseEnter={e=>{e.currentTarget.style.background=t.bg.tertiary;}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
@@ -420,7 +420,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
         <div style={{ display: "flex", background: t.bg.secondary, borderRadius: 8, padding: 3, gap: 2, marginBottom: 12 }}>
           {[{id:"layers",label:"Layers",icon:Layers},{id:"filters",label:"Filters",icon:SlidersHorizontal}].map(tab => {
             const on = view===tab.id; const Ic=tab.icon;
-            return <button key={tab.id} onClick={()=>setView(tab.id)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "7px 0", borderRadius: 6, border: "none", cursor: "pointer", background: on?t.accent.green:t.bg.tertiary, color: on?"#fff":t.text.secondary, fontSize: 12, fontWeight: 600, transition: "all 0.15s", fontFamily: font }}><Ic size={13} strokeWidth={2}/>{tab.label}</button>;
+            return <button key={tab.id} onClick={()=>setView(tab.id)} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "7px 0", borderRadius: 6, border: "none", cursor: "pointer", background: on?t.accent.primary:t.bg.tertiary, color: on?"#fff":t.text.secondary, fontSize: 12, fontWeight: 600, transition: "all 0.15s", fontFamily: font }}><Ic size={13} strokeWidth={2}/>{tab.label}</button>;
           })}
         </div>
       </div>
@@ -430,19 +430,19 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
         <div style={{ position: "relative", marginBottom: 10 }}>
           <input type="text" placeholder="Search layers..." value={search} onChange={e=>setSearch(e.target.value)}
             style={{ width: "100%", height: 34, background: t.bg.secondary, border: `1px solid ${t.border.default}`, borderRadius: 8, padding: "0 10px 0 34px", color: t.text.primary, fontSize: 13, outline: "none", boxSizing: "border-box", fontFamily: font }}
-            onFocus={e=>{e.target.style.borderColor=t.accent.green;}} onBlur={e=>{e.target.style.borderColor=t.border.default;}} />
+            onFocus={e=>{e.target.style.borderColor=t.accent.primary;}} onBlur={e=>{e.target.style.borderColor=t.border.default;}} />
           <Search size={14} color={t.text.tertiary} strokeWidth={1.8} style={{ position: "absolute", left: 11, top: 10 }} />
         </div>
 
         <div style={{ marginBottom: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
             <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: t.text.tertiary, textTransform: "uppercase" }}>Layer Packs</span>
-            <button onClick={()=>setPack(null)} style={{ fontSize: 10, color: t.accent.green, background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 3 }}><RotateCcw size={10} strokeWidth={2}/>Reset</button>
+            <button onClick={()=>setPack(null)} style={{ fontSize: 10, color: t.accent.primary, background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 3 }}><RotateCcw size={10} strokeWidth={2}/>Reset</button>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5 }}>
             {LAYER_PACKS.map(p => { const on=pack===p.id; const Ic=p.icon;
-              return <button key={p.id} onClick={()=>setPack(on?null:p.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 52, gap: 3, padding: 4, cursor: "pointer", background: on?t.accent.greenMuted:t.bg.secondary, border: `1px solid ${on?t.accent.green:t.border.subtle}`, borderRadius: 8, transition: "all 0.15s" }}>
-                <Ic size={15} color={on?t.accent.green:t.text.secondary} strokeWidth={1.8}/><span style={{ fontSize: 10, fontWeight: 600, color: on?t.accent.green:t.text.secondary }}>{p.label}</span>
+              return <button key={p.id} onClick={()=>setPack(on?null:p.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 52, gap: 3, padding: 4, cursor: "pointer", background: on?t.accent.primaryMuted:t.bg.secondary, border: `1px solid ${on?t.accent.primary:t.border.subtle}`, borderRadius: 8, transition: "all 0.15s" }}>
+                <Ic size={15} color={on?t.accent.primary:t.text.secondary} strokeWidth={1.8}/><span style={{ fontSize: 10, fontWeight: 600, color: on?t.accent.primary:t.text.secondary }}>{p.label}</span>
               </button>;
             })}
           </div>
@@ -452,7 +452,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
           <span style={{ display: "block", fontSize: 10, fontWeight: 600, letterSpacing: "1px", color: t.text.tertiary, textTransform: "uppercase", marginBottom: 6 }}>Base Maps</span>
           <div style={{ display: "flex", gap: 5 }}>
             {BASE_MAPS.map(bm => { const on=baseMap===bm.id;
-              return <button key={bm.id} onClick={()=>setBaseMap(bm.id)} style={{ flex: 1, padding: "7px 0", borderRadius: 8, background: on?t.accent.green:t.bg.secondary, color: on?"#fff":t.text.secondary, border: `1px solid ${on?t.accent.green:t.border.subtle}`, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.15s", fontFamily: font }}>{bm.label}</button>;
+              return <button key={bm.id} onClick={()=>setBaseMap(bm.id)} style={{ flex: 1, padding: "7px 0", borderRadius: 8, background: on?t.accent.primary:t.bg.secondary, color: on?"#fff":t.text.secondary, border: `1px solid ${on?t.accent.primary:t.border.subtle}`, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.15s", fontFamily: font }}>{bm.label}</button>;
             })}
           </div>
         </div>
@@ -467,7 +467,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
             {sec.hasOpacity && cntActive(sec)>0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 2px 36px" }}>
                 <Eye size={12} color={t.text.tertiary}/>
-                <input type="range" min="0" max="100" value={op[sec.id]||80} onChange={e=>setOp(p=>({...p,[sec.id]:Number(e.target.value)}))} style={{ flex: 1, height: 3, accentColor: t.accent.green, cursor: "pointer" }}/>
+                <input type="range" min="0" max="100" value={op[sec.id]||80} onChange={e=>setOp(p=>({...p,[sec.id]:Number(e.target.value)}))} style={{ flex: 1, height: 3, accentColor: t.accent.primary, cursor: "pointer" }}/>
                 <span style={{ fontSize: 10, color: t.text.tertiary, width: 26, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{op[sec.id]||80}%</span>
               </div>
             )}
@@ -475,7 +475,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
         ))}
 
         <button onClick={()=>setModal(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "10px 0", marginTop: 4, marginBottom: 16, borderRadius: 10, background: "transparent", border: `1px dashed ${t.border.default}`, color: t.text.tertiary, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.15s", fontFamily: font }}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor=t.accent.green;e.currentTarget.style.color=t.accent.green;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=t.border.default;e.currentTarget.style.color=t.text.tertiary;}}>
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=t.accent.primary;e.currentTarget.style.color=t.accent.primary;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=t.border.default;e.currentTarget.style.color=t.text.tertiary;}}>
           <Plus size={14} strokeWidth={2}/>Request a Layer
         </button>
       </div>}

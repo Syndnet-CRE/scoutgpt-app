@@ -8,7 +8,7 @@ export default {
           bg: '#0a0f1a',
           surface: '#111827',
           border: '#1e293b',
-          accent: '#3b82f6',
+          accent: '#1877F2',
           'accent-dim': '#1e40af',
           text: '#e2e8f0',
           'text-dim': '#94a3b8',

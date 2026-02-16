@@ -37,7 +37,7 @@ export default function MultiSelect({
         {options.map((option) => {
           const isSelected = selected.includes(option.id);
           const isHovered = hoveredId === option.id;
-          const chipColor = option.color || t.accent.green;
+          const chipColor = option.color || t.accent.primary;
 
           return (
             <button

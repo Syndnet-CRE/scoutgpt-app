@@ -56,7 +56,7 @@ export default function Dropdown({
             fontSize: 13,
             fontFamily: t.font.display,
             background: t.bg.secondary,
-            border: `1px solid ${open ? t.accent.green : hovered ? t.border.strong : t.border.default}`,
+            border: `1px solid ${open ? t.accent.primary : hovered ? t.border.strong : t.border.default}`,
             borderRadius: 6,
             color: selectedOption ? t.text.primary : t.text.tertiary,
             textAlign: 'left',
@@ -115,15 +115,15 @@ export default function Dropdown({
                 style={{
                   padding: '8px 10px',
                   fontSize: 13,
-                  color: option.value === value ? t.accent.green : t.text.primary,
+                  color: option.value === value ? t.accent.primary : t.text.primary,
                   cursor: 'pointer',
-                  background: option.value === value ? t.accent.greenMuted : 'transparent',
+                  background: option.value === value ? t.accent.primaryMuted : 'transparent',
                 }}
                 onMouseEnter={(e) => {
                   if (option.value !== value) e.target.style.background = t.bg.tertiary;
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = option.value === value ? t.accent.greenMuted : 'transparent';
+                  e.target.style.background = option.value === value ? t.accent.primaryMuted : 'transparent';
                 }}
               >
                 {option.label}

@@ -177,9 +177,27 @@ export default function App() {
     if (setHighlightedProperties) {
       setHighlightedProperties([Number(attomId)]);
     }
+
+    // Find marker coordinates from chatMarkers and pan to it
+    const marker = chatMarkers?.find(m => String(m.attomId) === String(attomId));
+    if (marker?.latitude && marker?.longitude && mapInstanceRef.current) {
+      // Calculate offset to center between panels
+      const leftPanel = 370;
+      const rightPanel = 400;
+      const horizontalOffset = (leftPanel - rightPanel) / 2;
+
+      mapInstanceRef.current.flyTo({
+        center: [Number(marker.longitude), Number(marker.latitude)],
+        offset: [horizontalOffset, 0],
+        duration: 800,
+        essential: true,
+        // Preserve current zoom level — don't change it
+      });
+    }
+
     // Also load the property detail to open its popup
     loadProperty(attomId);
-  }, [setHighlightedProperties, loadProperty]);
+  }, [setHighlightedProperties, loadProperty, chatMarkers]);
 
   // Chat panel: view property details (opens Mapbox popup via same flow as parcel click)
   const handleSelectProperty = useCallback((attomId) => {

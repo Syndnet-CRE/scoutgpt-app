@@ -177,7 +177,7 @@ const Badge = ({ children, color = "slate" }) => {
   const getColors = () => {
     switch (color) {
       case 'indigo':
-        return { background: t.accent.greenMuted, color: t.accent.green, borderColor: t.accent.greenBorder };
+        return { background: t.accent.primaryMuted, color: t.accent.primary, borderColor: t.accent.primaryBorder };
       case 'green':
         return { background: `${t.semantic.success}20`, color: t.semantic.success, borderColor: `${t.semantic.success}30` };
       case 'amber':
@@ -417,7 +417,7 @@ const OwnershipIntel = ({ data }) => {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             className="flex items-center gap-2 text-xs transition-colors"
-            style={{ color: hovered ? t.accent.green : t.accent.green }}
+            style={{ color: hovered ? t.accent.primary : t.accent.primary }}
           >
             <Icon name={showContact ? "eye-off" : "eye"} size={14} />
             {showContact ? "Hide Contact Info" : "Show Contact Info"}
@@ -1128,7 +1128,7 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
           onClick={onViewDetails}
           className="w-full py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
           style={{
-            background: `linear-gradient(to right, ${t.accent.green}, ${t.accent.greenHover})`,
+            background: `linear-gradient(to right, ${t.accent.primary}, ${t.accent.primaryHover})`,
             color: '#000',
           }}
         >
@@ -1144,7 +1144,7 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
               width: '100%',
               padding: '9px 0',
               marginTop: '6px',
-              background: workstationHovered ? t.accent.greenHover : t.accent.green,
+              background: workstationHovered ? t.accent.primaryHover : t.accent.primary,
               border: 'none',
               borderRadius: '8px',
               color: '#000',
@@ -1293,7 +1293,7 @@ const DetailModule = ({ data, onClose }) => {
               className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-colors"
               style={{
                 color: activeTab === tab.id ? t.text.primary : t.text.tertiary,
-                borderBottom: activeTab === tab.id ? `2px solid ${t.accent.green}` : '2px solid transparent',
+                borderBottom: activeTab === tab.id ? `2px solid ${t.accent.primary}` : '2px solid transparent',
               }}
             >
               <Icon name={tab.icon} size={14} />

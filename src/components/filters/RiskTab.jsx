@@ -71,7 +71,7 @@ export default function RiskTab({ filters, setFilter, toggleArrayFilter }) {
                 onChange={(e) => setFilter('foreclosureFiledDays', e.target.value)}
                 placeholder="e.g. 90"
                 style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = t.accent.green}
+                onFocus={(e) => e.target.style.borderColor = t.accent.primary}
                 onBlur={(e) => e.target.style.borderColor = t.border.default}
               />
             </div>
@@ -96,7 +96,7 @@ export default function RiskTab({ filters, setFilter, toggleArrayFilter }) {
             onChange={(e) => setFilter('auctionWithinDays', e.target.value)}
             placeholder="e.g. 30"
             style={inputStyle}
-            onFocus={(e) => e.target.style.borderColor = t.accent.green}
+            onFocus={(e) => e.target.style.borderColor = t.accent.primary}
             onBlur={(e) => e.target.style.borderColor = t.border.default}
           />
         </div>
@@ -121,7 +121,7 @@ export default function RiskTab({ filters, setFilter, toggleArrayFilter }) {
             min="0"
             max="100"
             style={inputStyle}
-            onFocus={(e) => e.target.style.borderColor = t.accent.green}
+            onFocus={(e) => e.target.style.borderColor = t.accent.primary}
             onBlur={(e) => e.target.style.borderColor = t.border.default}
           />
         </div>
@@ -152,7 +152,7 @@ export default function RiskTab({ filters, setFilter, toggleArrayFilter }) {
             min="0"
             max="100"
             style={inputStyle}
-            onFocus={(e) => e.target.style.borderColor = t.accent.green}
+            onFocus={(e) => e.target.style.borderColor = t.accent.primary}
             onBlur={(e) => e.target.style.borderColor = t.border.default}
           />
         </div>

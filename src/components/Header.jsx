@@ -33,7 +33,7 @@ export default function Header() {
           color: t.text.primary,
         }}>
           Scout
-          <span style={{ color: t.accent.green }}>GPT</span>
+          <span style={{ color: t.accent.primary }}>GPT</span>
         </span>
         <span style={{
           fontSize: 10,
@@ -60,7 +60,7 @@ export default function Header() {
           height: 32,
           borderRadius: 8,
           background: searchFocused ? t.bg.secondary : t.bg.secondary,
-          border: `1px solid ${searchFocused ? t.accent.greenBorder : t.border.default}`,
+          border: `1px solid ${searchFocused ? t.accent.primaryBorder : t.border.default}`,
           transition: 'border-color 0.15s ease',
         }}>
           <Search size={14} style={{ color: t.text.tertiary, flexShrink: 0 }} />

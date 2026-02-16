@@ -33,7 +33,7 @@ export default function MinMaxInput({
   };
 
   const handleFocus = (e) => {
-    e.target.style.borderColor = t.accent.green;
+    e.target.style.borderColor = t.accent.primary;
   };
 
   const handleBlur = (e) => {

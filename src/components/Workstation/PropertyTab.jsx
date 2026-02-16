@@ -50,11 +50,11 @@ const SectionHeader = ({ children, t }) => (
     style={{
       fontSize: 11,
       fontWeight: 700,
-      color: t.accent.green,
+      color: t.accent.primary,
       textTransform: 'uppercase',
       letterSpacing: '0.08em',
       padding: '12px 0 8px',
-      borderBottom: `1px solid ${t.accent.greenBorder}`,
+      borderBottom: `1px solid ${t.accent.primaryBorder}`,
       marginTop: 16,
     }}
   >
@@ -65,11 +65,11 @@ const SectionHeader = ({ children, t }) => (
 const Badge = ({ children, color = 'slate', t }) => {
   const colors = {
     slate: { bg: t.bg.tertiary, text: t.text.secondary, border: t.border.strong },
-    purple: { bg: t.accent.greenMuted, text: t.accent.green, border: t.accent.greenBorder },
-    cyan: { bg: t.accent.greenMuted, text: t.semantic.info, border: t.accent.greenBorder },
-    amber: { bg: t.accent.greenMuted, text: t.semantic.warning, border: t.accent.greenBorder },
-    green: { bg: t.accent.greenMuted, text: t.semantic.success, border: t.accent.greenBorder },
-    red: { bg: t.accent.greenMuted, text: t.semantic.error, border: t.accent.greenBorder },
+    purple: { bg: t.accent.primaryMuted, text: t.accent.primary, border: t.accent.primaryBorder },
+    cyan: { bg: t.accent.primaryMuted, text: t.semantic.info, border: t.accent.primaryBorder },
+    amber: { bg: t.accent.primaryMuted, text: t.semantic.warning, border: t.accent.primaryBorder },
+    green: { bg: t.accent.primaryMuted, text: t.semantic.success, border: t.accent.primaryBorder },
+    red: { bg: t.accent.primaryMuted, text: t.semantic.error, border: t.accent.primaryBorder },
   };
   const c = colors[color] || colors.slate;
   return (
@@ -130,7 +130,7 @@ const CardHeader = ({ children, t }) => (
     style={{
       fontSize: 10,
       fontWeight: 700,
-      color: t.accent.green,
+      color: t.accent.primary,
       textTransform: 'uppercase',
       letterSpacing: '0.08em',
       marginBottom: 12,
@@ -280,12 +280,12 @@ const OwnershipSubTab = ({ data, t }) => {
         style={{
           marginTop: 24,
           padding: 16,
-          background: t.accent.greenMuted,
+          background: t.accent.primaryMuted,
           borderRadius: 8,
-          border: `1px solid ${t.accent.greenBorder}`,
+          border: `1px solid ${t.accent.primaryBorder}`,
         }}
       >
-        <div style={{ fontSize: 12, color: t.accent.green, fontWeight: 500 }}>
+        <div style={{ fontSize: 12, color: t.accent.primary, fontWeight: 500 }}>
           Linked Properties
         </div>
         <div style={{ fontSize: 13, color: t.text.tertiary, marginTop: 4, fontStyle: 'italic' }}>
@@ -446,9 +446,9 @@ const DistressSubTab = ({ data, t }) => {
           height: '100%',
           minHeight: 200,
           padding: 32,
-          background: t.accent.greenMuted,
+          background: t.accent.primaryMuted,
           borderRadius: 12,
-          border: `1px solid ${t.accent.greenBorder}`,
+          border: `1px solid ${t.accent.primaryBorder}`,
         }}
       >
         <ShieldCheck size={48} style={{ marginBottom: 16 }} />
@@ -565,7 +565,7 @@ const ValuationSubTab = ({ data, t }) => {
           </div>
           <div>
             <div style={{ fontSize: 11, color: t.text.tertiary, marginBottom: 4 }}>Confidence</div>
-            <div style={{ fontSize: 14, color: t.accent.green, fontFamily: t.font.mono }}>{confidence ? `${confidence}/100` : '—'}</div>
+            <div style={{ fontSize: 14, color: t.accent.primary, fontFamily: t.font.mono }}>{confidence ? `${confidence}/100` : '—'}</div>
           </div>
         </div>
       </Card>
@@ -704,7 +704,7 @@ const PermitsSubTab = ({ data, t }) => {
               onMouseEnter={(e) => e.currentTarget.style.background = t.bg.tertiary}
               onMouseLeave={(e) => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : t.bg.secondary}
             >
-              <td style={{ ...tdStyle, fontFamily: t.font.mono, color: t.accent.green }}>{permit.permitNumber || '—'}</td>
+              <td style={{ ...tdStyle, fontFamily: t.font.mono, color: t.accent.primary }}>{permit.permitNumber || '—'}</td>
               <td style={{ ...tdStyle, color: t.text.primary }}>{permit.permitType || '—'}</td>
               <td style={tdStyle}>
                 <Badge t={t} color={permit.permitStatus === 'Completed' || permit.permitStatus === 'Final' ? 'green' : 'amber'}>
@@ -904,7 +904,7 @@ export default function PropertyTab({ data }) {
 
         {/* Quick Stats */}
         <div style={{ padding: 16, flex: 1, overflow: 'auto' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: t.accent.green, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: t.accent.primary, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
             Quick Stats
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -946,7 +946,7 @@ export default function PropertyTab({ data }) {
           <button
             style={{
               padding: '10px 0',
-              background: t.accent.green,
+              background: t.accent.primary,
               border: 'none',
               borderRadius: 6,
               color: t.text.primary,
@@ -1005,7 +1005,7 @@ export default function PropertyTab({ data }) {
               style={{
                 padding: '12px 16px',
                 border: 'none',
-                borderBottom: activeSubTab === tab.id ? `2px solid ${t.accent.green}` : '2px solid transparent',
+                borderBottom: activeSubTab === tab.id ? `2px solid ${t.accent.primary}` : '2px solid transparent',
                 background: 'transparent',
                 color: activeSubTab === tab.id ? t.text.primary : t.text.tertiary,
                 fontSize: 12,

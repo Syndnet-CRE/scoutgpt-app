@@ -71,8 +71,8 @@ export default function CompsTab({ data }) {
       <div
         style={{
           padding: '12px 20px',
-          background: t.accent.greenMuted,
-          borderBottom: `1px solid ${t.accent.greenBorder}`,
+          background: t.accent.primaryMuted,
+          borderBottom: `1px solid ${t.accent.primaryBorder}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -81,7 +81,7 @@ export default function CompsTab({ data }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div>
-            <div style={{ fontSize: 11, color: t.accent.green, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+            <div style={{ fontSize: 11, color: t.accent.primary, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
               Subject Property
             </div>
             <div style={{ fontSize: 14, fontWeight: 600, color: t.text.primary }}>{address}</div>
@@ -97,7 +97,7 @@ export default function CompsTab({ data }) {
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase' }}>Type</div>
-              <div style={{ fontSize: 13, color: t.accent.green }}>{propertyType}</div>
+              <div style={{ fontSize: 13, color: t.accent.primary }}>{propertyType}</div>
             </div>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function CompsTab({ data }) {
           <button
             style={{
               padding: '8px 16px',
-              background: t.accent.green,
+              background: t.accent.primary,
               border: 'none',
               borderRadius: 6,
               color: t.text.primary,
@@ -158,7 +158,7 @@ export default function CompsTab({ data }) {
               <button
                 onClick={handleExpandSearch}
                 style={{
-                  padding: '8px 16px', background: t.accent.green, border: 'none',
+                  padding: '8px 16px', background: t.accent.primary, border: 'none',
                   borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 }}
               >
@@ -225,7 +225,7 @@ export default function CompsTab({ data }) {
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: t.text.primary, fontFamily: t.font.mono, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.sf(areaBuilding)}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{yearBuilt || '—'}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: t.text.tertiary, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.dist(distanceMiles)}</td>
-                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.accent.green, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.score(similarityScore)}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: t.accent.primary, fontFamily: t.font.mono, fontWeight: 600, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.score(similarityScore)}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: t.text.secondary, borderBottom: `1px solid ${t.border.strong}`, fontSize: 12 }}>{fmt.date(recordingDate)}</td>
                 </tr>
               );
@@ -258,7 +258,7 @@ export default function CompsTab({ data }) {
           </div>
           <div>
             <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>AVG CAP</div>
-            <div style={{ fontSize: 16, color: t.accent.green, fontFamily: t.font.mono, fontWeight: 700 }}>{avgCap > 0 ? `${avgCap.toFixed(1)}%` : '—'}</div>
+            <div style={{ fontSize: 16, color: t.accent.primary, fontFamily: t.font.mono, fontWeight: 700 }}>{avgCap > 0 ? `${avgCap.toFixed(1)}%` : '—'}</div>
           </div>
         </div>
         <div style={{ fontSize: 13, color: t.text.secondary }}>

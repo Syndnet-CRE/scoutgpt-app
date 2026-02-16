@@ -99,7 +99,7 @@ function renderMarkdown(text, t) {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              color: isHeader ? '#a5b4fc' : '#94a3b8',
+              color: isHeader ? '#93c5fd' : '#94a3b8',
             }}>
               {renderInlineBold(cell, t)}
             </div>
@@ -156,9 +156,9 @@ function ChatPropertyCard({ property, loading, onShowOnMap, onViewDetails, saved
   if (!property) return null;
 
   const useType = property.propertyUseStandardized || "Unknown";
-  const typeColor = useType.toLowerCase().includes("commercial") ? t.accent.green :
+  const typeColor = useType.toLowerCase().includes("commercial") ? t.accent.primary :
     useType.toLowerCase().includes("vacant") ? t.semantic.warning :
-    useType.toLowerCase().includes("mixed") ? "#8b5cf6" : t.text.quaternary;
+    useType.toLowerCase().includes("mixed") ? "#60a5fa" : t.text.quaternary;
 
   return (
     <div onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)} style={{
@@ -203,11 +203,11 @@ function ChatPropertyCard({ property, loading, onShowOnMap, onViewDetails, saved
       <div style={{ display: "flex", gap: 6 }}>
         <button onClick={() => onShowOnMap?.(property.attomId)} style={{
           flex: 1, padding: "6px 0", borderRadius: 6, border: "none", cursor: "pointer",
-          background: t.accent.greenMuted, color: t.accent.green, fontSize: 11.5, fontWeight: 600,
+          background: t.accent.primaryMuted, color: t.accent.primary, fontSize: 11.5, fontWeight: 600,
           display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "all 150ms",
         }}
-          onMouseEnter={e => e.currentTarget.style.background = t.accent.greenBorder}
-          onMouseLeave={e => e.currentTarget.style.background = t.accent.greenMuted}
+          onMouseEnter={e => e.currentTarget.style.background = t.accent.primaryBorder}
+          onMouseLeave={e => e.currentTarget.style.background = t.accent.primaryMuted}
         ><MapPin size={14} />Show on Map</button>
         <button onClick={() => onViewDetails?.(property.attomId)} style={{
           flex: 1, padding: "6px 0", borderRadius: 6, border: `1px solid ${t.border.default}`,
@@ -227,11 +227,11 @@ function ThinkingIndicator({ t }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0" }}>
       <div style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-        background: t.accent.green,
+        background: t.accent.primary,
         display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={16} className="animate-spin" style={{ color: "#fff" }} /></div>
       <div style={{ paddingTop: 3 }}>
         <div style={{ display: "flex", gap: 4 }}>
-          {[0, 1, 2].map(i => (<div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: t.accent.green,
+          {[0, 1, 2].map(i => (<div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: t.accent.primary,
             animation: `pulse 1.4s ease-in-out ${i * 0.2}s infinite`, opacity: 0.5 }} />))}
         </div>
         <div style={{ fontSize: 12, color: t.text.quaternary, marginTop: 5 }}>Searching properties...</div>
@@ -243,7 +243,7 @@ function ThinkingIndicator({ t }) {
 // ── History Drawer ──
 function HistoryDrawer({ open, onClose, sessions, activeId, onSelect, onNewChat, searchQuery, onSearchChange, t }) {
   const ARTIFACTS = [
-    { icon: FileText, label: "Analysis Report", color: t.accent.green },
+    { icon: FileText, label: "Analysis Report", color: t.accent.primary },
     { icon: LayoutGrid, label: "Property Comparison", color: t.semantic.success },
     { icon: TrendingUp, label: "Market Trends", color: t.semantic.warning },
   ];
@@ -264,10 +264,10 @@ function HistoryDrawer({ open, onClose, sessions, activeId, onSelect, onNewChat,
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 16px 12px" }}>
           <span style={{ fontSize: 20, fontWeight: 700, color: t.text.primary }}>Chats</span>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button onClick={onNewChat} style={{ background: t.accent.green, border: "none", borderRadius: 14,
+            <button onClick={onNewChat} style={{ background: t.accent.primary, border: "none", borderRadius: 14,
               padding: "5px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#fff" }}
-              onMouseEnter={e => e.target.style.background = t.accent.greenHover}
-              onMouseLeave={e => e.target.style.background = t.accent.green}>+ New</button>
+              onMouseEnter={e => e.target.style.background = t.accent.primaryHover}
+              onMouseLeave={e => e.target.style.background = t.accent.primary}>+ New</button>
             <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer",
               color: t.text.quaternary, padding: 4, display: "flex", borderRadius: 6 }}
               onMouseEnter={e => e.currentTarget.style.color = t.text.primary}
@@ -280,7 +280,7 @@ function HistoryDrawer({ open, onClose, sessions, activeId, onSelect, onNewChat,
             style={{ width: "100%", background: t.bg.secondary, border: `1px solid ${t.border.default}`,
               borderRadius: 6, padding: "9px 12px 9px 38px", fontSize: 13, color: t.text.secondary,
               outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
-            onFocus={e => e.target.style.borderColor = t.accent.greenBorder}
+            onFocus={e => e.target.style.borderColor = t.accent.primaryBorder}
             onBlur={e => e.target.style.borderColor = t.border.default} />
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }} className="scout-scroll">
@@ -291,7 +291,7 @@ function HistoryDrawer({ open, onClose, sessions, activeId, onSelect, onNewChat,
             return (
               <button key={session.id} onClick={() => onSelect(session.id)} style={{
                 display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left",
-                background: isActive ? t.accent.green : "transparent", border: "none", borderRadius: 6,
+                background: isActive ? t.accent.primary : "transparent", border: "none", borderRadius: 6,
                 padding: "9px 12px", margin: "1px 0", cursor: "pointer", transition: "background 120ms",
               }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = t.bg.tertiary; }}
@@ -336,8 +336,8 @@ function ToggleButton({ onClick, t }) {
       style={{
         position: "fixed", right: GAP, bottom: "calc(50vh - 24px)",
         width: 48, height: 48, borderRadius: 12,
-        background: hovered ? t.accent.green : t.bg.secondary,
-        border: `1px solid ${hovered ? t.accent.green : t.border.default}`,
+        background: hovered ? t.accent.primary : t.bg.secondary,
+        border: `1px solid ${hovered ? t.accent.primary : t.border.default}`,
         boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
         transition: "all 200ms ease", zIndex: 55,
@@ -345,7 +345,7 @@ function ToggleButton({ onClick, t }) {
       <MessageSquare size={22} fill={hovered ? "white" : t.text.tertiary} color={hovered ? "white" : t.text.tertiary} />
       <div style={{
         position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: "50%",
-        background: t.accent.green, border: `2px solid ${t.bg.secondary}`,
+        background: t.accent.primary, border: `2px solid ${t.bg.secondary}`,
         opacity: hovered ? 0 : 1, transition: "opacity 150ms",
       }} />
     </button>
@@ -592,12 +592,12 @@ export default function ScoutGPTChatPanel({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <button onClick={createNewChat} style={{
-            background: t.accent.green, border: "none", borderRadius: 14,
+            background: t.accent.primary, border: "none", borderRadius: 14,
             padding: "4px 12px", cursor: "pointer",
             fontSize: 12, fontWeight: 600, color: "#fff",
           }}
-            onMouseEnter={e => e.target.style.background = t.accent.greenHover}
-            onMouseLeave={e => e.target.style.background = t.accent.green}>+ New</button>
+            onMouseEnter={e => e.target.style.background = t.accent.primaryHover}
+            onMouseLeave={e => e.target.style.background = t.accent.primary}>+ New</button>
           <button onClick={handleClose} style={{
             background: "none", border: "none", cursor: "pointer",
             color: t.text.quaternary, padding: 4, display: "flex", borderRadius: 4,
@@ -626,7 +626,7 @@ export default function ScoutGPTChatPanel({
               background: "#1e293b",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1877F2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                 <circle cx="12" cy="10" r="3"/>
               </svg>
@@ -674,8 +674,8 @@ export default function ScoutGPTChatPanel({
               /* ── User bubble ── */
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
                 <div style={{
-                  maxWidth: "82%", background: t.accent.greenMuted,
-                  border: `1px solid ${t.accent.greenBorder}`,
+                  maxWidth: "82%", background: t.accent.primaryMuted,
+                  border: `1px solid ${t.accent.primaryBorder}`,
                   borderRadius: `${RADIUS}px ${RADIUS}px 3px ${RADIUS}px`,
                   padding: "10px 14px", fontSize: 14, lineHeight: 1.5, color: t.text.primary,
                 }}>{msg.content}</div>
@@ -686,7 +686,7 @@ export default function ScoutGPTChatPanel({
                 <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 7, paddingLeft: 1 }}>
                   <div style={{
                     width: 20, height: 20, borderRadius: 6, flexShrink: 0,
-                    background: t.accent.green,
+                    background: t.accent.primary,
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
                     <Sparkles size={10} style={{ color: "white" }} />
@@ -702,13 +702,13 @@ export default function ScoutGPTChatPanel({
                   <div style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     marginTop: 12, padding: "9px 12px",
-                    background: t.accent.greenMuted, border: `1px solid ${t.accent.greenBorder}`, borderRadius: 7,
+                    background: t.accent.primaryMuted, border: `1px solid ${t.accent.primaryBorder}`, borderRadius: 7,
                   }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: t.semantic.success }}>{msg.properties.length} properties found</span>
                     <button onClick={() => {
                       onHighlightProperties?.(msg.properties);
                     }} style={{ background: "none", border: "none", cursor: "pointer",
-                      fontSize: 12, fontWeight: 600, color: t.accent.green }}>Show all on map →</button>
+                      fontSize: 12, fontWeight: 600, color: t.accent.primary }}>Show all on map →</button>
                   </div>
                 )}
 
@@ -748,7 +748,7 @@ export default function ScoutGPTChatPanel({
       <div style={{ padding: "10px 12px 8px", flexShrink: 0 }}>
         <div style={{
           background: inputFocused ? t.bg.tertiary : t.bg.secondary,
-          border: `1px solid ${inputFocused ? t.accent.greenBorder : t.border.default}`,
+          border: `1px solid ${inputFocused ? t.accent.primaryBorder : t.border.default}`,
           borderRadius: RADIUS, padding: "10px 11px", transition: "all 200ms ease",
           display: "flex", flexDirection: "column", gap: 6,
         }}>
@@ -775,7 +775,7 @@ export default function ScoutGPTChatPanel({
               width: 30, height: 30, borderRadius: 7, border: "none",
               display: "flex", alignItems: "center", justifyContent: "center",
               cursor: hasText && !loading ? "pointer" : "not-allowed",
-              background: hasText && !loading ? t.accent.green : t.bg.tertiary,
+              background: hasText && !loading ? t.accent.primary : t.bg.tertiary,
               color: hasText && !loading ? "#fff" : t.text.quaternary,
               transition: "all 200ms ease", flexShrink: 0,
             }}>{loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowUp size={16} />}</button>
