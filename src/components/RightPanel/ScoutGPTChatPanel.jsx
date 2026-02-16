@@ -20,12 +20,43 @@ function cleanResponseText(text) {
   return cleaned.trim();
 }
 
-// ── Quick Actions ──
+// ── Quick Action Icons (Lucide style) ──
+const QuickActionIcons = {
+  land: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/>
+      <path d="M8 2v16"/>
+      <path d="M16 6v16"/>
+    </svg>
+  ),
+  permit: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+    </svg>
+  ),
+  alert: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  ),
+  trending: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </svg>
+  ),
+};
+
 const QUICK_ACTIONS = [
-  { emoji: "🔍", text: "Vacant land in 78702" },
-  { emoji: "🏢", text: "Commercial properties" },
-  { emoji: "🏛️", text: "Properties near me" },
-  { emoji: "📈", text: "Analyze trends" },
+  { icon: "land", text: "Vacant land 78702" },
+  { icon: "permit", text: "Entitled parcels" },
+  { icon: "alert", text: "Distressed assets" },
+  { icon: "trending", text: "High equity targets" },
 ];
 
 // ── Markdown renderer ──
@@ -581,49 +612,49 @@ export default function ScoutGPTChatPanel({
         {(messages.length === 0 || (messages.length === 1 && messages[0].role === 'assistant')) && !loading && (
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", height: "100%", gap: 16, paddingBottom: 40,
+            justifyContent: "center", height: "100%",
             animation: "fadeUp 400ms ease-out",
           }}>
             {/* Map Pin Icon */}
             <div style={{
-              width: 44, height: 44, borderRadius: 12,
+              width: 40, height: 40, borderRadius: 10,
               background: "#1e293b",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                 <circle cx="12" cy="10" r="3"/>
               </svg>
             </div>
 
             {/* Title */}
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0", marginTop: 0 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#e2e8f0", marginTop: 12 }}>
               Start a new search
             </div>
 
             {/* Subtitle */}
-            <div style={{ fontSize: 13, color: "#64748b", textAlign: "center", marginTop: -6 }}>
+            <div style={{ fontSize: 13, color: "#64748b", textAlign: "center", marginTop: 4, marginBottom: 20 }}>
               Ask about properties, analyze parcels, or explore the map
             </div>
 
-            {/* 2x2 Quick Action Grid */}
+            {/* Quick Action Chips - flex wrap */}
             <div style={{
-              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
-              marginTop: 8, width: "100%", maxWidth: 320,
+              display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8,
+              width: "100%", maxWidth: 360,
             }}>
               {QUICK_ACTIONS.map((a, i) => (
                 <button key={i} onClick={() => handleSend(a.text)} style={{
-                  background: "#1e293b",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  background: "rgba(255,255,255,0.06)",
                   border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 20, padding: "8px 16px", cursor: "pointer",
-                  fontSize: 13, fontWeight: 400, color: "#94a3b8",
-                  transition: "all 150ms", textAlign: "center",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  borderRadius: 999, padding: "6px 14px", cursor: "pointer",
+                  fontSize: 13, fontWeight: 500, color: "#94a3b8",
+                  transition: "all 0.15s ease",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; e.currentTarget.style.color = "#e2e8f0"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#94a3b8"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.10)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; e.currentTarget.style.color = "#e2e8f0"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#94a3b8"; }}
                 >
-                  <span>{a.emoji}</span>
+                  {QuickActionIcons[a.icon]}
                   <span>{a.text}</span>
                 </button>
               ))}
