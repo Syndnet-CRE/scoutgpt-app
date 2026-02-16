@@ -525,6 +525,8 @@ export default function ScoutGPTChatPanel({
   }, [onClose]);
 
   const hasText = input.trim().length > 0;
+  const hasUserMessages = messages.some(m => m.role === 'user');
+  const showWelcome = !hasUserMessages && !loading;
 
   // ── Collapsed state ──
   if (!panelOpen) {
@@ -606,10 +608,13 @@ export default function ScoutGPTChatPanel({
       </div>
 
       {/* ── Scroll Region ── */}
-      <div ref={scrollRef} className="scout-scroll" style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px" }}>
+      <div ref={scrollRef} className="scout-scroll" style={{
+        flex: 1, overflowY: "auto", padding: "14px 14px 8px",
+        ...(showWelcome && { display: "flex", justifyContent: "center", alignItems: "center" }),
+      }}>
 
         {/* Welcome Screen */}
-        {(messages.length === 0 || (messages.length === 1 && messages[0].role === 'assistant')) && !loading && (
+        {showWelcome && (
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center",
             justifyContent: "center", height: "100%",
@@ -662,8 +667,8 @@ export default function ScoutGPTChatPanel({
           </div>
         )}
 
-        {/* Messages */}
-        {messages.map((msg, i) => (
+        {/* Messages - only render when there are user messages */}
+        {hasUserMessages && messages.map((msg, i) => (
           <div key={i} style={{ marginBottom: 18, animation: "fadeUp 250ms ease-out" }}>
             {msg.role === "user" ? (
               /* ── User bubble ── */
