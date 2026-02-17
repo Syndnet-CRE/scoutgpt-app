@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://scoutgpt-app.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://scoutgpt-app.onrender.com/api';
 
 const streetViewCache = new Map();
 
@@ -37,7 +37,7 @@ export function useStreetView(attomId) {
     setLoading(true);
     setError(null);
 
-    fetch(`${API_URL}/api/property/${attomId}/streetview`, {
+    fetch(`${API_BASE}/property/${attomId}/streetview`, {
       signal: controller.signal,
     })
       .then((res) => {
