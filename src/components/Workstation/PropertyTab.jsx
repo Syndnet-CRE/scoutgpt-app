@@ -3,6 +3,8 @@ import { Building, User, Handshake, DollarSign, AlertTriangle, BarChart3, FileTe
 import { useTheme } from '../../theme.jsx';
 import useIntelligence from '../../hooks/useIntelligence';
 import IntelligenceScorecard from './IntelligenceScorecard';
+import { useStreetView } from '../../hooks/useStreetView';
+import StreetViewImage from '../StreetView/StreetViewImage';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // FORMATTERS
@@ -820,6 +822,9 @@ export default function PropertyTab({ data }) {
   // Fetch intelligence scores from backend
   const { intelligence, loading } = useIntelligence(data?.attomId);
 
+  // Fetch street view image
+  const { streetView, loading: svLoading } = useStreetView(data?.attomId || data?.attom_id);
+
   if (!data) return <EmptyState t={t} icon={Home} title="No property selected" />;
 
   // Extract property info for sidebar
@@ -877,21 +882,8 @@ export default function PropertyTab({ data }) {
           flexShrink: 0,
         }}
       >
-        {/* Street View Placeholder */}
-        <div
-          style={{
-            height: 140,
-            background: t.bg.secondary,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderBottom: `1px solid ${t.border.strong}`,
-            color: t.text.tertiary,
-            fontSize: 12,
-          }}
-        >
-          Street View Coming Soon
-        </div>
+        {/* Street View Image */}
+        <StreetViewImage streetView={streetView} loading={svLoading} height={260} showCameraIcon={true} />
 
         {/* Address Block */}
         <div style={{ padding: 16, borderBottom: `1px solid ${t.border.strong}` }}>

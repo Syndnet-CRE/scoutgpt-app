@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, ChevronDown, ChevronUp, Building, User, Handshake, DollarSign, AlertTriangle, BarChart3, FileText, Hammer, Shield, Camera, Eye, EyeOff, MapPin, Calendar, Home, Briefcase, Phone, Mail, ExternalLink, Check, TrendingUp, LayoutDashboard } from 'lucide-react';
 import { useTheme } from '../../theme.jsx';
+import { useStreetView } from '../../hooks/useStreetView';
+import StreetViewImage from '../StreetView/StreetViewImage';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // UTILITIES
@@ -985,6 +987,7 @@ const RiskEnvironment = ({ data }) => {
 
 const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
   const { t } = useTheme();
+  const { streetView, loading: svLoading } = useStreetView(data?.attomId || data?.attom_id);
   const [closeHovered, setCloseHovered] = useState(false);
   const [workstationHovered, setWorkstationHovered] = useState(false);
 
@@ -1037,6 +1040,8 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
 
   return (
     <Glass className="w-[416px] overflow-hidden shadow-2xl">
+      <StreetViewImage streetView={streetView} loading={svLoading} height={150} showCameraIcon={false} />
+
       {/* Distress Banner */}
       {(hasForeclosure || hasTaxDelinquent) && (
         <div className="px-4 py-2" style={{ background: hasForeclosure ? `${t.semantic.error}20` : `${t.semantic.warning}20` }}>
