@@ -69,7 +69,8 @@ export default function MapContainer({
   const gisDataRef = useRef({});
   const gisFetchTimeoutRef = useRef(null);
   const visibleGisLayersRef = useRef(visibleGisLayers);
-  const lastFetchBoundsRef = useRef({}); // Track last fetch bounds per layer to reduce spam
+  const gisFetchingRef = useRef({}); // Track in-progress fetches per layer
+  const lastBoundsKeyRef = useRef({}); // Track last fetch bounds key per layer (string comparison)
 
   // Handle popup expand — re-pan map to center larger DetailModule
   const handlePopupExpand = () => {
@@ -740,58 +741,55 @@ export default function MapContainer({
         });
       }
 
-      // Re-fetch active GIS layers on viewport change (debounced, with viewport change threshold)
+      // Re-fetch active GIS layers on viewport change (debounced, with bounds-change + in-progress guards)
       clearTimeout(gisFetchTimeoutRef.current);
       gisFetchTimeoutRef.current = setTimeout(() => {
         const currentGisLayers = visibleGisLayersRef.current;
         if (!currentGisLayers) return;
         const currentBounds = map.getBounds();
 
+        // Build bounds key (3 decimal places = ~100m precision) for change detection
+        const boundsKey = `${currentBounds.getWest().toFixed(3)},${currentBounds.getSouth().toFixed(3)},${currentBounds.getEast().toFixed(3)},${currentBounds.getNorth().toFixed(3)}`;
+
         for (const [layerKey, isVisible] of Object.entries(currentGisLayers)) {
           if (!isVisible) continue;
 
-          // Check if viewport has changed significantly (>20%) since last fetch
-          const lastBounds = lastFetchBoundsRef.current[layerKey];
-          if (lastBounds) {
-            const lastWidth = lastBounds.getEast() - lastBounds.getWest();
-            const lastHeight = lastBounds.getNorth() - lastBounds.getSouth();
-            const currWidth = currentBounds.getEast() - currentBounds.getWest();
-            const currHeight = currentBounds.getNorth() - currentBounds.getSouth();
+          // Skip if fetch already in progress for this layer
+          if (gisFetchingRef.current[layerKey]) {
+            console.log(`[GIS] Skipping ${layerKey} - fetch already in progress`);
+            continue;
+          }
 
-            // Calculate overlap percentage
-            const overlapWest = Math.max(lastBounds.getWest(), currentBounds.getWest());
-            const overlapEast = Math.min(lastBounds.getEast(), currentBounds.getEast());
-            const overlapSouth = Math.max(lastBounds.getSouth(), currentBounds.getSouth());
-            const overlapNorth = Math.min(lastBounds.getNorth(), currentBounds.getNorth());
-
-            if (overlapEast > overlapWest && overlapNorth > overlapSouth) {
-              const overlapArea = (overlapEast - overlapWest) * (overlapNorth - overlapSouth);
-              const currArea = currWidth * currHeight;
-              const overlapRatio = overlapArea / currArea;
-
-              // Skip re-fetch if >80% overlap (viewport changed <20%)
-              // Use stricter threshold for expensive layers like floodplains
-              const threshold = (layerKey === 'floodplains') ? 0.7 : 0.8;
-              if (overlapRatio > threshold) {
-                continue;
-              }
-            }
+          // Skip if bounds haven't changed significantly (same key = same viewport)
+          if (lastBoundsKeyRef.current[layerKey] === boundsKey) {
+            continue;
           }
 
           const sourceId = `gis-${layerKey}`;
-          lastFetchBoundsRef.current[layerKey] = currentBounds;
+
+          // Mark fetch as in-progress
+          gisFetchingRef.current[layerKey] = true;
 
           fetchGisLayer(layerKey, currentBounds).then(geojson => {
             if (!geojson || !mapRef.current) return;
+            // Check layer is still visible (user might have toggled off during fetch)
+            if (!visibleGisLayersRef.current?.[layerKey]) return;
             const m = mapRef.current;
             const src = m.getSource(sourceId);
             if (src) {
               src.setData(geojson);
               gisDataRef.current[layerKey] = geojson;
+              // Only update bounds key on successful fetch
+              lastBoundsKeyRef.current[layerKey] = boundsKey;
             }
-          }).catch(() => {});
+          }).catch((err) => {
+            console.warn(`[GIS] Re-fetch failed for ${layerKey}:`, err.message);
+          }).finally(() => {
+            // Always clear in-progress flag
+            gisFetchingRef.current[layerKey] = false;
+          });
         }
-      }, 500);
+      }, 800); // Increased from 500ms to reduce fetch storm
     });
 
     mapRef.current = map;

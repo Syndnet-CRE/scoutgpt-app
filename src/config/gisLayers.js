@@ -367,10 +367,18 @@ async function safeFetchJSON(url) {
     const preferred = methods.find(m => m.name === cached);
     if (preferred) { methods.splice(methods.indexOf(preferred), 1); methods.unshift(preferred); }
   }
+  let lastStatus = null;
   for (const method of methods) {
     try {
       const resp = await method.fn();
-      if (!resp.ok) continue;
+      lastStatus = resp.status;
+      if (!resp.ok) {
+        // Log 404s and other HTTP errors with URL for debugging
+        if (resp.status === 404) {
+          console.warn(`[GIS] Endpoint 404: ${url}`);
+        }
+        continue;
+      }
       const text = await resp.text();
       if (!text || text.trim().startsWith('<')) continue;
       const data = JSON.parse(text);
@@ -378,7 +386,7 @@ async function safeFetchJSON(url) {
       return data;
     } catch { /* try next method */ }
   }
-  throw new Error(`All fetch methods failed for ${host}`);
+  throw new Error(`All fetch methods failed for ${host} (last status: ${lastStatus})`);
 }
 
 function buildQueryUrl(baseUrl, bounds, offset = 0, max = 1000) {
