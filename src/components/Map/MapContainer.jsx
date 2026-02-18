@@ -193,6 +193,9 @@ export default function MapContainer({
   // Ref for utility line hover popup (one at a time)
   const utilityPopupRef = useRef(null);
 
+  // Ref for polygon (zoning/flood) hover popup
+  const polygonPopupRef = useRef(null);
+
   // Helper: add hover handlers for utility line layers
   function addUtilityLineHover(map, layerId, layerKey) {
     // Get friendly name for layer type
@@ -218,8 +221,8 @@ export default function MapContainer({
           }
         }
 
-        // Extract material from common field names
-        const materialAliases = ['MATERIAL', 'PIPE_MATERIAL', 'PIPEMATERIAL', 'MAT', 'PIPE_MAT'];
+        // Extract material from common field names (include lowercase for Neon API)
+        const materialAliases = ['material', 'MATERIAL', 'PIPE_MATERIAL', 'PIPEMATERIAL', 'MAT', 'PIPE_MAT'];
         let material = null;
         for (const alias of materialAliases) {
           if (props[alias] != null && props[alias] !== '') {
@@ -228,9 +231,13 @@ export default function MapContainer({
           }
         }
 
+        // Extract source
+        const source = props.source || '';
+
         // Build popup content
         const diamText = diameter != null ? `${diameter}"` : 'Unknown';
         const matText = material ? ` • ${material}` : '';
+        const sourceText = source ? `<div style="color: #94a3b8; font-size: 10px; margin-top: 2px;">${source}</div>` : '';
 
         // Remove existing utility popup
         if (utilityPopupRef.current) {
@@ -260,6 +267,7 @@ export default function MapContainer({
             ">
               <div style="font-weight: 600; color: #a5b4fc; margin-bottom: 2px;">${layerName} Main</div>
               <div style="font-family: 'JetBrains Mono', monospace;">⌀ ${diamText}${matText}</div>
+              ${sourceText}
             </div>
           `)
           .addTo(map);
@@ -280,6 +288,143 @@ export default function MapContainer({
       if (utilityPopupRef.current) {
         utilityPopupRef.current.remove();
         utilityPopupRef.current = null;
+      }
+    });
+  }
+
+  // Helper: add hover handlers for zoning district layers
+  function addZoningHover(map, fillLayerId) {
+    map.on('mouseenter', fillLayerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const zoneCode = props.zone_code || props._zone_category || 'Unknown';
+        const zoneCategory = props.zone_category || props._zone_category || '';
+        const source = props.source || '';
+
+        // Remove existing polygon popup
+        if (polygonPopupRef.current) {
+          polygonPopupRef.current.remove();
+          polygonPopupRef.current = null;
+        }
+
+        // Build popup content
+        const sourceText = source ? `<div style="color: #94a3b8; font-size: 10px; margin-top: 2px;">${source}</div>` : '';
+
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'gis-polygon-popup',
+          offset: 10,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: rgba(15, 23, 42, 0.95);
+              border: 1px solid rgba(236, 72, 153, 0.4);
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: 'DM Sans', sans-serif;
+              color: #e2e8f0;
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            ">
+              <div style="font-weight: 600; color: #f472b6; margin-bottom: 2px;">Zoning</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-weight: 500;">${zoneCode}</div>
+              ${zoneCategory && zoneCategory !== zoneCode ? `<div style="color: #94a3b8; font-size: 11px;">${zoneCategory}</div>` : ''}
+              ${sourceText}
+            </div>
+          `)
+          .addTo(map);
+
+        polygonPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', fillLayerId, (e) => {
+      if (polygonPopupRef.current && e.lngLat) {
+        polygonPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', fillLayerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (polygonPopupRef.current) {
+        polygonPopupRef.current.remove();
+        polygonPopupRef.current = null;
+      }
+    });
+  }
+
+  // Helper: add hover handlers for floodplain layers
+  function addFloodHover(map, fillLayerId) {
+    map.on('mouseenter', fillLayerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const floodZone = props.flood_zone || props._flood_zone || 'Unknown';
+        const isSfha = props.is_sfha;
+        const source = props.source || '';
+
+        // Remove existing polygon popup
+        if (polygonPopupRef.current) {
+          polygonPopupRef.current.remove();
+          polygonPopupRef.current = null;
+        }
+
+        // Determine SFHA status text
+        const sfhaText = isSfha ? '⚠ SFHA (High Risk)' : 'Non-SFHA';
+        const sfhaColor = isSfha ? '#fbbf24' : '#94a3b8';
+
+        // Build popup content
+        const sourceText = source ? `<div style="color: #94a3b8; font-size: 10px; margin-top: 2px;">${source}</div>` : '';
+
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'gis-polygon-popup',
+          offset: 10,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: rgba(15, 23, 42, 0.95);
+              border: 1px solid rgba(239, 68, 68, 0.4);
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: 'DM Sans', sans-serif;
+              color: #e2e8f0;
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              max-width: 280px;
+            ">
+              <div style="font-weight: 600; color: #f87171; margin-bottom: 2px;">Flood Zone</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-weight: 500; white-space: normal; word-wrap: break-word;">${floodZone}</div>
+              <div style="color: ${sfhaColor}; font-size: 11px; margin-top: 2px;">${sfhaText}</div>
+              ${sourceText}
+            </div>
+          `)
+          .addTo(map);
+
+        polygonPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', fillLayerId, (e) => {
+      if (polygonPopupRef.current && e.lngLat) {
+        polygonPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', fillLayerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (polygonPopupRef.current) {
+        polygonPopupRef.current.remove();
+        polygonPopupRef.current = null;
       }
     });
   }
@@ -359,6 +504,9 @@ export default function MapContainer({
           'line-opacity': 0.5
         }
       }, beforeId);
+
+      // Add hover popup for zoning district details
+      addZoningHover(map, `${sourceId}-fill`);
     } else if (config.geometryType === 'fill' && layerKey === 'floodplains') {
       // Flood: use _flood_zone (normalized during GeoJSON conversion)
       const floodValue = ['get', '_flood_zone'];
@@ -401,6 +549,9 @@ export default function MapContainer({
           'line-opacity': 0.5  // Consistent outline opacity
         }
       }, beforeId);
+
+      // Add hover popup for floodplain details
+      addFloodHover(map, `${sourceId}-fill`);
     }
 
     // After adding, reorder to enforce z-order
