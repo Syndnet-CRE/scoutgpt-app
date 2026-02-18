@@ -17,6 +17,9 @@ export const darkTheme = {
     primaryHover: "#1565D8",
     primaryMuted: "rgba(24, 119, 242, 0.12)",
     primaryBorder: "rgba(24, 119, 242, 0.25)",
+    green: "#34C759",
+    greenHover: "#2DB84E",
+    greenMuted: "rgba(52, 199, 89, 0.12)",
   },
   text: {
     primary: "rgba(255, 255, 255, 1.0)",
@@ -58,6 +61,9 @@ export const lightTheme = {
     primaryHover: "#1260CC",
     primaryMuted: "rgba(21, 112, 232, 0.08)",
     primaryBorder: "rgba(21, 112, 232, 0.20)",
+    green: "#28A745",
+    greenHover: "#218838",
+    greenMuted: "rgba(40, 167, 69, 0.08)",
   },
   text: {
     primary: "rgba(0, 0, 0, 0.92)",

@@ -5,7 +5,7 @@ import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import ScoutGPTChatPanel from './components/RightPanel/ScoutGPTChatPanel';
 import { PropertyCard } from './components/PropertyCard/PropertyCardModule';
-import WorkstationDrawer from './components/Workstation/WorkstationDrawer';
+import WorkstationPanel from './components/Workstation/WorkstationPanel';
 import { useProperties } from './hooks/useProperties';
 import { usePropertyDetail } from './hooks/usePropertyDetail';
 
@@ -57,9 +57,13 @@ export default function App() {
   // Ref for map instance (used by filter API)
   const mapInstanceRef = useRef(null);
 
+  // Right panel mode: 'chat' | 'workstation'
+  const [rightPanelMode, setRightPanelMode] = useState('chat');
+
   // Workstation state
   const [workstationOpen, setWorkstationOpen] = useState(false);
   const [workstationProperty, setWorkstationProperty] = useState(null);
+  const [activeWorkstationTab, setActiveWorkstationTab] = useState('Overview');
 
   // Track if workstation was open in previous render (to avoid clearing popup on first property load)
   const wasWorkstationOpenRef = useRef(false);
@@ -223,6 +227,8 @@ export default function App() {
   const handleOpenWorkstation = useCallback((propertyData) => {
     setWorkstationProperty(propertyData);
     setWorkstationOpen(true);
+    setRightPanelMode('workstation');
+    setActiveWorkstationTab('Overview');
     // Close the Mapbox popup
     clearProperty();
     setPopupContainer(null);
@@ -302,28 +308,107 @@ export default function App() {
         )}
       </div>
 
-        {/* Right Panel — Scout AI Chat (floating overlay) */}
-        <ScoutGPTChatPanel
-          messages={messages}
-          loading={chatLoading}
-          onSend={handleChatSend}
-          onSelectProperty={handleSelectProperty}
-          onShowOnMap={handleShowOnMap}
-          onHighlightProperties={handleHighlightProperties}
-          onNewChat={resetChat}
-          onLoadSession={setMessages}
-          zIndex={getPanelZ('right')}
-          onBringToFront={() => setWorkstationOnTop(false)}
+        {/* Right Panel — Scout AI Chat (visible when mode is chat) */}
+        {rightPanelMode === 'chat' && (
+          <ScoutGPTChatPanel
+            messages={messages}
+            loading={chatLoading}
+            onSend={handleChatSend}
+            onSelectProperty={handleSelectProperty}
+            onShowOnMap={handleShowOnMap}
+            onHighlightProperties={handleHighlightProperties}
+            onNewChat={resetChat}
+            onLoadSession={setMessages}
+            zIndex={getPanelZ('right')}
+            onBringToFront={() => setWorkstationOnTop(false)}
+          />
+        )}
+
+        {/* Collapsed Chat Strip (visible when workstation is active) */}
+        {rightPanelMode === 'workstation' && (
+          <button
+            onClick={() => setRightPanelMode('chat')}
+            style={{
+              position: 'fixed',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 48,
+              zIndex: 64,
+              background: t.bg.secondary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: 'none',
+              borderLeft: `1px solid ${t.border.default}`,
+              padding: 0,
+            }}
+          >
+            <span style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              fontSize: 12,
+              fontWeight: 600,
+              color: t.text.tertiary,
+              fontFamily: t.font.display,
+              letterSpacing: '0.05em',
+            }}>
+              Scout AI
+            </span>
+          </button>
+        )}
+
+        {/* Workstation Panel (right side slide-in) */}
+        <WorkstationPanel
+          isOpen={workstationOpen && rightPanelMode === 'workstation'}
+          onClose={() => {
+            setWorkstationOpen(false);
+            setRightPanelMode('chat');
+          }}
+          propertyData={workstationProperty}
+          activeTab={activeWorkstationTab}
+          onTabChange={setActiveWorkstationTab}
+          onOpenChat={() => setRightPanelMode('chat')}
         />
 
-        {/* Bottom Drawer Workstation */}
-        <WorkstationDrawer
-          data={workstationProperty}
-          isOpen={workstationOpen}
-          onClose={() => setWorkstationOpen(false)}
-          zIndex={getPanelZ('workstation')}
-          onBringToFront={() => setWorkstationOnTop(true)}
-        />
+        {/* Collapsed Workstation Strip (visible when chat is active and workstation has data) */}
+        {rightPanelMode === 'chat' && workstationProperty && (
+          <button
+            onClick={() => {
+              setRightPanelMode('workstation');
+              setWorkstationOpen(true);
+            }}
+            style={{
+              position: 'fixed',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 48,
+              zIndex: 54,
+              background: t.bg.secondary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: 'none',
+              borderLeft: `1px solid ${t.border.default}`,
+              padding: 0,
+            }}
+          >
+            <span style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              fontSize: 12,
+              fontWeight: 600,
+              color: t.text.tertiary,
+              fontFamily: t.font.display,
+              letterSpacing: '0.05em',
+            }}>
+              Workstation
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );
