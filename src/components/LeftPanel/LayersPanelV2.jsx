@@ -47,7 +47,7 @@ const SECTIONS = [
     { id: "futureLandUse", label: "Future Land Use", sym: sym("fill","#8B5CF6"), hasData: false, badge: "Soon" },
     { id: "zoningOverlays", label: "Zoning Overlays", sym: sym("dashed","#60a5fa"), hasData: false, badge: "Later" },
   ]},
-  { id: "environmental", title: "ENVIRONMENTAL", icon: Trees, layers: [
+  { id: "environmental", title: "ENVIRONMENTAL", icon: Trees, hasOpacity: true, layers: [
     { id: "floodZones", label: "FEMA Flood Zones", sym: sym("fill","#3B82F6"), hasData: true },
     { id: "wetlands", label: "Wetlands", sym: sym("fill","#14B8A6"), hasData: false, badge: "Later" },
     { id: "soilTypes", label: "Soil Types", sym: sym("fill","#A3714F"), hasData: false, badge: "Later" },
@@ -66,10 +66,10 @@ const SECTIONS = [
     { id: "tifDistricts", label: "TIF Districts", sym: sym("dashed","#f59e0b"), hasData: false, badge: "Later" },
     { id: "enterpriseZones", label: "Enterprise Zones", sym: sym("fill","#8B5CF6"), hasData: false, badge: "Later" },
   ]},
-  { id: "utilities", title: "UTILITIES", icon: Wrench, layers: [
-    { id: "waterMains", label: "Water Mains", sym: sym("solid","#3B82F6"), hasData: true },
-    { id: "sewerMains", label: "Sewer Mains", sym: sym("dashed","#B45309"), hasData: true },
-    { id: "stormwaterLines", label: "Storm Water", sym: sym("solid","#06b6d4"), hasData: true },
+  { id: "utilities", title: "UTILITIES", icon: Wrench, hasOpacity: true, layers: [
+    { id: "waterMains", label: "Water Mains", gradient: ["#93c5fd","#3b82f6","#1e3a8a"], hasData: true },
+    { id: "sewerMains", label: "Sewer Mains", gradient: ["#86efac","#22c55e","#14532d"], hasData: true },
+    { id: "stormwaterLines", label: "Storm Water", gradient: ["#67e8f9","#06b6d4","#164e63"], hasData: true },
     { id: "waterServiceAreas", label: "Water Service Areas", sym: sym("solid","#60a5fa"), hasData: true },
     { id: "sewerServiceAreas", label: "Sewer Service Areas", sym: sym("solid","#C2956A"), hasData: true },
     { id: "electricServiceAreas", label: "Electric Service Areas", sym: sym("solid","#D97706"), hasData: true },
@@ -298,7 +298,7 @@ function RequestModal({ isOpen, onClose, t }) {
 // ── MAIN ──
 // This is the original LayersPanelV2 component with added onLayerChange and onFilterChange callbacks.
 // It notifies the parent (App.jsx) whenever a wired layer or filter changes state.
-export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, mapRef, zIndex, onBringToFront }) {
+export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, onGisOpacityChange, gisLayerOpacity, mapRef, zIndex, onBringToFront }) {
   const { t } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("layers");
@@ -307,7 +307,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
   const [pack, setPack] = useState(null);
   const [baseMap, setBaseMap] = useState("streets");
   const [ls, setLs] = useState(() => { const i = {}; SECTIONS.forEach(s => s.layers.forEach(l => { i[l.id]=false; })); i.parcelBoundaries=true; return i; });
-  const [op, setOp] = useState({ parcels: 80, zoning: 60 });
+  const [op, setOp] = useState({ parcels: 80, zoning: 25, environmental: 35, utilities: 85 });
   const [fs, setFs] = useState(() => { const i = {}; FILTER_GROUPS.forEach(g => g.filters.forEach(f => { if (f.type==="range") i[f.id]=[f.min,f.max]; else if (f.type==="select") i[f.id]=f.options[0]; else i[f.id]=false; })); return i; });
 
   // New filter API hook
@@ -393,6 +393,23 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
 
   const tog = id => setLs(p => ({...p,[id]:!p[id]}));
   const selRadio = (sid, lid) => { const sec = SECTIONS.find(s=>s.id===sid); if (!sec) return; setLs(p => { const n={...p}; sec.layers.forEach(l => { n[l.id] = l.id===lid ? !p[lid] : false; }); return n; }); };
+
+  // Map section ID to GIS layer keys for opacity updates
+  const SECTION_TO_GIS = {
+    zoning: ['zoning_districts'],
+    environmental: ['floodplains'],
+    utilities: ['water_lines', 'wastewater_lines', 'stormwater_lines'],
+  };
+
+  // Handle opacity slider change — update local state AND notify parent
+  const handleOpacityChange = (sectionId, percent) => {
+    setOp(p => ({ ...p, [sectionId]: percent }));
+    const opacity = percent / 100; // Convert 0-100 to 0-1
+    const gisKeys = SECTION_TO_GIS[sectionId];
+    if (gisKeys && onGisOpacityChange) {
+      gisKeys.forEach(key => onGisOpacityChange(key, opacity));
+    }
+  };
   const cntActive = sec => sec.layers.filter(l => ls[l.id]).length;
   const totalLayers = Object.values(ls).filter(Boolean).length;
   const cntFilters = Object.entries(fs).filter(([k,v]) => { const d=FILTER_GROUPS.flatMap(g=>g.filters).find(f=>f.id===k); if(!d) return false; if(d.type==="range") return v[0]!==d.min||v[1]!==d.max; if(d.type==="select") return v!==d.options[0]; return v===true; }).length;
@@ -494,7 +511,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
             {sec.hasOpacity && cntActive(sec)>0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 4px 2px 36px" }}>
                 <Eye size={12} color={t.text.tertiary}/>
-                <input type="range" min="0" max="100" value={op[sec.id]||80} onChange={e=>setOp(p=>({...p,[sec.id]:Number(e.target.value)}))} style={{ flex: 1, height: 3, accentColor: t.accent.primary, cursor: "pointer" }}/>
+                <input type="range" min="0" max="100" value={op[sec.id]||80} onChange={e=>handleOpacityChange(sec.id, Number(e.target.value))} style={{ flex: 1, height: 3, accentColor: t.accent.primary, cursor: "pointer" }}/>
                 <span style={{ fontSize: 10, color: t.text.tertiary, width: 26, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{op[sec.id]||80}%</span>
               </div>
             )}

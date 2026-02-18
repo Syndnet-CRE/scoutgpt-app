@@ -47,6 +47,7 @@ export default function MapContainer({
   schoolsGeoJSON,
   visibleLayers,
   visibleGisLayers,
+  gisLayerOpacity,
   highlightedProperties,
   chatMarkers,
   onParcelClick,
@@ -974,6 +975,40 @@ export default function MapContainer({
       }
     }
   }, [mapLoaded, visibleGisLayers]);
+
+  // Update GIS layer opacity when slider changes (also re-applies after layer creation)
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current || !gisLayerOpacity) return;
+    const map = mapRef.current;
+
+    for (const [layerKey, opacity] of Object.entries(gisLayerOpacity)) {
+      const config = GIS_LAYERS[layerKey];
+      if (!config) continue;
+
+      // Only update if layer is visible
+      if (!visibleGisLayers?.[layerKey]) continue;
+
+      const sourceId = `gis-${layerKey}`;
+
+      // Update opacity based on layer type
+      if (config.geometryType === 'line') {
+        const lineLayerId = `${sourceId}-line`;
+        if (map.getLayer(lineLayerId)) {
+          map.setPaintProperty(lineLayerId, 'line-opacity', opacity);
+        }
+      } else if (config.geometryType === 'fill') {
+        const fillLayerId = `${sourceId}-fill`;
+        const outlineLayerId = `${sourceId}-outline`;
+        if (map.getLayer(fillLayerId)) {
+          map.setPaintProperty(fillLayerId, 'fill-opacity', opacity);
+        }
+        if (map.getLayer(outlineLayerId)) {
+          // Outline slightly more opaque for visibility
+          map.setPaintProperty(outlineLayerId, 'line-opacity', Math.min(opacity + 0.25, 1));
+        }
+      }
+    }
+  }, [mapLoaded, gisLayerOpacity, visibleGisLayers]);
 
   // Highlight properties from chat results (filter-based — attom_id is numeric in tiles)
   useEffect(() => {

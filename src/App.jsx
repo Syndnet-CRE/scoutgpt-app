@@ -36,6 +36,9 @@ export default function App() {
   // GIS layer visibility state (ArcGIS endpoints)
   const [visibleGisLayers, setVisibleGisLayers] = useState({});
 
+  // GIS layer opacity state (0-1 values)
+  const [gisLayerOpacity, setGisLayerOpacity] = useState({});
+
   // Map viewport bbox
   const [mapBbox, setMapBbox] = useState(null);
 
@@ -122,6 +125,11 @@ export default function App() {
   // Handler for GIS layer toggles (ArcGIS endpoints)
   const handleGisLayerChange = useCallback((layerKey, isVisible) => {
     setVisibleGisLayers(prev => ({ ...prev, [layerKey]: isVisible }));
+  }, []);
+
+  // Handler for GIS layer opacity changes
+  const handleGisOpacityChange = useCallback((layerKey, opacity) => {
+    setGisLayerOpacity(prev => ({ ...prev, [layerKey]: opacity }));
   }, []);
 
   // Handler for new filter panel — receives filtered attom IDs for map highlighting
@@ -244,6 +252,7 @@ export default function App() {
             schoolsGeoJSON={MOCK_SCHOOL_GEOJSON}
             visibleLayers={visibleLayers}
             visibleGisLayers={visibleGisLayers}
+            gisLayerOpacity={gisLayerOpacity}
             highlightedProperties={highlightedProperties}
             chatMarkers={chatMarkers}
             onParcelClick={handleParcelClick}
@@ -264,6 +273,8 @@ export default function App() {
           onFilteredIdsChange={handleFilteredIdsChange}
           onAssetClassChange={handleAssetClassChange}
           onGisLayerChange={handleGisLayerChange}
+          onGisOpacityChange={handleGisOpacityChange}
+          gisLayerOpacity={gisLayerOpacity}
           mapRef={mapInstanceRef}
           zIndex={getPanelZ('left')}
           onBringToFront={() => setWorkstationOnTop(false)}
