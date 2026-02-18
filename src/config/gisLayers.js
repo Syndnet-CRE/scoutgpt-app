@@ -1,5 +1,7 @@
 // GIS Infrastructure Layer Configuration
-// Fetches from City of Austin + surrounding cities' ArcGIS MapServer REST endpoints
+// Fetches from Neon API (replaces ArcGIS MapServer REST endpoints)
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const DIAMETER_ALIASES = [
   'DIAMETER', 'WATERDIAMETER', 'PIPE_DIAMETER', 'PIPESIZE', 'PIPE_SIZE',
@@ -211,16 +213,6 @@ export const GIS_LAYERS = {
     geometryType: 'line',
     gradient: ['#7dd3fc', '#38bdf8', '#00bfff', '#0284c7'],
     thresholds: [6, 12, 24, 48],
-    endpoints: [
-      'https://coagiswebadaptor.austintexas.gov/awgisago/rest/services/RAAS/RAAS_Water_Service/MapServer/17',
-      'https://coagiswebadaptor.austintexas.gov/awgisago/rest/services/RAAS/RAAS_Water_Service/MapServer/0',
-      'https://maps.roundrocktexas.gov/arcgis/rest/services/Base_Maps/LineLocate/MapServer/5',
-      'https://gis.georgetown.org/arcgis/rest/services/GUS/Hydrant_Meters_WebMap/MapServer/4',
-      'https://gis.cedarparktexas.gov/mapping/rest/services/VIEW/Water_Distribution_System/MapServer/9',
-      'https://gis.cedarparktexas.gov/mapping/rest/services/VIEW/Water_Distribution_System/MapServer/7',
-      'https://gis.cityofkyle.com/server/rest/services/CartegraphGIS2/MapServer/20',
-      'https://maps.pflugervilletx.gov/arcgis/rest/services/CityWorks/Storm_Drainage_System/MapServer/3'
-    ]
   },
   wastewater_lines: {
     name: 'Wastewater Lines',
@@ -228,15 +220,6 @@ export const GIS_LAYERS = {
     geometryType: 'line',
     gradient: ['#86efac', '#4ade80', '#22c55e', '#14532d'],
     thresholds: [6, 12, 24, 48],
-    endpoints: [
-      'https://coagiswebadaptor.austintexas.gov/awgisago/rest/services/RAAS/RAAS_Wastewater_Network/MapServer/11',
-      'https://coagiswebadaptor.austintexas.gov/awgisago/rest/services/RAAS/RAAS_Wastewater_Network/MapServer/0',
-      'https://maps.roundrocktexas.gov/arcgis/rest/services/Base_Maps/LineLocate/MapServer/4',
-      'https://gis.cedarparktexas.gov/mapping/rest/services/VIEW/WastewaterCollectionSystem/MapServer/8',
-      'https://gis.cedarparktexas.gov/mapping/rest/services/VIEW/WastewaterCollectionSystem/MapServer/6',
-      'https://gis.georgetown.org/arcgis/rest/services/DigTix/DigTix_FeatureService/MapServer/18',
-      'https://maps.pflugervilletx.gov/arcgis/rest/services/Wastewater/Sewer_Lateral/MapServer/0'
-    ]
   },
   stormwater_lines: {
     name: 'Stormwater Lines',
@@ -244,224 +227,64 @@ export const GIS_LAYERS = {
     geometryType: 'line',
     gradient: ['#67e8f9', '#22d3ee', '#06b6d4', '#164e63'],
     thresholds: [12, 24, 36, 60],
-    endpoints: [
-      'https://maps.austintexas.gov/arcgis/rest/services/Shared/DrainageInfrastructure/MapServer/6',
-      'https://maps.roundrocktexas.gov/arcgis/rest/services/Stormwater/Storm_Multi/MapServer/7',
-      'https://gis.cedarparktexas.gov/mapping/rest/services/VIEW/Stormwater_Collection_System/MapServer/5',
-      'https://maps.pflugervilletx.gov/arcgisadmin/rest/services/Streets/Stormwater_Line/MapServer/0',
-      'https://gis.georgetown.org/arcgis/rest/services/SystemsEngineering/SystemsEngineering_WebMap/MapServer/3'
-    ]
   },
   zoning_districts: {
     name: 'Zoning Districts',
     color: '#ec4899',
     geometryType: 'fill',
-    endpoints: [
-      'https://maps.austintexas.gov/arcgis/rest/services/Shared/Zoning_1/MapServer/0',
-      'https://maps.roundrocktexas.gov/arcgis/rest/services/Planning/Planning_Multi/MapServer/12',
-      'https://maps.pflugervilletx.gov/arcgis/rest/services/Planning/Zoning_Districts/MapServer/0',
-      'https://gis.cedarparktexas.gov/mapping/rest/services/VIEW/Zoning/MapServer/3',
-      'https://gis.georgetown.org/arcgis/rest/services/PublicSafety/FireDepartment_WebMap/MapServer/28',
-      'https://gis.cityofkyle.com/server/rest/services/Location_Check/MapServer/5',
-      'https://smgis.sanmarcostx.gov/arcgis/rest/services/AllDataProd/DS_prod/MapServer/50'
-    ]
   },
   floodplains: {
     name: 'Floodplains',
     color: '#ef4444',
     geometryType: 'fill',
-    endpoints: [
-      'https://maps.austintexas.gov/arcgis/rest/services/FloodPro/FloodPro/MapServer/4',
-      'https://maps.austintexas.gov/arcgis/rest/services/FloodPro/FloodPro/MapServer/9',
-      'https://gis.georgetown.org/arcgis/rest/services/Planning/PlanningDevelopmentNew_WebMap/MapServer/60',
-      // Bastrop County endpoint removed - CORS completely broken
-      'https://gis.cedarparktexas.gov/mapping/rest/services/VIEW/Flood_Zones/MapServer/0',
-      'https://smgis.sanmarcostx.gov/arcgis/rest/services/CityRegulatedFloodplains/MapServer/2'
-    ]
   }
 };
 
-// --- ArcGIS to GeoJSON ---
+// Layer key to API type mapping
+const LAYER_TYPE_MAP = {
+  water_lines: 'water',
+  wastewater_lines: 'sewer',
+  stormwater_lines: 'storm',
+  zoning_districts: 'zoning',
+  floodplains: 'flood'
+};
 
-function ringArea(ring) {
-  let area = 0;
-  for (let i = 0, len = ring.length, j = len - 1; i < len; j = i++) {
-    area += (ring[j][0] - ring[i][0]) * (ring[j][1] + ring[i][1]);
-  }
-  return area / 2;
-}
-
-function groupRings(rings) {
-  const polygons = [];
-  let current = null;
-  for (const ring of rings) {
-    if (ringArea(ring) > 0) {
-      if (current) polygons.push(current);
-      current = [ring];
-    } else {
-      if (current) current.push(ring);
-      else current = [ring];
-    }
-  }
-  if (current) polygons.push(current);
-  return polygons.length > 0 ? polygons : [rings];
-}
-
-function arcgisToGeoJSON(feature, geometryType) {
-  const geom = feature.geometry;
-  if (!geom) return null;
-  let geometry;
-  switch (geometryType) {
-    case 'esriGeometryPolyline':
-      if (!geom.paths?.length) return null;
-      geometry = geom.paths.length === 1
-        ? { type: 'LineString', coordinates: geom.paths[0] }
-        : { type: 'MultiLineString', coordinates: geom.paths };
-      break;
-    case 'esriGeometryPolygon':
-      if (!geom.rings?.length) return null;
-      if (geom.rings.length === 1) {
-        geometry = { type: 'Polygon', coordinates: [geom.rings[0]] };
-      } else {
-        const grouped = groupRings(geom.rings);
-        geometry = grouped.length === 1
-          ? { type: 'Polygon', coordinates: grouped[0] }
-          : { type: 'MultiPolygon', coordinates: grouped };
-      }
-      break;
-    case 'esriGeometryPoint':
-      if (geom.x == null || geom.y == null) return null;
-      geometry = { type: 'Point', coordinates: [geom.x, geom.y] };
-      break;
-    default:
-      return null;
-  }
-  return { type: 'Feature', geometry, properties: feature.attributes || {} };
-}
-
-function extractField(props, fieldAliases) {
-  for (const alias of fieldAliases) {
-    for (const key of Object.keys(props)) {
-      if (key.toUpperCase() === alias.toUpperCase()) {
-        const val = props[key];
-        if (val != null && String(val).trim() !== '') return String(val).trim();
-      }
-    }
-  }
-  return null;
-}
-
-// --- Fetch with CORS proxy fallback ---
-
-const hostMethodCache = {};
-
-async function safeFetchJSON(url) {
-  const host = new URL(url).hostname;
-  const methods = [
-    { name: 'direct', fn: () => fetch(url) },
-    { name: 'corsproxy', fn: () => fetch('https://corsproxy.io/?' + encodeURIComponent(url)) },
-    { name: 'allorigins', fn: () => fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url)) }
-  ];
-  const cached = hostMethodCache[host];
-  if (cached) {
-    const preferred = methods.find(m => m.name === cached);
-    if (preferred) { methods.splice(methods.indexOf(preferred), 1); methods.unshift(preferred); }
-  }
-  let lastStatus = null;
-  for (const method of methods) {
-    try {
-      const resp = await method.fn();
-      lastStatus = resp.status;
-      if (!resp.ok) {
-        // Log 404s and other HTTP errors with URL for debugging
-        if (resp.status === 404) {
-          console.warn(`[GIS] Endpoint 404: ${url}`);
-        }
-        continue;
-      }
-      const text = await resp.text();
-      if (!text || text.trim().startsWith('<')) continue;
-      const data = JSON.parse(text);
-      hostMethodCache[host] = method.name;
-      return data;
-    } catch { /* try next method */ }
-  }
-  throw new Error(`All fetch methods failed for ${host} (last status: ${lastStatus})`);
-}
-
-function buildQueryUrl(baseUrl, bounds, offset = 0, max = 1000) {
-  const envelope = JSON.stringify({
-    xmin: bounds.getWest(), ymin: bounds.getSouth(),
-    xmax: bounds.getEast(), ymax: bounds.getNorth(),
-    spatialReference: { wkid: 4326 }
-  });
-  const params = new URLSearchParams({
-    where: '1=1', geometry: envelope, geometryType: 'esriGeometryEnvelope',
-    inSR: '4326', spatialRel: 'esriSpatialRelIntersects',
-    outFields: '*', outSR: '4326', f: 'json',
-    resultOffset: String(offset), resultRecordCount: String(max)
-  });
-  return `${baseUrl}/query?${params}`;
-}
-
-async function fetchEndpoint(endpointUrl, bounds, layerKey) {
-  const features = [];
-  let offset = 0;
-  const max = 1000;
-  const maxPages = 7; // Reduced from 10 to avoid CORS issues on paginated requests
-  try {
-    for (let page = 0; page < maxPages; page++) {
-      const url = buildQueryUrl(endpointUrl, bounds, offset, max);
-      const data = await safeFetchJSON(url);
-      if (data.error) throw new Error(data.error.message);
-      const raw = data.features || [];
-      if (raw.length === 0) break;
-      const geomType = data.geometryType || 'esriGeometryPolyline';
-
-      for (const f of raw) {
-        const gj = arcgisToGeoJSON(f, geomType);
-        if (gj) {
-          if (layerKey === 'zoning_districts') {
-            const zoneCode = extractField(gj.properties, ZONING_ALIASES) || '';
-            gj.properties._zone_code = zoneCode;
-            gj.properties._zone_category = categorizeZoneCode(zoneCode);
-          } else if (layerKey === 'floodplains') {
-            const floodZone = extractField(gj.properties, FLOOD_ALIASES) || '';
-            gj.properties._flood_zone = normalizeFloodZone(floodZone);
-          }
-          features.push(gj);
-        }
-      }
-      if (!data.exceededTransferLimit && raw.length < max) break;
-      offset += max;
-    }
-  } catch (e) {
-    console.warn(`[GIS] Failed: ${endpointUrl}: ${e.message}`);
-  }
-  return features;
-}
-
-async function promisePool(fns, concurrency = 3) {
-  const results = [];
-  let i = 0;
-  async function run() {
-    while (i < fns.length) { const idx = i++; results[idx] = await fns[idx](); }
-  }
-  await Promise.all(Array.from({ length: Math.min(concurrency, fns.length) }, run));
-  return results;
-}
+// --- Neon API Fetch ---
 
 export async function fetchGisLayer(layerKey, bounds) {
   const config = GIS_LAYERS[layerKey];
   if (!config) return null;
-  console.log(`[GIS] Fetching ${layerKey} from ${config.endpoints.length} endpoints...`);
-  const results = await promisePool(
-    config.endpoints.map(ep => () => fetchEndpoint(ep, bounds, layerKey)),
-    3
-  );
-  const features = results.flat();
-  console.log(`[GIS] ${layerKey}: ${features.length} features loaded`);
-  return { type: 'FeatureCollection', features };
+
+  const apiType = LAYER_TYPE_MAP[layerKey];
+  if (!apiType) {
+    console.warn(`[GIS] Unknown layer key: ${layerKey}`);
+    return null;
+  }
+
+  const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
+  const url = `${API_URL}/api/gis/${apiType}?bbox=${bbox}`;
+
+  console.log(`[GIS] Fetching ${layerKey} from Neon API...`);
+
+  try {
+    const resp = await fetch(url);
+
+    if (resp.status === 404) {
+      console.warn(`[GIS] No data for ${layerKey} in this viewport`);
+      return { type: 'FeatureCollection', features: [] };
+    }
+
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+    }
+
+    const geojson = await resp.json();
+    console.log(`[GIS] ${layerKey}: ${geojson.features?.length || 0} features loaded`);
+    return geojson;
+  } catch (e) {
+    console.warn(`[GIS] Failed to fetch ${layerKey}: ${e.message}`);
+    return { type: 'FeatureCollection', features: [] };
+  }
 }
 
 export { DIAMETER_ALIASES };
