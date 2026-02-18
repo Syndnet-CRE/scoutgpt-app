@@ -109,18 +109,177 @@ export default function MapContainer({
   // Keep visibleGisLayersRef in sync (for use in moveend handler)
   useEffect(() => { visibleGisLayersRef.current = visibleGisLayers; }, [visibleGisLayers]);
 
-  // Helper: build diameter-based color expression for utility lines
-  function buildDiameterColorExpr(gradient, thresholds) {
+  // Helper: coalesce all diameter field aliases with default fallback
+  function getDiameterExpr(defaultVal = 8) {
     const getExprs = DIAMETER_ALIASES.map(f => ['get', f]);
-    const coalesced = ['coalesce', ...getExprs, 0];
+    return ['to-number', ['coalesce', ...getExprs, defaultVal], defaultVal];
+  }
+
+  // Helper: build diameter-scaled line width expression (varies by zoom AND diameter)
+  function buildDiameterWidthExpr() {
+    const diam = getDiameterExpr(8);
     return [
-      'interpolate', ['linear'], ['to-number', coalesced, 0],
-      0, gradient[0],
-      thresholds[0], gradient[0],
-      thresholds[1], gradient[1],
-      thresholds[2], gradient[2],
-      thresholds[3], gradient[3]
+      'interpolate', ['linear'], ['zoom'],
+      10, ['interpolate', ['linear'], diam,
+        2, 0.5,    // 2" pipe → 0.5px at z10
+        8, 1,      // 8" pipe → 1px at z10
+        16, 1.5,   // 16" pipe → 1.5px at z10
+        36, 2.5,   // 36" pipe → 2.5px at z10
+        60, 3.5    // 60" pipe → 3.5px at z10
+      ],
+      14, ['interpolate', ['linear'], diam,
+        2, 1,
+        8, 2,
+        16, 3,
+        36, 5,
+        60, 7
+      ],
+      18, ['interpolate', ['linear'], diam,
+        2, 2,
+        8, 3,
+        16, 5,
+        36, 8,
+        60, 12
+      ]
     ];
+  }
+
+  // Helper: build diameter-based color gradient for each utility type
+  function buildDiameterColorExpr(layerKey) {
+    const diam = getDiameterExpr(8);
+
+    // Water lines: blue family (light → dark)
+    if (layerKey === 'water_lines') {
+      return [
+        'interpolate', ['linear'], diam,
+        2, '#93c5fd',   // small → light blue
+        8, '#3b82f6',   // medium → blue
+        16, '#2563eb',  // large → darker blue
+        36, '#1d4ed8',  // major → deep blue
+        60, '#1e3a8a'   // transmission → navy
+      ];
+    }
+
+    // Wastewater/sewer lines: green family (light → dark)
+    if (layerKey === 'wastewater_lines') {
+      return [
+        'interpolate', ['linear'], diam,
+        2, '#86efac',   // small → light green
+        8, '#22c55e',   // medium → green
+        16, '#16a34a',  // large → darker green
+        36, '#15803d',  // major → deep green
+        60, '#14532d'   // trunk → forest
+      ];
+    }
+
+    // Stormwater lines: cyan family (light → dark)
+    if (layerKey === 'stormwater_lines') {
+      return [
+        'interpolate', ['linear'], diam,
+        2, '#67e8f9',   // small → light cyan
+        8, '#06b6d4',   // medium → cyan
+        16, '#0891b2',  // large → darker cyan
+        36, '#0e7490',  // major → deep cyan
+        60, '#164e63'   // trunk → dark teal
+      ];
+    }
+
+    // Fallback
+    return '#888888';
+  }
+
+  // Ref for utility line hover popup (one at a time)
+  const utilityPopupRef = useRef(null);
+
+  // Helper: add hover handlers for utility line layers
+  function addUtilityLineHover(map, layerId, layerKey) {
+    // Get friendly name for layer type
+    const layerNames = {
+      water_lines: 'Water',
+      wastewater_lines: 'Sewer',
+      stormwater_lines: 'Storm'
+    };
+    const layerName = layerNames[layerKey] || 'Utility';
+
+    map.on('mouseenter', layerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+
+        // Extract diameter from any of the aliases
+        let diameter = null;
+        for (const alias of DIAMETER_ALIASES) {
+          if (props[alias] != null && props[alias] !== '' && props[alias] !== 0) {
+            diameter = props[alias];
+            break;
+          }
+        }
+
+        // Extract material from common field names
+        const materialAliases = ['MATERIAL', 'PIPE_MATERIAL', 'PIPEMATERIAL', 'MAT', 'PIPE_MAT'];
+        let material = null;
+        for (const alias of materialAliases) {
+          if (props[alias] != null && props[alias] !== '') {
+            material = String(props[alias]).toUpperCase();
+            break;
+          }
+        }
+
+        // Build popup content
+        const diamText = diameter != null ? `${diameter}"` : 'Unknown';
+        const matText = material ? ` • ${material}` : '';
+
+        // Remove existing utility popup
+        if (utilityPopupRef.current) {
+          utilityPopupRef.current.remove();
+          utilityPopupRef.current = null;
+        }
+
+        // Create popup
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'utility-popup',
+          offset: 10,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: rgba(15, 23, 42, 0.95);
+              border: 1px solid rgba(99, 102, 241, 0.4);
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: 'DM Sans', sans-serif;
+              color: #e2e8f0;
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            ">
+              <div style="font-weight: 600; color: #a5b4fc; margin-bottom: 2px;">${layerName} Main</div>
+              <div style="font-family: 'JetBrains Mono', monospace;">⌀ ${diamText}${matText}</div>
+            </div>
+          `)
+          .addTo(map);
+
+        utilityPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', layerId, (e) => {
+      // Update popup position as mouse moves along the line
+      if (utilityPopupRef.current && e.lngLat) {
+        utilityPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', layerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (utilityPopupRef.current) {
+        utilityPopupRef.current.remove();
+        utilityPopupRef.current = null;
+      }
+    });
   }
 
   // Helper: reorder GIS layers to enforce z-order
@@ -148,18 +307,23 @@ export default function MapContainer({
     const sourceId = `gis-${layerKey}`;
 
     if (config.geometryType === 'line') {
+      const layerId = `${sourceId}-line`;
+
       // Utility lines go on TOP (no beforeId = add to top)
       map.addLayer({
-        id: `${sourceId}-line`,
+        id: layerId,
         type: 'line',
         source: sourceId,
         paint: {
-          'line-color': buildDiameterColorExpr(config.gradient, config.thresholds),
-          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 14, 3, 18, 5],
-          'line-opacity': 1.0
+          'line-color': buildDiameterColorExpr(layerKey),
+          'line-width': buildDiameterWidthExpr(),
+          'line-opacity': 0.85
         },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
       });
+
+      // Add hover popup for utility line details
+      addUtilityLineHover(map, layerId, layerKey);
     } else if (config.geometryType === 'fill' && layerKey === 'zoning_districts') {
       // Zoning: use coalesce to try multiple field names
       const zoneValue = ['coalesce',
