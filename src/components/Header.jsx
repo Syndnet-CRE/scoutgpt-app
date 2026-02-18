@@ -1,10 +1,9 @@
-import { Sun, Moon, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '../theme';
 
 export default function Header() {
-  const { t, isDark, toggleTheme } = useTheme();
-  const [themeHovered, setThemeHovered] = useState(false);
+  const { t } = useTheme();
   const [searchFocused, setSearchFocused] = useState(false);
 
   return (
@@ -83,30 +82,8 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Right section — theme toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160, justifyContent: 'flex-end' }}>
-        <button
-          onClick={toggleTheme}
-          onMouseEnter={() => setThemeHovered(true)}
-          onMouseLeave={() => setThemeHovered(false)}
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: themeHovered ? t.bg.tertiary : 'transparent',
-            border: `1px solid ${themeHovered ? t.border.default : 'transparent'}`,
-            color: t.text.secondary,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-          }}
-          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-        >
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-      </div>
+      {/* Right section */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160, justifyContent: 'flex-end' }} />
     </header>
   );
 }
