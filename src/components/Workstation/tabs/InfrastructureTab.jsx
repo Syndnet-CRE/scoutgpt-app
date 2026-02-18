@@ -5,12 +5,16 @@ import SectionHeader from '../shared/SectionHeader.jsx';
 import DataRow from '../shared/DataRow.jsx';
 import StatusBadge from '../shared/StatusBadge.jsx';
 
-function Placeholder({ text, t }) {
-  return (
-    <span style={{ fontSize: 12, color: t.text.tertiary, fontFamily: t.font.display, fontStyle: 'italic' }}>
-      {text}
-    </span>
-  );
+function fmtDist(val) {
+  if (val == null) return null;
+  return `${Number(val).toLocaleString()} ft`;
+}
+
+function fmtDate(val) {
+  if (!val) return null;
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return val;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function MapPlaceholder({ label, t }) {
@@ -88,11 +92,6 @@ export default function InfrastructureTab({ data, infrastructureData }) {
     });
   };
 
-  const infra = infrastructureData ?? null;
-  const fetching = <Placeholder text="Fetching..." t={t} />;
-
-  const zoning = data?.zoning ?? null;
-
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
@@ -105,15 +104,13 @@ export default function InfrastructureTab({ data, infrastructureData }) {
         onToggle={() => toggle('water')}
         t={t}
       >
-        <DataRow label="Nearest Water Main" value={infra?.water?.nearestMain ?? null} mono={false} />
-        {!infra && <div style={{ padding: '4px 0' }}>{fetching}</div>}
-        <DataRow label="Pipe Diameter" value={infra?.water?.pipeDiameter ?? null} />
-        <DataRow label="Pipe Material" value={infra?.water?.pipeMaterial ?? null} mono={false} />
-        <DataRow label="Service Provider" value={infra?.water?.serviceProvider ?? null} mono={false} />
+        <DataRow label="Nearest Water Main" value={fmtDist(data?.nearestWaterFt)} mono={false} />
+        <DataRow label="Pipe Diameter" value={data?.nearestWaterDiam ?? null} />
+        <DataRow label="Pipe Material" value={data?.nearestWaterMaterial ?? null} mono={false} />
         <MapPlaceholder label="Water Infrastructure Map" t={t} />
       </AccordionSection>
 
-      {/* Wastewater */}
+      {/* Wastewater / Sewer */}
       <AccordionSection
         icon={Pipette}
         iconColor={t.semantic.success}
@@ -122,11 +119,8 @@ export default function InfrastructureTab({ data, infrastructureData }) {
         onToggle={() => toggle('wastewater')}
         t={t}
       >
-        <DataRow label="Nearest Main" value={infra?.wastewater?.nearestMain ?? null} mono={false} />
-        {!infra && <div style={{ padding: '4px 0' }}>{fetching}</div>}
-        <DataRow label="Pipe Diameter" value={infra?.wastewater?.pipeDiameter ?? null} />
-        <DataRow label="Pipe Material" value={infra?.wastewater?.pipeMaterial ?? null} mono={false} />
-        <DataRow label="Service Provider" value={infra?.wastewater?.serviceProvider ?? null} mono={false} />
+        <DataRow label="Nearest Sewer Main" value={fmtDist(data?.nearestSewerFt)} mono={false} />
+        <DataRow label="Pipe Diameter" value={data?.nearestSewerDiam ?? null} />
         <MapPlaceholder label="Wastewater Infrastructure Map" t={t} />
       </AccordionSection>
 
@@ -139,10 +133,8 @@ export default function InfrastructureTab({ data, infrastructureData }) {
         onToggle={() => toggle('stormwater')}
         t={t}
       >
-        <DataRow label="Nearest Line" value={infra?.stormwater?.nearestLine ?? null} mono={false} />
-        {!infra && <div style={{ padding: '4px 0' }}>{fetching}</div>}
-        <DataRow label="Diameter" value={infra?.stormwater?.diameter ?? null} />
-        <DataRow label="Drainage Basin" value={infra?.stormwater?.drainageBasin ?? null} mono={false} />
+        <DataRow label="Nearest Storm Line" value={fmtDist(data?.nearestStormFt)} mono={false} />
+        <DataRow label="Diameter" value={data?.nearestStormDiam ?? null} />
         <MapPlaceholder label="Stormwater Map" t={t} />
       </AccordionSection>
 
@@ -155,9 +147,8 @@ export default function InfrastructureTab({ data, infrastructureData }) {
         onToggle={() => toggle('zoning')}
         t={t}
       >
-        <DataRow label="Zone Code" value={zoning ?? infra?.zoning?.zoneCode ?? null} />
-        <DataRow label="Zone Description" value={infra?.zoning?.zoneDescription ?? null} mono={false} />
-        <DataRow label="Zone Category" value={infra?.zoning?.zoneCategory ?? null} mono={false} />
+        <DataRow label="Zone Code" value={data?.zoningLocal ?? null} />
+        <DataRow label="Jurisdiction" value={data?.zoningJurisdiction ?? null} mono={false} />
         <MapPlaceholder label="Zoning Map" t={t} />
       </AccordionSection>
 
@@ -170,9 +161,13 @@ export default function InfrastructureTab({ data, infrastructureData }) {
         onToggle={() => toggle('floodplain')}
         t={t}
       >
-        <DataRow label="FEMA Zone" value={infra?.floodplain?.femaZone ?? null} />
-        <DataRow label="Flood Zone Type" value={infra?.floodplain?.floodZoneType ?? null} mono={false} />
-        <DataRow label="Fully Developed Floodplain" value={infra?.floodplain?.fullyDeveloped != null ? (infra.floodplain.fullyDeveloped ? 'Yes' : 'No') : null} mono={false} />
+        <DataRow label="FEMA Zone" value={data?.floodZone ?? null} />
+        <DataRow label="Description" value={data?.floodZoneDesc ?? null} mono={false} />
+        <DataRow
+          label="In Floodplain"
+          value={data?.inFloodplain != null ? (data.inFloodplain ? 'Yes' : 'No') : null}
+          mono={false}
+        />
         <MapPlaceholder label="Floodplain Map" t={t} />
       </AccordionSection>
 
@@ -189,7 +184,7 @@ export default function InfrastructureTab({ data, infrastructureData }) {
         </div>
       </div>
 
-      {/* Architecture note */}
+      {/* GIS enrichment note */}
       <div style={{ paddingTop: 12 }}>
         <span style={{
           fontSize: 11,
@@ -197,7 +192,9 @@ export default function InfrastructureTab({ data, infrastructureData }) {
           fontFamily: t.font.display,
           fontStyle: 'italic',
         }}>
-          Infrastructure data fetched live from ArcGIS MapServer endpoints
+          {data?.gisEnrichedAt
+            ? `GIS data enriched ${fmtDate(data.gisEnrichedAt)}`
+            : 'GIS data sourced from Neon API'}
         </span>
       </div>
     </div>

@@ -1,4 +1,5 @@
-import { useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { useTheme } from '../../theme.jsx';
 import WorkstationHeader from './WorkstationHeader.jsx';
 import OverviewTab from './tabs/OverviewTab.jsx';
@@ -50,6 +51,7 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
   const { t } = useTheme();
   const tabBarRef = useRef(null);
   const activeTabRef = useRef(null);
+  const [handleHovered, setHandleHovered] = useState(false);
 
   const currentTab = activeTab ?? 'Overview';
 
@@ -108,70 +110,95 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
         top: 0,
         right: 0,
         bottom: 0,
-        width: 480,
+        width: '45vw',
+        minWidth: 480,
+        maxWidth: 960,
         zIndex: 65,
         background: t.bg.primary,
         borderLeft: `1px solid ${t.border.default}`,
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 300ms ease',
         boxShadow: isOpen ? `-4px 0 24px rgba(0,0,0,0.25)` : 'none',
       }}
     >
-      {/* Sticky Header */}
-      <WorkstationHeader data={propertyData} onClose={onClose} />
-
-      {/* Sticky Tab Bar */}
+      {/* Close Handle — left edge */}
       <div
-        ref={tabBarRef}
+        onClick={onClose}
+        onMouseEnter={() => setHandleHovered(true)}
+        onMouseLeave={() => setHandleHovered(false)}
         style={{
-          display: 'flex',
-          height: 40,
+          width: 28,
           flexShrink: 0,
-          borderBottom: `1px solid ${t.border.default}`,
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          scrollbarWidth: 'none',
-          padding: '0 20px',
+          background: handleHovered ? t.bg.elevated : t.bg.tertiary,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          borderRight: `1px solid ${t.border.default}`,
+          transition: 'background 0.15s ease',
         }}
       >
-        {TABS.map((tab) => {
-          const isActive = tab === currentTab;
-          return (
-            <button
-              key={tab}
-              ref={isActive ? activeTabRef : undefined}
-              onClick={() => onTabChange?.(tab)}
-              style={{
-                height: '100%',
-                padding: '0 12px',
-                fontSize: 12,
-                fontWeight: isActive ? 600 : 500,
-                fontFamily: t.font.display,
-                color: isActive ? t.accent.green : t.text.tertiary,
-                background: 'none',
-                border: 'none',
-                borderBottom: isActive ? `2px solid ${t.accent.green}` : '2px solid transparent',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                transition: 'color 0.15s ease, border-color 0.15s ease',
-              }}
-            >
-              {tab}
-            </button>
-          );
-        })}
+        <ChevronRight size={16} style={{ color: t.text.tertiary }} />
       </div>
 
-      {/* Scrollable Content */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        overflowX: 'hidden',
-      }}>
-        {renderTab()}
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Sticky Header */}
+        <WorkstationHeader data={propertyData} onClose={onClose} />
+
+        {/* Sticky Tab Bar */}
+        <div
+          ref={tabBarRef}
+          style={{
+            display: 'flex',
+            height: 40,
+            flexShrink: 0,
+            borderBottom: `1px solid ${t.border.default}`,
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            scrollbarWidth: 'none',
+            padding: '0 20px',
+          }}
+        >
+          {TABS.map((tab) => {
+            const isActive = tab === currentTab;
+            return (
+              <button
+                key={tab}
+                ref={isActive ? activeTabRef : undefined}
+                onClick={() => onTabChange?.(tab)}
+                style={{
+                  height: '100%',
+                  padding: '0 12px',
+                  fontSize: 12,
+                  fontWeight: isActive ? 600 : 500,
+                  fontFamily: t.font.display,
+                  color: isActive ? t.accent.green : t.text.tertiary,
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: isActive ? `2px solid ${t.accent.green}` : '2px solid transparent',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  transition: 'color 0.15s ease, border-color 0.15s ease',
+                }}
+              >
+                {tab}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Scrollable Content */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+        }}>
+          {renderTab()}
+        </div>
       </div>
     </div>
   );

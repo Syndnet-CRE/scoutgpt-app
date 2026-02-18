@@ -17,27 +17,23 @@ function fmtPct(val) {
 
 function buildHistoryRows(assessments) {
   if (!assessments || assessments.length === 0) return [];
-  const sorted = [...assessments].sort((a, b) => {
-    const ya = a.tax_year ?? a.taxYear ?? 0;
-    const yb = b.tax_year ?? b.taxYear ?? 0;
-    return yb - ya;
-  });
+  const sorted = [...assessments].sort((a, b) => (b.taxYear ?? 0) - (a.taxYear ?? 0));
 
   return sorted.map((row, i) => {
-    const assessed = row.assessed_value_total ?? row.assessedValueTotal ?? null;
+    const assessed = row.assessedValueTotal ?? null;
     const prev = sorted[i + 1];
-    const prevAssessed = prev ? (prev.assessed_value_total ?? prev.assessedValueTotal ?? null) : null;
+    const prevAssessed = prev ? (prev.assessedValueTotal ?? null) : null;
     let yoyChange = null;
     if (assessed != null && prevAssessed != null && prevAssessed !== 0) {
       yoyChange = ((assessed - prevAssessed) / prevAssessed) * 100;
     }
     return {
-      id: row.tax_year ?? row.taxYear ?? i,
-      tax_year: row.tax_year ?? row.taxYear,
-      assessed_value_total: assessed,
-      market_value_total: row.market_value_total ?? row.marketValueTotal ?? null,
-      tax_amount_billed: row.tax_amount_billed ?? row.taxAmountBilled ?? null,
-      yoy_change: yoyChange,
+      id: row.taxYear ?? i,
+      taxYear: row.taxYear,
+      assessedValueTotal: assessed,
+      marketValueTotal: row.marketValueTotal ?? null,
+      taxAmountBilled: row.taxAmountBilled ?? null,
+      yoyChange: yoyChange,
     };
   });
 }
@@ -58,37 +54,36 @@ function YoyCell({ value, t }) {
 export default function TaxTab({ data }) {
   const { t } = useTheme();
 
-  const assessments = data?.taxAssessments ?? data?.tax_assessments ?? [];
+  const assessments = data?.taxAssessments ?? [];
   const current = assessments[0] ?? {};
 
-  const taxYear = current.tax_year ?? current.taxYear ?? null;
-  const assessedTotal = current.assessed_value_total ?? current.assessedValueTotal ?? null;
-  const assessedLand = current.assessed_value_land ?? current.assessedValueLand ?? null;
-  const assessedImpr = current.assessed_value_improvements ?? current.assessedValueImprovements ?? null;
-  const marketTotal = current.market_value_total ?? current.marketValueTotal ?? null;
-  const marketLand = current.market_value_land ?? current.marketValueLand ?? null;
-  const marketImpr = current.market_value_improvements ?? current.marketValueImprovements ?? null;
-  const taxBilled = current.tax_amount_billed ?? current.taxAmountBilled ?? null;
-  const taxRate = current.tax_rate ?? current.taxRate ?? null;
+  const taxYear = current.taxYear ?? null;
+  const assessedTotal = current.assessedValueTotal ?? null;
+  const assessedLand = current.assessedValueLand ?? null;
+  const assessedImpr = current.assessedValueImprovements ?? null;
+  const marketTotal = current.marketValueTotal ?? null;
+  const marketLand = current.marketValueLand ?? null;
+  const marketImpr = current.marketValueImprovements ?? null;
+  const taxBilled = current.taxAmountBilled ?? null;
+  const taxRate = current.taxRate ?? null;
 
-  const delinquentYear = current.tax_delinquent_year ?? current.taxDelinquentYear
-    ?? data?.tax_delinquent_year ?? data?.taxDelinquentYear ?? null;
+  const delinquentYear = current.taxDelinquentYear ?? null;
 
-  const homeExempt = current.has_homeowner_exemption ?? current.hasHomeownerExemption ?? false;
-  const seniorExempt = current.has_senior_exemption ?? current.hasSeniorExemption ?? false;
-  const vetExempt = current.has_veteran_exemption ?? current.hasVeteranExemption ?? false;
-  const disabledExempt = current.has_disabled_exemption ?? current.hasDisabledExemption ?? false;
+  const homeExempt = current.hasHomeownerExemption ?? false;
+  const seniorExempt = current.hasSeniorExemption ?? false;
+  const vetExempt = current.hasVeteranExemption ?? false;
+  const disabledExempt = current.hasDisabledExemption ?? false;
   const hasAnyExemption = homeExempt || seniorExempt || vetExempt || disabledExempt;
 
   const historyRows = buildHistoryRows(assessments);
 
   const tableColumns = [
-    { key: 'tax_year', label: 'Year', align: 'left' },
-    { key: 'assessed_value_total', label: 'Assessed', align: 'right', format: (v) => fmtCurrency(v) },
-    { key: 'market_value_total', label: 'Market', align: 'right', format: (v) => fmtCurrency(v) },
-    { key: 'tax_amount_billed', label: 'Tax Billed', align: 'right', format: (v) => fmtCurrency(v) },
+    { key: 'taxYear', label: 'Year', align: 'left' },
+    { key: 'assessedValueTotal', label: 'Assessed', align: 'right', format: (v) => fmtCurrency(v) },
+    { key: 'marketValueTotal', label: 'Market', align: 'right', format: (v) => fmtCurrency(v) },
+    { key: 'taxAmountBilled', label: 'Tax Billed', align: 'right', format: (v) => fmtCurrency(v) },
     {
-      key: 'yoy_change',
+      key: 'yoyChange',
       label: 'YoY',
       align: 'right',
       format: (v) => <YoyCell value={v} t={t} />,

@@ -33,24 +33,23 @@ function DetailRow({ label, value, t, mono = true }) {
 }
 
 const COLS = [
-  { key: 'recording_date', label: 'Date', w: '15%' },
-  { key: 'sale_price', label: 'Price', w: '16%', align: 'right' },
-  { key: 'document_type', label: 'Doc Type', w: '14%' },
-  { key: 'grantor1_name_full', label: 'Grantor', w: '18%' },
-  { key: 'grantee1_name_full', label: 'Grantee', w: '18%' },
-  { key: 'is_arms_length', label: 'Arms Length', w: '10%', align: 'center' },
-  { key: 'is_distressed', label: 'Distressed', w: '9%', align: 'center' },
+  { key: 'recordingDate', label: 'Date', w: '15%' },
+  { key: 'salePrice', label: 'Price', w: '16%', align: 'right' },
+  { key: 'documentType', label: 'Doc Type', w: '14%' },
+  { key: 'grantor1NameFull', label: 'Grantor', w: '18%' },
+  { key: 'grantee1NameFull', label: 'Grantee', w: '18%' },
+  { key: 'isArmsLength', label: 'Arms Length', w: '10%', align: 'center' },
+  { key: 'isDistressed', label: 'Distressed', w: '9%', align: 'center' },
 ];
 
 export default function TransactionsTab({ data }) {
   const { t } = useTheme();
   const [expandedId, setExpandedId] = useState(null);
-  const [sortKey, setSortKey] = useState('recording_date');
+  const [sortKey, setSortKey] = useState('recordingDate');
   const [sortDir, setSortDir] = useState('desc');
   const [hoveredRow, setHoveredRow] = useState(null);
 
-  const sales = data?.salesTransactions ?? data?.sales_transactions ?? [];
-  const mortgages = data?.mortgageRecords ?? data?.mortgage_records ?? [];
+  const sales = data?.salesTransactions ?? [];
 
   const sorted = useMemo(() => {
     if (!sortKey) return sales;
@@ -67,13 +66,6 @@ export default function TransactionsTab({ data }) {
   const handleSort = (key) => {
     if (sortKey === key) setSortDir((d) => d === 'asc' ? 'desc' : 'asc');
     else { setSortKey(key); setSortDir('desc'); }
-  };
-
-  const getMortgagesForTx = (txId) => {
-    if (!txId) return [];
-    return mortgages.filter((m) =>
-      (m.transactionId ?? m.transaction_id) === txId
-    );
   };
 
   const thStyle = (col) => ({
@@ -114,9 +106,9 @@ export default function TransactionsTab({ data }) {
                 </td>
               </tr>
             ) : sorted.map((row, i) => {
-              const txId = row.transactionId ?? row.transaction_id ?? i;
+              const txId = row.transactionId ?? i;
               const isExpanded = expandedId === txId;
-              const linkedMortgages = getMortgagesForTx(row.transactionId ?? row.transaction_id);
+              const linkedMortgages = row.mortgages ?? [];
 
               return (
                 <tbody key={txId}>
@@ -133,28 +125,28 @@ export default function TransactionsTab({ data }) {
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {isExpanded ? <ChevronDown size={12} style={{ color: t.text.tertiary }} /> : <ChevronRight size={12} style={{ color: t.text.tertiary }} />}
-                        {fmtDate(row.recording_date ?? row.recordingDate)}
+                        {fmtDate(row.recordingDate)}
                       </span>
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, textAlign: 'right', borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {fmtCurrency(row.sale_price ?? row.salePrice)}
+                      {fmtCurrency(row.salePrice)}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {row.document_type ?? row.documentType ?? '\u2014'}
+                      {row.documentType ?? '\u2014'}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {row.grantor1_name_full ?? row.grantor1NameFull ?? '\u2014'}
+                      {row.grantor1NameFull ?? '\u2014'}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {row.grantee1_name_full ?? row.grantee1NameFull ?? '\u2014'}
+                      {row.grantee1NameFull ?? '\u2014'}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, textAlign: 'center', borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {(row.is_arms_length ?? row.isArmsLength) != null
-                        ? <StatusBadge label={(row.is_arms_length ?? row.isArmsLength) ? 'Yes' : 'No'} variant={(row.is_arms_length ?? row.isArmsLength) ? 'success' : 'neutral'} />
+                      {row.isArmsLength != null
+                        ? <StatusBadge label={row.isArmsLength ? 'Yes' : 'No'} variant={row.isArmsLength ? 'success' : 'neutral'} />
                         : <span style={{ color: t.text.quaternary }}>{'\u2014'}</span>}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, textAlign: 'center', borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {(row.is_distressed ?? row.isDistressed)
+                      {row.isDistressed
                         ? <StatusBadge label="Yes" variant="error" />
                         : <span style={{ color: t.text.quaternary }}>{'\u2014'}</span>}
                     </td>
@@ -168,24 +160,25 @@ export default function TransactionsTab({ data }) {
                           {/* Full details */}
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
                             <div>
-                              <DetailRow label="Transaction ID" value={row.transactionId ?? row.transaction_id} t={t} />
-                              <DetailRow label="Document #" value={row.document_number ?? row.documentNumber} t={t} />
-                              <DetailRow label="Price Description" value={row.sale_price_description ?? row.salePriceDescription} t={t} mono={false} />
-                              <DetailRow label="Grantor 2" value={row.grantor2 ?? row.grantor2_name_full} t={t} mono={false} />
-                              <DetailRow label="Grantee 2" value={row.grantee2 ?? row.grantee2_name_full} t={t} mono={false} />
+                              <DetailRow label="Transaction ID" value={row.transactionId} t={t} />
+                              <DetailRow label="Document #" value={row.documentNumber} t={t} />
+                              <DetailRow label="Price Description" value={row.salePriceDescription} t={t} mono={false} />
+                              <DetailRow label="Grantor 2" value={row.grantor2NameFull} t={t} mono={false} />
+                              <DetailRow label="Grantee 2" value={row.grantee2NameFull} t={t} mono={false} />
                             </div>
                             <div>
-                              {(row.grantee_investor_flag ?? row.granteeInvestorFlag) && (
+                              {row.granteeInvestorFlag && (
                                 <div style={{ padding: '4px 0' }}><StatusBadge label="INVESTOR" variant="info" /></div>
                               )}
-                              <DetailRow label="Multi-Parcel" value={row.is_multi_parcel ?? row.isMultiParcel ? 'Yes' : 'No'} t={t} mono={false} />
-                              <DetailRow label="Foreclosure Auction" value={row.is_foreclosure_auction ?? row.isForeclosureAuction ? 'Yes' : 'No'} t={t} mono={false} />
-                              <DetailRow label="Down Payment" value={fmtCurrency(row.down_payment ?? row.downPayment)} t={t} />
-                              <DetailRow label="Purchase LTV" value={fmtPct(row.purchase_ltv ?? row.purchaseLtv)} t={t} />
+                              <DetailRow label="Title Company" value={row.titleCompanyStandardized} t={t} mono={false} />
+                              <DetailRow label="Multi-Parcel" value={row.isMultiParcel ? 'Yes' : 'No'} t={t} mono={false} />
+                              <DetailRow label="Foreclosure Auction" value={row.isForeclosureAuction ? 'Yes' : 'No'} t={t} mono={false} />
+                              <DetailRow label="Down Payment" value={fmtCurrency(row.downPayment)} t={t} />
+                              <DetailRow label="Purchase LTV" value={fmtPct(row.purchaseLtv)} t={t} />
                             </div>
                           </div>
 
-                          {/* Linked Mortgages */}
+                          {/* Linked Mortgages (nested inside sale) */}
                           {linkedMortgages.length > 0 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                               <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: t.text.tertiary, fontFamily: t.font.display }}>
@@ -206,25 +199,25 @@ export default function TransactionsTab({ data }) {
                                     {linkedMortgages.map((m, mi) => (
                                       <tr key={mi} style={{ background: mi % 2 === 0 ? t.bg.primary : t.bg.secondary }}>
                                         <td style={{ padding: '5px 8px', fontSize: 11, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                                          {m.mortgage_position ?? m.mortgagePosition ?? '\u2014'}
+                                          {m.mortgagePosition ?? '\u2014'}
                                         </td>
                                         <td style={{ padding: '5px 8px', fontSize: 11, fontFamily: t.font.mono, color: t.text.primary, textAlign: 'right', borderBottom: `1px solid ${t.border.subtle}` }}>
-                                          {fmtCurrency(m.loan_amount ?? m.loanAmount)}
+                                          {fmtCurrency(m.loanAmount)}
                                         </td>
                                         <td style={{ padding: '5px 8px', fontSize: 11, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                                          {m.lender_name_standardized ?? m.lenderNameStandardized ?? '\u2014'}
+                                          {m.lenderNameStandardized ?? '\u2014'}
                                         </td>
                                         <td style={{ padding: '5px 8px', fontSize: 11, fontFamily: t.font.mono, color: t.text.primary, textAlign: 'right', borderBottom: `1px solid ${t.border.subtle}` }}>
-                                          {m.interest_rate ?? m.interestRate != null ? `${m.interest_rate ?? m.interestRate}%` : '\u2014'}
+                                          {m.interestRate != null ? `${m.interestRate}%` : '\u2014'}
                                         </td>
                                         <td style={{ padding: '5px 8px', fontSize: 11, fontFamily: t.font.display, color: t.text.secondary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                                          {m.interest_rate_type ?? m.interestRateType ?? '\u2014'}
+                                          {m.interestRateType ?? '\u2014'}
                                         </td>
                                         <td style={{ padding: '5px 8px', fontSize: 11, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                                          {(m.loan_term ?? m.loanTerm) != null ? `${m.loan_term ?? m.loanTerm} ${m.loan_term_type ?? m.loanTermType ?? ''}`.trim() : '\u2014'}
+                                          {m.loanTerm != null ? `${m.loanTerm} ${m.loanTermType ?? ''}`.trim() : '\u2014'}
                                         </td>
                                         <td style={{ padding: '5px 8px', fontSize: 11, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                                          {fmtDate(m.due_date ?? m.dueDate)}
+                                          {fmtDate(m.dueDate)}
                                         </td>
                                       </tr>
                                     ))}

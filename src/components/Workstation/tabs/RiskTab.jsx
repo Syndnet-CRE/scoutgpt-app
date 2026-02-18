@@ -29,17 +29,17 @@ function floodZoneVariant(zone) {
 }
 
 const RISK_SCORES = [
-  { key: 'flood_risk_score', camel: 'floodRiskScore', label: 'Flood', icon: Droplets },
-  { key: 'heat_risk_score', camel: 'heatRiskScore', label: 'Heat', icon: Thermometer },
-  { key: 'storm_risk_score', camel: 'stormRiskScore', label: 'Storm', icon: CloudLightning },
-  { key: 'wildfire_risk_score', camel: 'wildfireRiskScore', label: 'Wildfire', icon: Flame },
-  { key: 'drought_risk_score', camel: 'droughtRiskScore', label: 'Drought', icon: Sun },
-  { key: 'wind_risk_score', camel: 'windRiskScore', label: 'Wind', icon: Wind },
-  { key: 'air_quality_score', camel: 'airQualityScore', label: 'Air Quality', icon: CloudFog },
+  { key: 'floodRiskScore', label: 'Flood', icon: Droplets },
+  { key: 'heatRiskScore', label: 'Heat', icon: Thermometer },
+  { key: 'stormRiskScore', label: 'Storm', icon: CloudLightning },
+  { key: 'wildfireRiskScore', label: 'Wildfire', icon: Flame },
+  { key: 'droughtRiskScore', label: 'Drought', icon: Sun },
+  { key: 'windRiskScore', label: 'Wind', icon: Wind },
+  { key: 'airQualityRiskScore', label: 'Air Quality', icon: CloudFog },
 ];
 
 function RiskBar({ item, climate, t }) {
-  const score = climate?.[item.key] ?? climate?.[item.camel] ?? null;
+  const score = climate?.[item.key] ?? null;
   const Icon = item.icon;
 
   return (
@@ -55,21 +55,16 @@ function RiskBar({ item, climate, t }) {
 export default function RiskTab({ data }) {
   const { t } = useTheme();
 
-  const rawClimate = data?.climateRisk ?? data?.climate_risk ?? null;
-  const climate = Array.isArray(rawClimate) ? rawClimate[0] : (rawClimate ?? {});
+  const climate = data?.climateRisk ?? {};
 
-  const totalScore = climate?.total_risk_score ?? climate?.totalRiskScore ?? climate?.total_score ?? climate?.totalScore ?? null;
+  const totalScore = climate?.totalRiskScore ?? null;
 
-  const floodChanceFuture = climate?.flood_chance_future ?? climate?.floodChanceFuture ?? null;
-  const femaFloodRisk = climate?.fema_flood_risk ?? climate?.femaFloodRisk ?? null;
+  const floodChanceFuture = climate?.floodChanceFuture ?? null;
+  const femaFloodRisk = climate?.femaFloodRisk ?? null;
 
-  const fz = data?.floodZone ?? data?.flood_zone ?? {};
-  const zoneType = fz?.zone_type ?? fz?.zoneType ?? null;
-  const zoneDesc = fz?.zone_description ?? fz?.zoneDescription ?? null;
-  const isSfha = fz?.is_sfha ?? fz?.isSfha ?? null;
-  const staticBfe = fz?.static_bfe ?? fz?.staticBfe ?? null;
-  const dfirmId = fz?.dfirm_id ?? fz?.dfirmId ?? null;
-  const panelNumber = fz?.panel_number ?? fz?.panelNumber ?? null;
+  const floodZoneStr = data?.floodZone ?? null;
+  const floodZoneDesc = data?.floodZoneDesc ?? null;
+  const inFloodplain = data?.inFloodplain ?? null;
 
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -137,31 +132,35 @@ export default function RiskTab({ data }) {
       {/* FEMA Flood Zone */}
       <div>
         <SectionHeader title="FEMA Flood Zone" />
-        {zoneType && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            padding: '8px 0 12px',
-          }}>
-            <Shield size={18} style={{ color: scoreColor(t, floodZoneVariant(zoneType) === 'error' ? 80 : floodZoneVariant(zoneType) === 'warning' ? 40 : 10), flexShrink: 0 }} />
-            <span style={{ fontSize: 20, fontWeight: 700, color: t.text.primary, fontFamily: t.font.mono }}>
-              {zoneType}
-            </span>
-            <StatusBadge label={zoneType} variant={floodZoneVariant(zoneType)} />
+        {floodZoneStr ? (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '8px 0 12px',
+            }}>
+              <Shield size={18} style={{ color: scoreColor(t, floodZoneVariant(floodZoneStr) === 'error' ? 80 : floodZoneVariant(floodZoneStr) === 'warning' ? 40 : 10), flexShrink: 0 }} />
+              <span style={{ fontSize: 20, fontWeight: 700, color: t.text.primary, fontFamily: t.font.mono }}>
+                {floodZoneStr}
+              </span>
+              <StatusBadge label={floodZoneStr} variant={floodZoneVariant(floodZoneStr)} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <DataRow label="Description" value={floodZoneDesc} mono={false} />
+              <DataRow
+                label="In Floodplain"
+                value={inFloodplain != null ? (inFloodplain ? 'Yes' : 'No') : null}
+                accent={inFloodplain === false}
+                mono={false}
+              />
+            </div>
+          </>
+        ) : (
+          <div style={{ padding: '8px 0', fontSize: 12, color: t.text.tertiary, fontFamily: t.font.display }}>
+            {'\u2014'}
           </div>
         )}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <DataRow label="Description" value={zoneDesc} mono={false} />
-          <DataRow
-            label="SFHA"
-            value={isSfha != null ? (isSfha ? 'Yes' : 'No') : null}
-            accent={isSfha === false}
-          />
-          <DataRow label="Static BFE" value={staticBfe} />
-          <DataRow label="DFIRM ID" value={dfirmId} />
-          <DataRow label="Panel Number" value={panelNumber} />
-        </div>
       </div>
     </div>
   );

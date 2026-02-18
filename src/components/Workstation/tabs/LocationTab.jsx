@@ -69,15 +69,18 @@ export default function LocationTab({ data }) {
   const { t } = useTheme();
 
   const d = data ?? {};
-  const lat = d.latitude ?? d.lat ?? null;
-  const lng = d.longitude ?? d.lng ?? d.lon ?? null;
-  const fips = d.fips ?? d.fipsCode ?? null;
-  const apn = d.parcel_number_raw ?? d.parcelNumberRaw ?? d.apn ?? d.parcel_id ?? null;
-  const useCode = d.property_use_code ?? d.propertyUseCode ?? null;
+  const lat = d.latitude ?? null;
+  const lng = d.longitude ?? null;
+  const fips = d.fipsCode ?? null;
+  const apn = d.parcelNumberRaw ?? null;
+  const useCode = d.propertyUseCode ?? null;
 
-  const pb = d.parcelBoundary ?? d.parcel_boundary ?? null;
-  const fz = d.floodZone ?? d.flood_zone ?? null;
-  const sd = d.schoolDistrict ?? d.school_district ?? null;
+  const floodZoneStr = d.floodZone ?? null;
+  const floodZoneDesc = d.floodZoneDesc ?? null;
+  const inFloodplain = d.inFloodplain ?? null;
+
+  const censusTract = d.censusTract ?? null;
+  const censusBlock = d.censusBlock ?? null;
 
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -96,72 +99,66 @@ export default function LocationTab({ data }) {
           <DataRow label="FIPS Code" value={fips} />
           <DataRow label="APN" value={apn} />
           <DataRow label="Use Code" value={useCode} />
+          <DataRow label="Census Tract" value={censusTract} />
+          <DataRow label="Census Block" value={censusBlock} />
         </div>
       </div>
 
       {/* Parcel Info */}
       <div>
         <SectionHeader title="Parcel Info" />
-        {pb ? (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <DataRow label="APN" value={pb.apn ?? pb.parcelId} />
-            <DataRow label="Address" value={pb.address_line1 ?? pb.addressLine1} mono={false} />
-            <DataRow label="City" value={pb.city} mono={false} />
-            <DataRow label="State" value={pb.state} mono={false} />
-            <DataRow label="ZIP" value={pb.zip5 ?? pb.zip} />
-            <DataRow label="FIPS State" value={pb.fips_state ?? pb.fipsState} />
-            <DataRow label="FIPS County" value={pb.fips_county ?? pb.fipsCounty} />
-          </div>
+        <div style={{
+          padding: '12px 0',
+          fontSize: 12,
+          color: t.text.tertiary,
+          fontFamily: t.font.display,
+          fontStyle: 'italic',
+        }}>
+          Parcel data displayed on map
+        </div>
+      </div>
+
+      {/* Flood Zone */}
+      <div>
+        <SectionHeader title="Flood Zone" />
+        {floodZoneStr ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 10px' }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: t.text.primary, fontFamily: t.font.mono }}>
+                {floodZoneStr}
+              </span>
+              <StatusBadge label={floodZoneStr} variant={floodZoneVariant(floodZoneStr)} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <DataRow label="Description" value={floodZoneDesc} mono={false} />
+              <DataRow
+                label="In Floodplain"
+                value={inFloodplain != null ? (inFloodplain ? 'Yes' : 'No') : null}
+                accent={inFloodplain === false}
+                mono={false}
+              />
+            </div>
+          </>
         ) : (
-          <div style={{
-            padding: '12px 0',
-            fontSize: 12,
-            color: t.text.tertiary,
-            fontFamily: t.font.display,
-            fontStyle: 'italic',
-          }}>
-            Parcel data from map layer
+          <div style={{ padding: '8px 0', fontSize: 12, color: t.text.tertiary, fontFamily: t.font.display }}>
+            {'\u2014'}
           </div>
         )}
       </div>
 
-      {/* Flood Zone */}
-      {fz && (
-        <div>
-          <SectionHeader title="Flood Zone" />
-          {(fz.zone_type ?? fz.zoneType) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 10px' }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: t.text.primary, fontFamily: t.font.mono }}>
-                {fz.zone_type ?? fz.zoneType}
-              </span>
-              <StatusBadge label={fz.zone_type ?? fz.zoneType} variant={floodZoneVariant(fz.zone_type ?? fz.zoneType)} />
-            </div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <DataRow label="Description" value={fz.zone_description ?? fz.zoneDescription} mono={false} />
-            <DataRow
-              label="SFHA"
-              value={(fz.is_sfha ?? fz.isSfha) != null ? ((fz.is_sfha ?? fz.isSfha) ? 'Yes' : 'No') : null}
-              accent={(fz.is_sfha ?? fz.isSfha) === false}
-            />
-            <DataRow label="Static BFE" value={fz.static_bfe ?? fz.staticBfe} />
-            <DataRow label="DFIRM ID" value={fz.dfirm_id ?? fz.dfirmId} />
-            <DataRow label="Panel Number" value={fz.panel_number ?? fz.panelNumber} />
-          </div>
-        </div>
-      )}
-
       {/* School District */}
-      {sd && (
-        <div>
-          <SectionHeader title="School District" />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <DataRow label="Name" value={sd.name ?? sd.district_name ?? sd.districtName} mono={false} />
-            <DataRow label="Level" value={sd.level} mono={false} />
-            <DataRow label="NCES District ID" value={sd.nces_district_id ?? sd.ncesDistrictId} />
-          </div>
+      <div>
+        <SectionHeader title="School District" />
+        <div style={{
+          padding: '12px 0',
+          fontSize: 12,
+          color: t.text.tertiary,
+          fontFamily: t.font.display,
+          fontStyle: 'italic',
+        }}>
+          School district data coming soon
         </div>
-      )}
+      </div>
 
       {/* Map Preview */}
       <div>
@@ -183,7 +180,7 @@ export default function LocationTab({ data }) {
             Map Preview
           </span>
           <span style={{ fontSize: 10, color: t.text.quaternary, fontFamily: t.font.display, fontStyle: 'italic' }}>
-            Mapbox Static Image \u2014 coming soon
+            Mapbox Static Image {'\u2014'} coming soon
           </span>
         </div>
       </div>

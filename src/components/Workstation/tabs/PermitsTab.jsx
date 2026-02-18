@@ -43,28 +43,28 @@ function DetailRow({ label, value, t, mono = true }) {
 }
 
 const COLS = [
-  { key: 'effective_date', label: 'Date', w: '14%' },
-  { key: 'permit_number', label: 'Permit #', w: '14%' },
-  { key: 'permit_type', label: 'Type', w: '14%' },
+  { key: 'effectiveDate', label: 'Date', w: '14%' },
+  { key: 'permitNumber', label: 'Permit #', w: '14%' },
+  { key: 'permitType', label: 'Type', w: '14%' },
   { key: 'status', label: 'Status', w: '14%', align: 'center' },
-  { key: 'job_value', label: 'Value', w: '14%', align: 'right' },
+  { key: 'jobValue', label: 'Value', w: '14%', align: 'right' },
   { key: 'description', label: 'Description', w: '30%' },
 ];
 
 export default function PermitsTab({ data }) {
   const { t } = useTheme();
   const [expandedId, setExpandedId] = useState(null);
-  const [sortKey, setSortKey] = useState('effective_date');
+  const [sortKey, setSortKey] = useState('effectiveDate');
   const [sortDir, setSortDir] = useState('desc');
   const [hoveredRow, setHoveredRow] = useState(null);
 
-  const permits = data?.buildingPermits ?? data?.building_permits ?? [];
+  const permits = data?.buildingPermits ?? [];
 
   const sorted = useMemo(() => {
     if (!sortKey) return permits;
     return [...permits].sort((a, b) => {
-      const av = a[sortKey] ?? a[sortKey.replace(/_([a-z])/g, (_, c) => c.toUpperCase())];
-      const bv = b[sortKey] ?? b[sortKey.replace(/_([a-z])/g, (_, c) => c.toUpperCase())];
+      const av = a[sortKey];
+      const bv = b[sortKey];
       if (av == null) return 1;
       if (bv == null) return -1;
       const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
@@ -77,10 +77,10 @@ export default function PermitsTab({ data }) {
     else { setSortKey(key); setSortDir('desc'); }
   };
 
-  const totalValue = permits.reduce((sum, p) => sum + (p.job_value ?? p.jobValue ?? 0), 0);
+  const totalValue = permits.reduce((sum, p) => sum + (p.jobValue ?? 0), 0);
   const mostRecent = permits.length > 0
     ? permits.reduce((latest, p) => {
-        const d = p.effective_date ?? p.effectiveDate;
+        const d = p.effectiveDate;
         return d && (!latest || d > latest) ? d : latest;
       }, null)
     : null;
@@ -131,10 +131,10 @@ export default function PermitsTab({ data }) {
                 </td>
               </tr>
             ) : sorted.map((row, i) => {
-              const rowId = row.permit_number ?? row.permitNumber ?? i;
+              const rowId = row.permitNumber ?? i;
               const isExpanded = expandedId === rowId;
-              const status = row.status ?? row.permitStatus ?? null;
-              const desc = row.description ?? row.permitDescription ?? null;
+              const status = row.status ?? null;
+              const desc = row.description ?? null;
 
               return (
                 <tbody key={rowId}>
@@ -151,20 +151,20 @@ export default function PermitsTab({ data }) {
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {isExpanded ? <ChevronDown size={12} style={{ color: t.text.tertiary }} /> : <ChevronRight size={12} style={{ color: t.text.tertiary }} />}
-                        {fmtDate(row.effective_date ?? row.effectiveDate)}
+                        {fmtDate(row.effectiveDate)}
                       </span>
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {row.permit_number ?? row.permitNumber ?? '\u2014'}
+                      {row.permitNumber ?? '\u2014'}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {row.permit_type ?? row.permitType ?? '\u2014'}
+                      {row.permitType ?? '\u2014'}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, textAlign: 'center', borderBottom: `1px solid ${t.border.subtle}` }}>
                       {status ? <StatusBadge label={status} variant={statusVariant(status)} /> : <span style={{ color: t.text.quaternary }}>{'\u2014'}</span>}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, textAlign: 'right', borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {fmtCurrency(row.job_value ?? row.jobValue)}
+                      {fmtCurrency(row.jobValue)}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.secondary, borderBottom: `1px solid ${t.border.subtle}` }} title={desc}>
                       {truncate(desc, 60)}
@@ -175,12 +175,12 @@ export default function PermitsTab({ data }) {
                     <tr>
                       <td colSpan={COLS.length} style={{ padding: 0, borderBottom: `1px solid ${t.border.default}` }}>
                         <div style={{ padding: '12px 16px', background: t.bg.secondary, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <DetailRow label="Sub Type" value={row.permit_sub_type ?? row.permitSubType} t={t} mono={false} />
+                          <DetailRow label="Sub Type" value={row.permitSubType} t={t} mono={false} />
                           <DetailRow label="Fees" value={fmtCurrency(row.fees)} t={t} />
-                          <DetailRow label="Project Name" value={row.project_name ?? row.projectName} t={t} mono={false} />
-                          <DetailRow label="Business Name" value={row.business_name ?? row.businessName} t={t} mono={false} />
-                          <DetailRow label="Status Date" value={fmtDate(row.status_date ?? row.statusDate)} t={t} />
-                          <DetailRow label="Address" value={row.address_full ?? row.addressFull} t={t} mono={false} />
+                          <DetailRow label="Project Name" value={row.projectName} t={t} mono={false} />
+                          <DetailRow label="Business Name" value={row.businessName} t={t} mono={false} />
+                          <DetailRow label="Status Date" value={fmtDate(row.statusDate)} t={t} />
+                          <DetailRow label="Address" value={row.addressFull} t={t} mono={false} />
                           {desc && (
                             <div style={{ paddingTop: 6 }}>
                               <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: t.text.tertiary, fontFamily: t.font.display }}>

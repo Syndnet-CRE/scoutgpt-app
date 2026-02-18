@@ -23,20 +23,20 @@ function fmtPct(val) {
 }
 
 function LoanCard({ loan, t }) {
-  const pos = loan.loan_position ?? loan.loanPosition ?? null;
-  const amount = loan.loan_amount ?? loan.loanAmount ?? null;
-  const lender = loan.lender_name_first ?? loan.lenderNameFirst ?? loan.lender_name_standardized ?? loan.lenderNameStandardized ?? null;
-  const lenderCode = loan.lender_code ?? loan.lenderCode ?? null;
-  const rate = loan.interest_rate ?? loan.interestRate ?? null;
-  const rateType = loan.interest_rate_type ?? loan.interestRateType ?? null;
-  const loanType = loan.loan_type ?? loan.loanType ?? null;
-  const mortgageType = loan.mortgage_type ?? loan.mortgageType ?? null;
-  const term = loan.loan_term ?? loan.loanTerm ?? null;
-  const dueDate = loan.due_date ?? loan.dueDate ?? null;
-  const recordDate = loan.recording_date ?? loan.recordingDate ?? null;
-  const docNum = loan.document_number ?? loan.documentNumber ?? null;
-  const estBalance = loan.estimated_balance ?? loan.estimatedBalance ?? null;
-  const estPayment = loan.estimated_monthly_payment ?? loan.estimatedMonthlyPayment ?? null;
+  const pos = loan.loanPosition ?? null;
+  const amount = loan.loanAmount ?? null;
+  const lender = loan.lenderNameFirst ?? loan.lenderNameStandardized ?? null;
+  const lenderCode = loan.lenderCode ?? null;
+  const rate = loan.interestRate ?? null;
+  const rateType = loan.interestRateType ?? null;
+  const loanType = loan.loanType ?? null;
+  const mortgageType = loan.mortgageType ?? null;
+  const term = loan.loanTerm ?? null;
+  const dueDate = loan.dueDate ?? null;
+  const recordDate = loan.recordingDate ?? null;
+  const docNum = loan.documentNumber ?? null;
+  const estBalance = loan.estimatedBalance ?? null;
+  const estPayment = loan.estimatedMonthlyPayment ?? null;
 
   return (
     <div style={{
@@ -85,19 +85,19 @@ function LoanCard({ loan, t }) {
 export default function FinancialsTab({ data }) {
   const { t } = useTheme();
 
-  const loans = data?.currentLoans ?? data?.current_loans ?? [];
-  const val = Array.isArray(data?.valuations) ? data.valuations[0] : (data?.valuations ?? data?.valuation ?? {});
+  const loans = data?.currentLoans ?? [];
+  const val = Array.isArray(data?.valuations) ? data.valuations[0] : (data?.valuations ?? {});
 
-  const estimatedValue = val?.estimated_value ?? val?.estimatedValue ?? null;
-  const estMin = val?.estimated_min_value ?? val?.estimatedMinValue ?? null;
-  const estMax = val?.estimated_max_value ?? val?.estimatedMaxValue ?? null;
-  const confidence = val?.confidence_score ?? val?.confidenceScore ?? null;
-  const valDate = val?.valuation_date ?? val?.valuationDate ?? null;
-  const rentalValue = val?.estimated_rental_value ?? val?.estimatedRentalValue ?? null;
+  const estimatedValue = val?.estimatedValue ?? null;
+  const estMin = val?.estimatedMinValue ?? null;
+  const estMax = val?.estimatedMaxValue ?? null;
+  const confidence = val?.confidenceScore ?? null;
+  const valDate = val?.valuationDate ?? null;
+  const rentalValue = val?.estimatedRentalValue ?? null;
 
-  const ltv = val?.ltv ?? data?.ltv ?? data?.loan_to_value ?? null;
-  const availableEquity = val?.available_equity ?? val?.availableEquity ?? null;
-  const lendableEquity = val?.lendable_equity ?? val?.lendableEquity ?? null;
+  const ltv = val?.ltv ?? null;
+  const availableEquity = val?.availableEquity ?? null;
+  const lendableEquity = val?.lendableEquity ?? null;
 
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -119,7 +119,7 @@ export default function FinancialsTab({ data }) {
           </div>
         ) : (
           loans.map((loan, i) => (
-            <LoanCard key={loan.document_number ?? loan.documentNumber ?? i} loan={loan} t={t} />
+            <LoanCard key={loan.documentNumber ?? i} loan={loan} t={t} />
           ))
         )}
       </div>

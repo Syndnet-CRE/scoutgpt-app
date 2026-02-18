@@ -28,28 +28,30 @@ export default function OwnershipTab({ data }) {
   const { t } = useTheme();
 
   const owner = data?.ownership?.[0] ?? {};
-  const propertyState = data?.addressState ?? data?.state ?? null;
+  const propertyState = data?.addressState ?? null;
 
-  const ownerName = owner.owner1_name_full ?? owner.owner1NameFull ?? null;
-  const owner2Name = owner.owner2_name_full ?? owner.owner2NameFull ?? null;
-  const ownershipType = owner.ownership_type ?? owner.ownershipType ?? null;
-  const isOccupied = owner.is_owner_occupied ?? owner.isOwnerOccupied;
-  const ownershipSeq = owner.ownership_sequence ?? owner.ownershipSequence ?? null;
+  const ownerName = owner.owner1NameFull ?? null;
+  const owner2Name = owner.owner2NameFull ?? null;
+  const firstName = owner.owner1NameFirst ?? null;
+  const lastName = owner.owner1NameLast ?? null;
+  const ownershipType = owner.ownershipType ?? null;
+  const isOccupied = owner.isOwnerOccupied;
+  const ownershipSeq = owner.ownershipSequence ?? null;
 
-  const mailFull = owner.mail_address_full ?? owner.mailAddressFull ?? null;
-  const mailCity = owner.mail_address_city ?? owner.mailAddressCity ?? null;
-  const mailState = owner.mail_address_state ?? owner.mailAddressState ?? null;
-  const mailZip = owner.mail_address_zip ?? owner.mailAddressZip ?? null;
+  const mailFull = owner.mailAddressFull ?? null;
+  const mailCity = owner.mailAddressCity ?? null;
+  const mailState = owner.mailAddressState ?? null;
+  const mailZip = owner.mailAddressZip ?? null;
   const isOutOfState = mailState && propertyState && mailState.toUpperCase() !== propertyState.toUpperCase();
 
-  const transferDate = owner.ownership_transfer_date ?? owner.ownershipTransferDate ?? null;
+  const transferDate = owner.ownershipTransferDate ?? null;
   const ownershipLength = calcOwnershipLength(transferDate);
-  const effectiveFrom = owner.effective_from ?? owner.effectiveFrom ?? null;
-  const effectiveTo = owner.effective_to ?? owner.effectiveTo ?? null;
+  const effectiveFrom = owner.effectiveFrom ?? null;
+  const effectiveTo = owner.effectiveTo ?? null;
 
-  const companyFlag = owner.company_flag ?? owner.companyFlag;
-  const trustFlag = owner.trust_flag ?? owner.trustFlag;
-  const absenteeFlag = owner.is_absentee_owner ?? owner.isAbsenteeOwner;
+  const companyFlag = owner.companyFlag;
+  const trustFlag = owner.trustFlag;
+  const absenteeFlag = owner.isAbsenteeOwner;
 
   const badges = [];
   if (companyFlag) badges.push({ label: 'CORPORATE', variant: 'info' });

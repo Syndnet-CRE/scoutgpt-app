@@ -102,32 +102,47 @@ function fmtCurrency(val) {
   return `$${Number(val).toLocaleString()}`;
 }
 
+function fmtDate(val) {
+  if (!val) return null;
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return val;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function fmtPct(val) {
+  if (val == null) return null;
+  return `${Number(val).toFixed(2)}%`;
+}
+
 export default function OverviewTab({ data, onTabChange }) {
   const { t } = useTheme();
 
   const d = data || {};
 
-  const assessedValue = d.assessed_value ?? d.assessedValue;
-  const avmEstimate = d.avm_estimate ?? d.avmEstimate;
-  const lotSize = d.lot_size ?? d.lotSize ?? d.lot_sqft;
-  const buildingSf = d.building_sf ?? d.buildingSf ?? d.building_sqft;
-  const lastSalePrice = d.last_sale_price ?? d.lastSalePrice;
-  const lastSaleDate = d.last_sale_date ?? d.lastSaleDate;
-  const annualTax = d.annual_tax ?? d.annualTax ?? d.tax_amount;
+  const assessedValue = d.taxAssessments?.[0]?.assessedValueTotal ?? null;
+  const avmEstimate = d.valuations?.[0]?.estimatedValue ?? null;
+  const lotSf = d.areaLotSf ?? null;
+  const lotAcres = d.areaLotAcres ?? null;
+  const buildingSf = d.areaBuilding ?? null;
+  const yearBuilt = d.yearBuilt ?? null;
+  const lastSalePrice = d.lastSalePrice ?? null;
+  const lastSaleDate = d.lastSaleDate ?? null;
+  const annualTax = d.taxAssessments?.[0]?.taxAmountBilled ?? null;
 
-  const owner = d.owner ?? d.owner_name ?? d.ownerName;
-  const ownerType = d.owner_type ?? d.ownerType;
-  const mailingAddress = d.mailing_address ?? d.mailingAddress;
-  const ownershipYears = d.ownership_years ?? d.ownershipYears;
-  const ownerSince = d.owner_since ?? d.ownerSince;
+  const ownership = d.ownership?.[0] ?? {};
+  const owner = ownership.owner1NameFull ?? null;
+  const ownershipType = ownership.ownershipType ?? null;
+  const isAbsentee = ownership.isAbsenteeOwner;
+  const mailingAddress = ownership.mailAddressFull ?? null;
+  const transferDate = ownership.ownershipTransferDate ?? null;
 
-  const lender = d.lender ?? d.mortgage_lender;
-  const mortgageBalance = d.mortgage_balance ?? d.mortgageBalance;
-  const mortgageRate = d.mortgage_rate ?? d.mortgageRate;
-  const mortgageTerm = d.mortgage_term ?? d.mortgageTerm;
-  const mortgageYear = d.mortgage_year ?? d.mortgageYear;
-  const mortgageMaturity = d.mortgage_maturity ?? d.mortgageMaturity;
-  const ltv = d.ltv ?? d.loan_to_value;
+  const loan = d.currentLoans?.[0] ?? {};
+  const lender = loan.lenderNameFirst ?? null;
+  const mortgageBalance = loan.estimatedBalance ?? null;
+  const mortgageRate = loan.interestRate ?? null;
+  const mortgageTerm = loan.loanTerm ?? null;
+  const mortgageMaturity = loan.dueDate ?? null;
+  const ltv = d.valuations?.[0]?.ltv ?? null;
 
   return (
     <div style={{
@@ -135,7 +150,7 @@ export default function OverviewTab({ data, onTabChange }) {
       padding: 20,
       gap: 20,
     }}>
-      {/* ── LEFT COLUMN ── */}
+      {/* \u2500\u2500 LEFT COLUMN \u2500\u2500 */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* Key Metrics */}
@@ -145,14 +160,22 @@ export default function OverviewTab({ data, onTabChange }) {
             <div style={{ display: 'flex', gap: 8 }}>
               <MetricCard label="Assessed Value" value={fmtCurrency(assessedValue)} />
               <MetricCard label="AVM Estimate" value={fmtCurrency(avmEstimate)} />
-              <MetricCard label="Lot Size" value={fmt(lotSize, '', ' sqft')} />
+              <MetricCard
+                label="Lot Size"
+                value={fmt(lotSf, '', ' sqft')}
+                sub={lotAcres != null ? `${lotAcres} acres` : null}
+              />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <MetricCard label="Building" value={fmt(buildingSf, '', ' SF')} />
+              <MetricCard
+                label="Building"
+                value={fmt(buildingSf, '', ' SF')}
+                sub={yearBuilt ? `Built ${yearBuilt}` : null}
+              />
               <MetricCard
                 label="Last Sale"
                 value={fmtCurrency(lastSalePrice)}
-                sub={lastSaleDate ?? null}
+                sub={lastSaleDate ? fmtDate(lastSaleDate) : null}
               />
               <MetricCard label="Annual Tax" value={fmtCurrency(annualTax)} />
             </div>
@@ -168,17 +191,14 @@ export default function OverviewTab({ data, onTabChange }) {
           />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <DataRow label="Owner" value={owner} mono={false} />
-            <DataRow label="Owner Type" value={ownerType} mono={false} />
-            <DataRow label="Mailing" value={mailingAddress} mono={false} />
+            <DataRow label="Owner Type" value={ownershipType} mono={false} />
             <DataRow
-              label="Ownership Length"
-              value={
-                ownershipYears != null
-                  ? `${ownershipYears} years${ownerSince ? ` (since ${ownerSince})` : ''}`
-                  : null
-              }
+              label="Absentee"
+              value={isAbsentee != null ? (isAbsentee ? 'Yes' : 'No') : null}
               mono={false}
             />
+            <DataRow label="Mailing" value={mailingAddress} mono={false} />
+            <DataRow label="Transfer Date" value={fmtDate(transferDate)} mono={false} />
           </div>
         </CardShell>
 
@@ -196,11 +216,11 @@ export default function OverviewTab({ data, onTabChange }) {
               label="Rate / Term"
               value={
                 mortgageRate != null || mortgageTerm != null
-                  ? `${mortgageRate ?? '\u2014'}% / ${mortgageTerm ?? '\u2014'}yr${mortgageYear ? ` (${mortgageYear})` : ''}`
+                  ? `${mortgageRate != null ? fmtPct(mortgageRate) : '\u2014'} / ${mortgageTerm ?? '\u2014'}yr`
                   : null
               }
             />
-            <DataRow label="Maturity" value={mortgageMaturity} mono={false} />
+            <DataRow label="Due Date" value={fmtDate(mortgageMaturity)} mono={false} />
           </div>
           {ltv != null && (
             <div style={{ paddingTop: 4 }}>
@@ -210,7 +230,7 @@ export default function OverviewTab({ data, onTabChange }) {
         </CardShell>
       </div>
 
-      {/* ── RIGHT COLUMN ── */}
+      {/* \u2500\u2500 RIGHT COLUMN \u2500\u2500 */}
       <div style={{ width: 200, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* AI Quick Take */}
@@ -287,7 +307,7 @@ export default function OverviewTab({ data, onTabChange }) {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <DataRow label="Submarket" value={d.submarket} mono={false} />
             <DataRow label="Vacancy" value={d.vacancy != null ? `${d.vacancy}%` : null} accent={d.vacancy != null && d.vacancy < 10} />
-            <DataRow label="Avg Rent" value={d.avg_rent ?? d.avgRent} />
+            <DataRow label="Avg Rent" value={d.avgRent} />
           </div>
         </CardShell>
 

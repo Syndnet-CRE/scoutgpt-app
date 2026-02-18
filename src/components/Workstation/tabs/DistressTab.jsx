@@ -39,16 +39,16 @@ function isFutureDate(dateStr) {
 }
 
 function ForeclosureCard({ record, t }) {
-  const recType = record.record_type ?? record.recordType ?? null;
+  const recType = record.recordType ?? null;
   const status = record.status ?? null;
-  const filingDate = record.filing_date ?? record.filingDate ?? null;
-  const defaultAmt = record.default_amount ?? record.defaultAmount ?? null;
-  const loanBalance = record.loan_balance ?? record.loanBalance ?? null;
-  const estimatedValue = record.estimated_value ?? record.estimatedValue ?? null;
+  const filingDate = record.foreclosureRecordingDate ?? null;
+  const defaultAmt = record.defaultAmount ?? null;
+  const loanBalance = record.loanBalance ?? null;
+  const estimatedValue = record.estimatedValue ?? null;
 
-  const auctionDate = record.auction_date ?? record.auctionDate ?? null;
-  const auctionBid = record.auction_opening_bid ?? record.auctionOpeningBid ?? null;
-  const auctionAddr = record.auction_address ?? record.auctionAddress ?? null;
+  const auctionDate = record.auctionDate ?? null;
+  const auctionBid = record.auctionOpeningBid ?? null;
+  const auctionAddr = record.auctionAddress ?? null;
   const isFutureAuction = isFutureDate(auctionDate);
 
   return (
@@ -83,17 +83,17 @@ function ForeclosureCard({ record, t }) {
       {/* Detail rows */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <DataRow label="Case #" value={record.case_number ?? record.caseNumber} />
-          <DataRow label="Document #" value={record.document_number ?? record.documentNumber} />
-          <DataRow label="Original Loan" value={fmtCurrency(record.original_loan_amount ?? record.originalLoanAmount)} />
-          <DataRow label="Orig. Loan Date" value={fmtDate(record.original_loan_recording_date ?? record.originalLoanRecordingDate)} />
-          <DataRow label="Orig. Rate" value={fmtPct(record.original_loan_interest_rate ?? record.originalLoanInterestRate)} />
+          <DataRow label="Case #" value={record.caseNumber} />
+          <DataRow label="Document #" value={record.documentNumber} />
+          <DataRow label="Original Loan" value={fmtCurrency(record.originalLoanAmount)} />
+          <DataRow label="Orig. Loan Date" value={fmtDate(record.originalLoanRecordingDate)} />
+          <DataRow label="Orig. Rate" value={fmtPct(record.originalLoanInterestRate)} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <DataRow label="Maturity" value={fmtDate(record.loan_maturity_date ?? record.loanMaturityDate)} />
-          <DataRow label="Borrower" value={record.borrower_name ?? record.borrowerName} mono={false} />
-          <DataRow label="Lender" value={record.lender_name_standardized ?? record.lenderNameStandardized} mono={false} />
-          <DataRow label="Trustee" value={record.trustee_name ?? record.trusteeName} mono={false} />
+          <DataRow label="Maturity" value={fmtDate(record.loanMaturityDate)} />
+          <DataRow label="Borrower" value={record.borrowerName} mono={false} />
+          <DataRow label="Lender" value={record.lenderNameStandardized} mono={false} />
+          <DataRow label="Trustee" value={record.trusteeName} mono={false} />
         </div>
       </div>
 
@@ -125,48 +125,44 @@ function ForeclosureCard({ record, t }) {
 export default function DistressTab({ data }) {
   const { t } = useTheme();
 
-  const assessments = data?.taxAssessments ?? data?.tax_assessments ?? [];
+  const assessments = data?.taxAssessments ?? [];
   const current = assessments[0] ?? {};
-  const delinquentYear = current.tax_delinquent_year ?? current.taxDelinquentYear
-    ?? data?.tax_delinquent_year ?? data?.taxDelinquentYear ?? null;
-  const taxBilled = current.tax_amount_billed ?? current.taxAmountBilled ?? null;
+  const delinquentYear = current.taxDelinquentYear ?? null;
+  const taxBilled = current.taxAmountBilled ?? null;
 
-  const foreclosures = data?.foreclosureRecords ?? data?.foreclosure_records ?? [];
+  const foreclosures = data?.foreclosureRecords ?? [];
 
-  const sales = data?.salesTransactions ?? data?.sales_transactions ?? [];
+  const sales = data?.salesTransactions ?? [];
   const distressedSales = useMemo(
-    () => sales.filter((s) =>
-      (s.is_distressed ?? s.isDistressed) || (s.is_foreclosure_auction ?? s.isForeclosureAuction)
-    ),
+    () => sales.filter((s) => s.isDistressed || s.isForeclosureAuction),
     [sales]
   );
 
   const hasAnyDistress = delinquentYear || foreclosures.length > 0 || distressedSales.length > 0;
 
   const distressedColumns = [
-    { key: 'recording_date', label: 'Date', format: (v) => fmtDate(v) },
-    { key: 'sale_price', label: 'Price', align: 'right', format: (v) => fmtCurrency(v) },
+    { key: 'recordingDate', label: 'Date', format: (v) => fmtDate(v) },
+    { key: 'salePrice', label: 'Price', align: 'right', format: (v) => fmtCurrency(v) },
     {
       key: '_type', label: 'Type', format: (_, row) => {
-        const isAuction = row.is_foreclosure_auction ?? row.isForeclosureAuction;
-        return <StatusBadge label={isAuction ? 'Auction' : 'Distressed'} variant="error" />;
+        return <StatusBadge label={row.isForeclosureAuction ? 'Auction' : 'Distressed'} variant="error" />;
       },
     },
-    { key: 'grantor1_name_full', label: 'Grantor' },
-    { key: 'grantee1_name_full', label: 'Grantee' },
+    { key: 'grantor1NameFull', label: 'Grantor' },
+    { key: 'grantee1NameFull', label: 'Grantee' },
   ];
 
   const distressedRows = distressedSales.map((s, i) => ({
-    id: s.transactionId ?? s.transaction_id ?? i,
-    recording_date: s.recording_date ?? s.recordingDate,
-    sale_price: s.sale_price ?? s.salePrice,
-    grantor1_name_full: s.grantor1_name_full ?? s.grantor1NameFull ?? '\u2014',
-    grantee1_name_full: s.grantee1_name_full ?? s.grantee1NameFull ?? '\u2014',
-    is_foreclosure_auction: s.is_foreclosure_auction ?? s.isForeclosureAuction,
-    is_distressed: s.is_distressed ?? s.isDistressed,
+    id: s.transactionId ?? i,
+    recordingDate: s.recordingDate,
+    salePrice: s.salePrice,
+    grantor1NameFull: s.grantor1NameFull ?? '\u2014',
+    grantee1NameFull: s.grantee1NameFull ?? '\u2014',
+    isForeclosureAuction: s.isForeclosureAuction,
+    isDistressed: s.isDistressed,
   }));
 
-  /* ── No Distress ── */
+  /* \u2500\u2500 No Distress \u2500\u2500 */
   if (!hasAnyDistress) {
     return (
       <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -223,7 +219,7 @@ export default function DistressTab({ data }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <SectionHeader title="Active Foreclosures" count={foreclosures.length} />
           {foreclosures.map((rec, i) => (
-            <ForeclosureCard key={rec.case_number ?? rec.caseNumber ?? i} record={rec} t={t} />
+            <ForeclosureCard key={rec.caseNumber ?? i} record={rec} t={t} />
           ))}
         </div>
       )}

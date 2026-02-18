@@ -25,52 +25,51 @@ export default function PhysicalTab({ data }) {
   const { t } = useTheme();
 
   const d = data ?? {};
-  const pd = d.propertyDetails ?? {};
 
-  const propType = d.property_use_standardized ?? d.propertyUseStandardized ?? pd.property_use_standardized ?? null;
-  const propCode = d.property_use_code ?? d.propertyUseCode ?? pd.property_use_code ?? null;
-  const yearBuilt = d.year_built ?? d.yearBuilt ?? pd.year_built ?? null;
-  const buildingArea = d.area_building ?? d.areaBuilding ?? pd.area_building ?? d.building_sf ?? null;
-  const grossArea = d.gross_area ?? d.grossArea ?? pd.gross_area ?? null;
-  const stories = d.stories_count ?? d.storiesCount ?? pd.stories_count ?? null;
-  const buildings = d.buildings_count ?? d.buildingsCount ?? pd.buildings_count ?? null;
-  const units = d.units_count ?? d.unitsCount ?? pd.units_count ?? null;
+  const propType = d.propertyUseStandardized ?? null;
+  const propCode = d.propertyUseCode ?? null;
+  const yearBuilt = d.yearBuilt ?? null;
+  const buildingArea = d.areaBuilding ?? null;
+  const grossArea = d.grossArea ?? null;
+  const stories = d.storiesCount ?? null;
+  const buildings = d.buildingsCount ?? null;
+  const units = d.unitsCount ?? null;
 
-  const bedrooms = d.bedrooms_count ?? d.bedroomsCount ?? pd.bedrooms_count ?? null;
-  const baths = d.bath_count ?? d.bathCount ?? pd.bath_count ?? null;
-  const lotSf = d.area_lot_sf ?? d.areaLotSf ?? pd.area_lot_sf ?? d.lot_size ?? null;
-  const lotAcres = d.area_lot_acres ?? d.areaLotAcres ?? pd.area_lot_acres ?? null;
-  const zoning = d.zoning ?? pd.zoning ?? null;
+  const bedrooms = d.bedroomsCount ?? null;
+  const baths = d.bathCount ?? null;
+  const lotSf = d.areaLotSf ?? null;
+  const lotAcres = d.areaLotAcres ?? null;
+  const zoning = d.zoning ?? null;
 
-  const construction = pd.construction_type ?? d.construction_type ?? null;
-  const extWalls = pd.exterior_walls ?? d.exterior_walls ?? null;
-  const intWalls = pd.interior_walls ?? d.interior_walls ?? null;
-  const foundation = pd.foundation ?? d.foundation ?? null;
-  const floorType = pd.floor_type ?? d.floor_type ?? null;
+  const construction = d.constructionType ?? null;
+  const extWalls = d.exteriorWalls ?? null;
+  const intWalls = d.interiorWalls ?? null;
+  const foundation = d.foundation ?? null;
+  const floorType = d.floorType ?? null;
 
-  const roofType = pd.roof_type ?? d.roof_type ?? null;
-  const roofMaterial = pd.roof_material ?? d.roof_material ?? null;
-  const quality = pd.quality_grade ?? d.quality_grade ?? null;
-  const condition = pd.condition ?? d.condition ?? null;
+  const roofType = d.roofType ?? null;
+  const roofMaterial = d.roofMaterial ?? null;
+  const quality = d.qualityGrade ?? null;
+  const condition = d.condition ?? null;
 
-  const garageType = pd.garage_type ?? d.garage_type ?? null;
-  const garageArea = pd.garage_area ?? d.garage_area ?? null;
-  const parking = pd.parking_spaces ?? d.parking_spaces ?? null;
-  const poolType = pd.pool_type ?? d.pool_type ?? null;
-  const hasPool = pd.has_pool ?? d.has_pool ?? null;
-  const hasSpa = pd.has_spa ?? d.has_spa ?? null;
+  const garageType = d.garageType ?? null;
+  const garageArea = d.garageArea ?? null;
+  const parking = d.parkingSpaces ?? null;
+  const poolType = d.poolType ?? null;
+  const hasPool = d.hasPool ?? null;
+  const hasSpa = d.hasSpa ?? null;
 
-  const hasElevator = pd.has_elevator ?? d.has_elevator ?? null;
-  const hasFireplace = pd.has_fireplace ?? d.has_fireplace ?? null;
-  const fireplaceCount = pd.fireplace_count ?? d.fireplace_count ?? null;
-  const hvacCooling = pd.hvac_cooling ?? d.hvac_cooling ?? null;
-  const hvacHeating = pd.hvac_heating ?? d.hvac_heating ?? null;
-  const hvacFuel = pd.hvac_fuel ?? d.hvac_fuel ?? null;
+  const hasElevator = d.hasElevator ?? null;
+  const hasFireplace = d.hasFireplace ?? null;
+  const fireplaceCount = d.fireplaceCount ?? null;
+  const hvacCooling = d.hvacCooling ?? null;
+  const hvacHeating = d.hvacHeating ?? null;
+  const hvacFuel = d.hvacFuel ?? null;
 
-  const legalDesc = pd.legal_description ?? d.legal_description ?? null;
-  const legalLot = pd.legal_lot ?? d.legal_lot ?? null;
-  const legalBlock = pd.legal_block ?? d.legal_block ?? null;
-  const legalSection = pd.legal_section ?? d.legal_section ?? null;
+  const legalDesc = d.legalDescription ?? null;
+  const legalLot = d.legalLot ?? null;
+  const legalBlock = d.legalBlock ?? null;
+  const legalSection = d.legalSection ?? null;
 
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>

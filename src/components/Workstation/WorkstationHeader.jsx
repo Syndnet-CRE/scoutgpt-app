@@ -48,23 +48,30 @@ function formatDate(dateStr) {
 export default function WorkstationHeader({ data, onClose }) {
   const { t } = useTheme();
   const [copiedCoord, setCopiedCoord] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  const address = data?.address ?? data?.site_address ?? '\u2014';
-  const city = data?.city ?? '';
-  const state = data?.state ?? '';
-  const zip = data?.zip ?? '';
+  const address = data?.addressFull ?? '\u2014';
+  const city = data?.addressCity ?? '';
+  const state = data?.addressState ?? '';
+  const zip = data?.addressZip ?? '';
   const cityLine = [city, state].filter(Boolean).join(', ') + (zip ? ` ${zip}` : '');
-  const apn = data?.apn ?? data?.parcel_id ?? null;
-  const fips = data?.fips ?? null;
-  const lat = data?.latitude ?? data?.lat ?? null;
-  const lng = data?.longitude ?? data?.lng ?? data?.lon ?? null;
-  const propertyType = data?.property_type ?? data?.propertyType ?? null;
-  const zoning = data?.zoning ?? null;
-  const floodZone = data?.flood_zone ?? data?.floodZone ?? null;
-  const ownerType = data?.owner_type ?? data?.ownerType ?? null;
-  const freshness = formatDate(data?.updated_at ?? data?.updatedAt);
+  const apn = data?.parcelNumberRaw ?? null;
+  const fips = data?.fipsCode ?? null;
+  const lat = data?.latitude ?? null;
+  const lng = data?.longitude ?? null;
+  const propertyType = data?.propertyUseGroup ?? null;
+  const zoning = data?.zoningLocal ?? data?.zoning ?? null;
+  const floodZone = data?.floodZone ?? null;
+  const ownerName = data?.ownership?.[0]?.owner1NameFull ?? null;
+  const companyFlag = data?.ownership?.[0]?.companyFlag;
+  const trustFlag = data?.ownership?.[0]?.trustFlag;
+  const isAbsentee = data?.ownership?.[0]?.isAbsenteeOwner;
+  const freshness = formatDate(data?.updatedAt);
 
-  const isAbsentee = ownerType?.toLowerCase().includes('absentee');
+  const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
+  const streetViewUrl = lat && lng && googleMapsKey
+    ? `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${lat},${lng}&key=${googleMapsKey}`
+    : null;
 
   const handleCopyCoords = () => {
     if (lat != null && lng != null) {
@@ -79,11 +86,13 @@ export default function WorkstationHeader({ data, onClose }) {
   if (propertyType) badges.push({ label: propertyType, variant: 'success' });
   if (zoning) badges.push({ label: zoning, variant: 'neutral' });
   if (floodZone) badges.push({ label: `Zone ${floodZone}`, variant: floodZone === 'X' ? 'success' : 'warning' });
+  if (companyFlag) badges.push({ label: 'Corporate', variant: 'info' });
+  if (trustFlag) badges.push({ label: 'Trust', variant: 'neutral' });
   if (isAbsentee) badges.push({ label: 'Absentee Owner', variant: 'warning' });
 
   return (
     <div style={{ flexShrink: 0 }}>
-      {/* Street View Placeholder */}
+      {/* Street View / Placeholder */}
       <div style={{
         width: '100%',
         height: 180,
@@ -92,8 +101,18 @@ export default function WorkstationHeader({ data, onClose }) {
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
+        overflow: 'hidden',
       }}>
-        <Camera size={32} style={{ color: t.text.quaternary }} />
+        {streetViewUrl && !imgError ? (
+          <img
+            src={streetViewUrl}
+            alt="Street View"
+            onError={() => setImgError(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <Camera size={32} style={{ color: t.text.quaternary }} />
+        )}
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -138,6 +157,16 @@ export default function WorkstationHeader({ data, onClose }) {
               marginTop: 2,
             }}>
               {cityLine}
+            </div>
+          )}
+          {ownerName && (
+            <div style={{
+              fontSize: 12,
+              color: t.text.tertiary,
+              fontFamily: t.font.display,
+              marginTop: 4,
+            }}>
+              Owner: {ownerName}
             </div>
           )}
         </div>
