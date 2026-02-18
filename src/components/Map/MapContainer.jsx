@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { GIS_LAYERS, ZONING_CATEGORY_COLORS, FLOOD_COLORS, FLOOD_OPACITY, DIAMETER_ALIASES, fetchGisLayer } from '../../config/gisLayers';
+import { GIS_LAYERS, ZONING_CATEGORY_COLORS, FLOOD_COLORS, FLOOD_OPACITY, DIAMETER_ALIASES, fetchGisLayer, categorizeZoneCode, normalizeFloodZone } from '../../config/gisLayers';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.placeholder';
 
@@ -188,6 +188,42 @@ export default function MapContainer({
 
     // Fallback
     return '#888888';
+  }
+
+  // Helper: Transform GeoJSON features for zoning and flood layers
+  // Normalizes _zone_category and _flood_zone to match paint expression keys
+  function transformGisGeoJSON(layerKey, geojson) {
+    if (!geojson || !geojson.features) return geojson;
+
+    if (layerKey === 'zoning_districts') {
+      // Transform _zone_category from raw codes (CS, LO) to category names (commercial, office)
+      return {
+        ...geojson,
+        features: geojson.features.map(f => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            _zone_category: categorizeZoneCode(f.properties?.zone_code || f.properties?.zone_category)
+          }
+        }))
+      };
+    }
+
+    if (layerKey === 'floodplains') {
+      // Transform _flood_zone from descriptive strings to FEMA codes (AE, X, X_SHADED)
+      return {
+        ...geojson,
+        features: geojson.features.map(f => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            _flood_zone: normalizeFloodZone(f.properties?.flood_zone || f.properties?._flood_zone)
+          }
+        }))
+      };
+    }
+
+    return geojson;
   }
 
   // Ref for utility line hover popup (one at a time)
@@ -928,8 +964,9 @@ export default function MapContainer({
             const m = mapRef.current;
             const src = m.getSource(sourceId);
             if (src) {
-              src.setData(geojson);
-              gisDataRef.current[layerKey] = geojson;
+              const transformedData = transformGisGeoJSON(layerKey, geojson);
+              src.setData(transformedData);
+              gisDataRef.current[layerKey] = transformedData;
               // Only update bounds key on successful fetch
               lastBoundsKeyRef.current[layerKey] = boundsKey;
             }
@@ -1113,8 +1150,9 @@ export default function MapContainer({
           if (!visibleGisLayersRef.current?.[layerKey]) return;
           const m = mapRef.current;
           if (m.getSource(sourceId)) return; // already added
-          gisDataRef.current[layerKey] = geojson;
-          m.addSource(sourceId, { type: 'geojson', data: geojson });
+          const transformedData = transformGisGeoJSON(layerKey, geojson);
+          gisDataRef.current[layerKey] = transformedData;
+          m.addSource(sourceId, { type: 'geojson', data: transformedData });
           addGisMapLayers(m, layerKey, config);
         }).catch(err => console.warn(`[GIS] Error loading ${layerKey}:`, err));
       } else if (!isVisible && map.getSource(sourceId)) {
