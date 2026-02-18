@@ -262,7 +262,7 @@ export async function fetchGisLayer(layerKey, bounds) {
   }
 
   const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
-  const url = `${API_URL}/api/gis/${apiType}?bbox=${bbox}`;
+  const url = `${API_URL}/gis/${apiType}?bbox=${bbox}`;
 
   console.log(`[GIS] Fetching ${layerKey} from Neon API...`);
 
