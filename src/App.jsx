@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTheme } from './theme.jsx';
-import Header from './components/Header';
 import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import ScoutGPTChatPanel from './components/RightPanel/ScoutGPTChatPanel';
@@ -236,8 +235,7 @@ export default function App() {
   }, [selectedProperty, workstationOpen, clearProperty]);
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden" style={{ background: t.bg.primary }}>
-      <Header />
+    <div className="flex-1 flex flex-col overflow-hidden" style={{ background: t.bg.primary }}>
       <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
         {/* Map — full width */}
         <div className="flex-1 relative">
