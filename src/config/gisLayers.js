@@ -25,18 +25,18 @@ const FLOOD_ALIASES = [
 // ZONING CATEGORIZATION — Normalizes zone codes from 7 jurisdictions to 10 categories
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Category colors (high-contrast on dark map, distinct from each other)
+// Category colors — APA standard palette (optimized for dark map)
 export const ZONING_CATEGORY_COLORS = {
-  single_family: '#fbbf24',   // amber — dominant land use, warm
-  multi_family: '#f97316',    // orange — distinct from SF
-  office: '#8b5cf6',          // violet — cool tone
-  commercial: '#ef4444',      // red — high visibility
-  industrial: '#6b7280',      // gray — muted
-  mixed_use: '#ec4899',       // pink — vibrant
-  planned: '#14b8a6',         // teal — cool green
-  parks: '#22c55e',           // green — natural
-  agricultural: '#a3e635',    // lime — rural
-  other: '#475569',           // slate — neutral fallback
+  single_family: '#facc15',   // yellow-400 (APA: yellow)
+  multi_family: '#fb923c',    // orange-400 (APA: orange/tan)
+  office: '#60a5fa',          // blue-400 (APA: blue)
+  commercial: '#f87171',      // red-400 (APA: red)
+  industrial: '#a78bfa',      // violet-400 (APA: purple)
+  mixed_use: '#f472b6',       // pink-400 (APA: pink/magenta)
+  planned: '#2dd4bf',         // teal-400 (APA: teal)
+  parks: '#4ade80',           // green-400 (APA: green)
+  agricultural: '#a3e635',    // lime-400 (APA: light green)
+  other: '#94a3b8',           // slate-400 (neutral)
 };
 
 // Categorize any zone code to one of 10 categories
@@ -113,43 +113,43 @@ export function categorizeZoneCode(code) {
   return 'other';
 }
 
-// Legacy ZONING_COLORS export (for backwards compatibility) — maps exact codes to colors
+// Legacy ZONING_COLORS export (for backwards compatibility) — maps exact codes to APA colors
 export const ZONING_COLORS = {
-  // Single Family (amber)
-  'SF-1': '#fbbf24', 'SF-2': '#fbbf24', 'SF-3': '#fbbf24', 'SF-4A': '#fbbf24',
-  'SF-5': '#fbbf24', 'SF-6': '#fbbf24', 'RR': '#fbbf24', 'LA': '#fbbf24',
+  // Single Family (yellow)
+  'SF-1': '#facc15', 'SF-2': '#facc15', 'SF-3': '#facc15', 'SF-4A': '#facc15',
+  'SF-5': '#facc15', 'SF-6': '#facc15', 'RR': '#facc15', 'LA': '#facc15',
   // Multi-Family (orange)
-  'MF-1': '#f97316', 'MF-2': '#f97316', 'MF-3': '#f97316', 'MF-4': '#f97316',
-  'MF-5': '#f97316', 'MF-6': '#f97316', 'MH': '#f97316',
-  // Office (violet)
-  'LO': '#8b5cf6', 'GO': '#8b5cf6', 'NO': '#8b5cf6', 'W/LO': '#8b5cf6',
+  'MF-1': '#fb923c', 'MF-2': '#fb923c', 'MF-3': '#fb923c', 'MF-4': '#fb923c',
+  'MF-5': '#fb923c', 'MF-6': '#fb923c', 'MH': '#fb923c',
+  // Office (blue)
+  'LO': '#60a5fa', 'GO': '#60a5fa', 'NO': '#60a5fa', 'W/LO': '#60a5fa',
   // Commercial (red)
-  'LR': '#ef4444', 'GR': '#ef4444', 'CR': '#ef4444', 'CS': '#ef4444',
-  'CS-1': '#ef4444', 'CH': '#ef4444', 'CBD': '#ef4444',
-  // Industrial (gray)
-  'IP': '#6b7280', 'MI': '#6b7280', 'LI': '#6b7280',
+  'LR': '#f87171', 'GR': '#f87171', 'CR': '#f87171', 'CS': '#f87171',
+  'CS-1': '#f87171', 'CH': '#f87171', 'CBD': '#f87171',
+  // Industrial (violet)
+  'IP': '#a78bfa', 'MI': '#a78bfa', 'LI': '#a78bfa',
   // Mixed Use (pink)
-  'DMU': '#ec4899', 'MU': '#ec4899', 'TOD': '#ec4899', 'TND': '#ec4899', 'PDA': '#ec4899',
+  'DMU': '#f472b6', 'MU': '#f472b6', 'TOD': '#f472b6', 'TND': '#f472b6', 'PDA': '#f472b6',
   // Planned / PUD (teal)
-  'PUD': '#14b8a6',
+  'PUD': '#2dd4bf',
   // Parks / Public (green)
-  'P': '#22c55e',
+  'P': '#4ade80',
   // Agricultural (lime)
   'AG': '#a3e635',
 };
 
-// Legend for UI (10 categories)
+// Legend for UI (10 categories) — APA standard colors
 export const ZONING_LEGEND = [
-  { id: 'single_family', label: 'Single Family', color: '#fbbf24' },
-  { id: 'multi_family', label: 'Multi-Family', color: '#f97316' },
-  { id: 'office', label: 'Office', color: '#8b5cf6' },
-  { id: 'commercial', label: 'Commercial', color: '#ef4444' },
-  { id: 'industrial', label: 'Industrial', color: '#6b7280' },
-  { id: 'mixed_use', label: 'Mixed Use', color: '#ec4899' },
-  { id: 'planned', label: 'Planned / PUD', color: '#14b8a6' },
-  { id: 'parks', label: 'Parks / Public', color: '#22c55e' },
+  { id: 'single_family', label: 'Single Family', color: '#facc15' },
+  { id: 'multi_family', label: 'Multi-Family', color: '#fb923c' },
+  { id: 'office', label: 'Office', color: '#60a5fa' },
+  { id: 'commercial', label: 'Commercial', color: '#f87171' },
+  { id: 'industrial', label: 'Industrial', color: '#a78bfa' },
+  { id: 'mixed_use', label: 'Mixed Use', color: '#f472b6' },
+  { id: 'planned', label: 'Planned / PUD', color: '#2dd4bf' },
+  { id: 'parks', label: 'Parks / Public', color: '#4ade80' },
   { id: 'agricultural', label: 'Agricultural', color: '#a3e635' },
-  { id: 'other', label: 'Other / Unknown', color: '#475569' },
+  { id: 'other', label: 'Other / Unknown', color: '#94a3b8' },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -180,29 +180,29 @@ export function normalizeFloodZone(value) {
   return 'UNKNOWN';
 }
 
-// Flood zone colors by normalized code
+// Flood zone colors by normalized code — FEMA blue scheme
 export const FLOOD_COLORS = {
-  // High risk - 100-year floodplain (red-600)
-  'A': '#dc2626', 'AE': '#dc2626', 'AH': '#dc2626', 'AO': '#dc2626', 'AR': '#dc2626', 'A99': '#dc2626',
-  // Coastal high risk (red-800)
-  'V': '#991b1b', 'VE': '#991b1b',
-  // Moderate risk - 500-year / shaded X (amber-500)
-  'X_SHADED': '#f59e0b', 'B': '#f59e0b',
-  // Undetermined (gray-500)
-  'D': '#6b7280',
-  // Minimal risk - outside floodplain (blue-500)
-  'X': '#3b82f6', 'C': '#3b82f6',
-  // Unknown (slate-600)
+  // High risk - 100-year floodplain (dark blue)
+  'A': '#1e40af', 'AE': '#1e40af', 'AH': '#1e40af', 'AO': '#1e40af', 'AR': '#1e40af', 'A99': '#1e40af',
+  // Coastal high hazard (navy)
+  'V': '#1e3a8a', 'VE': '#1e3a8a',
+  // Moderate risk - 500-year / shaded X (sky blue)
+  'X_SHADED': '#0ea5e9', 'B': '#0ea5e9',
+  // Undetermined (gray-blue)
+  'D': '#64748b',
+  // Minimal risk - outside floodplain (light blue)
+  'X': '#7dd3fc', 'C': '#7dd3fc',
+  // Unknown (slate)
   'UNKNOWN': '#475569',
 };
 
-// Flood zone opacity by risk level
+// Flood zone opacity by risk level — reduced for less bleed
 export const FLOOD_OPACITY = {
-  'A': 0.30, 'AE': 0.30, 'AH': 0.30, 'AO': 0.30, 'AR': 0.30, 'A99': 0.30,
-  'V': 0.35, 'VE': 0.35,
-  'X_SHADED': 0.20, 'B': 0.20,
+  'A': 0.35, 'AE': 0.35, 'AH': 0.35, 'AO': 0.35, 'AR': 0.35, 'A99': 0.35,
+  'V': 0.40, 'VE': 0.40,
+  'X_SHADED': 0.25, 'B': 0.25,
   'D': 0.15,
-  'X': 0.10, 'C': 0.10,
+  'X': 0.08, 'C': 0.08,
   'UNKNOWN': 0.15,
 };
 

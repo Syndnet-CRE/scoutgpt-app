@@ -500,7 +500,7 @@ export default function MapContainer({
         paint: {
           'line-color': buildDiameterColorExpr(layerKey),
           'line-width': buildDiameterWidthExpr(),
-          'line-opacity': 0.85
+          'line-opacity': 0.75
         },
         layout: { 'line-cap': 'round', 'line-join': 'round' }
       });
