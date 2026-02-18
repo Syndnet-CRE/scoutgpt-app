@@ -456,4 +456,4 @@ export async function fetchGisLayer(layerKey, bounds) {
   return { type: 'FeatureCollection', features };
 }
 
-export { DIAMETER_ALIASES, categorizeZoneCode, normalizeFloodZone };
+export { DIAMETER_ALIASES };
