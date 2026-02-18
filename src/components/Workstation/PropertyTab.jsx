@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building, User, Handshake, DollarSign, AlertTriangle, BarChart3, FileText, Hammer, Shield, ShieldCheck, Home, Globe, Waves, Flame, CloudLightning, Sun } from 'lucide-react';
+import { Building, User, Handshake, DollarSign, AlertTriangle, BarChart3, FileText, Hammer, Shield, ShieldCheck, Home, Globe, Waves, Flame, CloudLightning, Sun, Droplet, MapPin } from 'lucide-react';
 import { useTheme } from '../../theme.jsx';
 import useIntelligence from '../../hooks/useIntelligence';
 import IntelligenceScorecard from './IntelligenceScorecard';
@@ -800,6 +800,315 @@ const RiskSubTab = ({ data, t }) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
+// INFRASTRUCTURE SUB-TAB
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Helper: Get distance color based on feet
+const getDistanceColor = (ft) => {
+  if (ft == null) return '#64748b';
+  if (ft <= 100) return '#34d399';  // green - adjacent
+  if (ft <= 300) return '#a3e635';  // lime - nearby
+  if (ft <= 500) return '#fbbf24';  // yellow - moderate
+  if (ft <= 1000) return '#f97316'; // orange - distant
+  return '#ef4444';                  // red - remote
+};
+
+// Helper: Get proximity label
+const getProximityLabel = (ft) => {
+  if (ft == null) return null;
+  if (ft <= 100) return 'ADJACENT';
+  if (ft <= 300) return 'NEARBY';
+  if (ft <= 500) return 'MODERATE';
+  if (ft <= 1000) return 'DISTANT';
+  return 'REMOTE';
+};
+
+// Helper: Get proximity bar percentage
+const getProximityPct = (ft) => {
+  if (ft == null) return 0;
+  if (ft <= 100) return 95;
+  if (ft <= 300) return 75;
+  if (ft <= 500) return 55;
+  if (ft <= 1000) return 35;
+  return 15;
+};
+
+// Helper: Get flood zone color
+const getFloodZoneColor = (zone) => {
+  if (!zone) return '#64748b';
+  const z = zone.toUpperCase();
+  if (z === 'X' || z === 'MINIMAL') return '#34d399';  // green
+  if (z.startsWith('A') || z === 'VE' || z === 'V') return '#ef4444';  // red - high risk
+  if (z.includes('SHADED') || z === 'B' || z === 'C') return '#fbbf24';  // yellow - moderate
+  return '#94a3b8';  // default gray
+};
+
+// Utility distance row component
+const InfraDistanceRow = ({ label, icon: IconComponent, distance, diameter, material, t }) => {
+  const color = getDistanceColor(distance);
+  const proximityLabel = getProximityLabel(distance);
+  const pct = getProximityPct(distance);
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        {IconComponent && <IconComponent size={18} style={{ color: t.accent.primary }} />}
+        <span style={{ fontSize: 11, fontWeight: 700, color: t.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          {label}
+        </span>
+      </div>
+
+      {distance != null ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+            <span style={{ fontSize: 28, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', color }}>
+              {Math.round(distance).toLocaleString()}
+            </span>
+            <span style={{ fontSize: 14, color: t.text.tertiary }}>ft</span>
+            {proximityLabel && (
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  background: `${color}20`,
+                  color: color,
+                  border: `1px solid ${color}40`,
+                }}
+              >
+                {proximityLabel}
+              </span>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ width: '100%', height: 6, background: t.bg.tertiary, borderRadius: 3, marginBottom: 8 }}>
+            <div
+              style={{
+                width: `${pct}%`,
+                height: '100%',
+                background: color,
+                borderRadius: 3,
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </div>
+
+          {/* Pipe details */}
+          {(diameter || material) && (
+            <div style={{ display: 'flex', gap: 16, fontSize: 12, color: t.text.secondary }}>
+              {diameter && <span>⌀ {diameter}" diameter</span>}
+              {material && <span>{material}</span>}
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={{ fontSize: 14, color: t.text.tertiary, fontStyle: 'italic' }}>
+          Not available
+        </div>
+      )}
+    </div>
+  );
+};
+
+const InfrastructureSubTab = ({ data, t }) => {
+  // Handle climateRisk as array or object (same pattern as RiskSubTab)
+  const climate = Array.isArray(data.climateRisk) ? data.climateRisk[0] || {} : data.climateRisk || {};
+
+  // Check if we have any GIS data at all
+  const hasZoning = data.zoningLocal || data.zoning;
+  const hasFlood = data.floodZone;
+  const hasUtilities = data.nearestWaterFt != null || data.nearestSewerFt != null || data.nearestStormFt != null;
+  const hasGisData = hasZoning || hasFlood || hasUtilities;
+
+  // Flood zone color
+  const floodZoneColor = getFloodZoneColor(data.floodZone);
+
+  if (!hasGisData) {
+    return (
+      <EmptyState
+        t={t}
+        icon={MapPin}
+        title="No GIS enrichment data"
+        subtitle="Infrastructure data will appear once the property is enriched with GIS sources"
+      />
+    );
+  }
+
+  return (
+    <div>
+      {/* GIS Enriched Badge */}
+      {data.gisEnrichedAt && (
+        <div style={{ marginBottom: 20 }}>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              padding: '4px 10px',
+              borderRadius: 4,
+              background: '#34d39920',
+              color: '#34d399',
+              border: '1px solid #34d39940',
+            }}
+          >
+            <span style={{ fontSize: 8 }}>●</span>
+            GIS ENRICHED {fmt.date(data.gisEnrichedAt)}
+          </span>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        {/* ─────────────────────────────────────────────────────────────────────
+            SECTION 1: ZONING
+        ───────────────────────────────────────────────────────────────────── */}
+        <Card t={t}>
+          <CardHeader t={t}>Zoning</CardHeader>
+          {data.zoningLocal ? (
+            <>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#a5b4fc', fontFamily: 'JetBrains Mono, monospace', marginBottom: 4 }}>
+                {data.zoningLocal}
+              </div>
+              {data.zoningJurisdiction && (
+                <div style={{ fontSize: 12, color: t.text.tertiary }}>
+                  {data.zoningJurisdiction}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 14, color: t.text.tertiary, fontStyle: 'italic', marginBottom: 4 }}>
+                Outside mapped jurisdictions
+              </div>
+              {data.zoning && (
+                <div style={{ fontSize: 12, color: t.text.secondary }}>
+                  (ATTOM: {data.zoning})
+                </div>
+              )}
+            </>
+          )}
+        </Card>
+
+        {/* ─────────────────────────────────────────────────────────────────────
+            SECTION 2: FLOOD RISK
+        ───────────────────────────────────────────────────────────────────── */}
+        <Card t={t} style={{ borderColor: data.inFloodplain ? '#ef4444' : undefined }}>
+          <CardHeader t={t}>Flood Zone</CardHeader>
+          {data.floodZone ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 8 }}>
+                <span style={{ fontSize: 28, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace', color: floodZoneColor }}>
+                  {data.floodZone}
+                </span>
+                {/* Floodplain badge */}
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    padding: '3px 8px',
+                    borderRadius: 4,
+                    background: data.inFloodplain ? '#ef444420' : '#34d39920',
+                    color: data.inFloodplain ? '#ef4444' : '#34d399',
+                    border: `1px solid ${data.inFloodplain ? '#ef444440' : '#34d39940'}`,
+                  }}
+                >
+                  {data.inFloodplain ? '▲ IN FLOODPLAIN' : '✓ NOT IN FLOODPLAIN'}
+                </span>
+              </div>
+              {data.floodZoneDesc && (
+                <div style={{ fontSize: 12, color: t.text.secondary, marginBottom: 12, lineHeight: 1.4 }}>
+                  {data.floodZoneDesc}
+                </div>
+              )}
+              {/* Climate flood metrics */}
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.border.strong}` }}>
+                {climate.floodRiskScore != null && (
+                  <div>
+                    <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase', marginBottom: 2 }}>Risk Score</div>
+                    <div style={{ fontSize: 14, fontFamily: 'JetBrains Mono, monospace', color: getFloodZoneColor(data.floodZone) }}>
+                      {climate.floodRiskScore}/100
+                    </div>
+                  </div>
+                )}
+                {climate.femaFloodRisk && (
+                  <div>
+                    <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase', marginBottom: 2 }}>FEMA Risk</div>
+                    <div style={{ fontSize: 14, color: t.text.primary }}>{climate.femaFloodRisk}</div>
+                  </div>
+                )}
+                {climate.floodChanceFuture != null && (
+                  <div>
+                    <div style={{ fontSize: 10, color: t.text.tertiary, textTransform: 'uppercase', marginBottom: 2 }}>Future Chance</div>
+                    <div style={{ fontSize: 14, fontFamily: 'JetBrains Mono, monospace', color: t.semantic.warning }}>
+                      {(climate.floodChanceFuture * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 14, color: t.text.tertiary, fontStyle: 'italic' }}>
+              Flood zone data not available
+            </div>
+          )}
+        </Card>
+
+        {/* ─────────────────────────────────────────────────────────────────────
+            SECTION 3: WATER
+        ───────────────────────────────────────────────────────────────────── */}
+        <Card t={t}>
+          <CardHeader t={t}>Water Main</CardHeader>
+          <InfraDistanceRow
+            label="Nearest Water Line"
+            icon={Droplet}
+            distance={data.nearestWaterFt}
+            diameter={data.nearestWaterDiam}
+            material={data.nearestWaterMaterial}
+            t={t}
+          />
+        </Card>
+
+        {/* ─────────────────────────────────────────────────────────────────────
+            SECTION 4: SEWER
+        ───────────────────────────────────────────────────────────────────── */}
+        <Card t={t}>
+          <CardHeader t={t}>Sanitary Sewer</CardHeader>
+          <InfraDistanceRow
+            label="Nearest Sewer Line"
+            icon={Waves}
+            distance={data.nearestSewerFt}
+            diameter={data.nearestSewerDiam}
+            material={null}
+            t={t}
+          />
+        </Card>
+
+        {/* ─────────────────────────────────────────────────────────────────────
+            SECTION 5: STORM DRAIN
+        ───────────────────────────────────────────────────────────────────── */}
+        <Card t={t} style={{ gridColumn: 'span 2' }}>
+          <CardHeader t={t}>Storm Drain</CardHeader>
+          <InfraDistanceRow
+            label="Nearest Storm Line"
+            icon={CloudLightning}
+            distance={data.nearestStormFt}
+            diameter={data.nearestStormDiam}
+            material={null}
+            t={t}
+          />
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
 // PROPERTY TAB (MAIN)
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -813,6 +1122,7 @@ const SUB_TABS = [
   { id: 'tax', label: 'Tax', icon: FileText },
   { id: 'permits', label: 'Permits', icon: Hammer },
   { id: 'risk', label: 'Risk', icon: Shield },
+  { id: 'infrastructure', label: 'Infrastructure', icon: MapPin },
 ];
 
 export default function PropertyTab({ data }) {
@@ -865,6 +1175,7 @@ export default function PropertyTab({ data }) {
       case 'tax': return <TaxSubTab data={data} t={t} />;
       case 'permits': return <PermitsSubTab data={data} t={t} />;
       case 'risk': return <RiskSubTab data={data} t={t} />;
+      case 'infrastructure': return <InfrastructureSubTab data={data} t={t} />;
       default: return null;
     }
   };
