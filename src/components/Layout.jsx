@@ -25,7 +25,7 @@ export default function Layout() {
       {/* Top Bar — h-14 (56px) */}
       <div
         className="h-14 flex items-center justify-between px-6 shrink-0"
-        style={{ background: t.bg.primary, borderBottom: `1px solid ${t.border.subtle}` }}
+        style={{ background: t.bg.primary, borderBottom: `1px solid ${t.border.subtle}`, position: 'relative', zIndex: 70 }}
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5">
@@ -103,7 +103,7 @@ export default function Layout() {
       {/* Horizontal Nav — h-12 (48px) */}
       <div
         className="h-12 flex items-center px-6 shrink-0"
-        style={{ background: t.bg.secondary, borderBottom: `1px solid ${t.border.default}` }}
+        style={{ background: t.bg.secondary, borderBottom: `1px solid ${t.border.default}`, position: 'relative', zIndex: 70 }}
       >
         {NAV_ITEMS.map((item) => {
           const isActive = item.to === '/'
