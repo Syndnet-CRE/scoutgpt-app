@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { GIS_LAYERS, ZONING_COLORS, FLOOD_COLORS, DIAMETER_ALIASES, fetchGisLayer } from '../../config/gisLayers';
+import { GIS_LAYERS, ZONING_CATEGORY_COLORS, FLOOD_COLORS, FLOOD_OPACITY, DIAMETER_ALIASES, fetchGisLayer } from '../../config/gisLayers';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.placeholder';
 
@@ -325,19 +325,15 @@ export default function MapContainer({
       // Add hover popup for utility line details
       addUtilityLineHover(map, layerId, layerKey);
     } else if (config.geometryType === 'fill' && layerKey === 'zoning_districts') {
-      // Zoning: use coalesce to try multiple field names
-      const zoneValue = ['coalesce',
-        ['get', 'ZONING_ZTYPE'], ['get', 'ZONING_ZTYP'], ['get', 'ZONING'],
-        ['get', 'ZONE_CODE'], ['get', 'ZONE_DESIG'], ['get', 'ZoningDesignation'],
-        ['get', 'ZONING_BASE'], ['get', '_zone_code'], ''
-      ];
+      // Zoning: use _zone_category (normalized during GeoJSON conversion)
+      const categoryValue = ['get', '_zone_category'];
 
-      // Build match expression for zone colors
-      const matchExpr = ['match', zoneValue];
-      for (const [code, color] of Object.entries(ZONING_COLORS)) {
-        matchExpr.push(code, color);
+      // Build match expression for category colors
+      const colorExpr = ['match', categoryValue];
+      for (const [category, color] of Object.entries(ZONING_CATEGORY_COLORS)) {
+        colorExpr.push(category, color);
       }
-      matchExpr.push('#6b7280'); // Gray fallback for unknown zones
+      colorExpr.push('#475569'); // Slate fallback for unknown
 
       // Add below parcels-fill if it exists
       const beforeId = map.getLayer('parcels-fill') ? 'parcels-fill' : undefined;
@@ -346,38 +342,38 @@ export default function MapContainer({
         id: `${sourceId}-fill`,
         type: 'fill',
         source: sourceId,
-        paint: { 'fill-color': matchExpr, 'fill-opacity': 0.35 }
+        paint: {
+          'fill-color': colorExpr,
+          'fill-opacity': 0.25  // Reduced from 0.35 — lets parcels show through
+        }
       }, beforeId);
       map.addLayer({
         id: `${sourceId}-outline`,
         type: 'line',
         source: sourceId,
-        paint: { 'line-color': '#e2e8f0', 'line-width': 1, 'line-opacity': 0.4 }
+        paint: {
+          'line-color': colorExpr,  // Match fill color instead of static white
+          'line-width': 1,
+          'line-opacity': 0.5
+        }
       }, beforeId);
     } else if (config.geometryType === 'fill' && layerKey === 'floodplains') {
-      // Flood: use coalesce to try multiple field names
-      const floodValue = ['coalesce',
-        ['get', 'FEMA_FLOOD_ZONE'], ['get', 'FLD_ZONE'], ['get', 'FLOOD_ZONE'],
-        ['get', 'ZONE_'], ['get', 'FloodZone'], ['get', '_flood_zone'], ''
-      ];
+      // Flood: use _flood_zone (normalized during GeoJSON conversion)
+      const floodValue = ['get', '_flood_zone'];
 
-      // Build case expression for flood colors with both exact matches and long string matches
-      const colorExpr = ['case',
-        // High risk exact matches (100-year floodplain)
-        ['in', floodValue, ['literal', ['A', 'AE', 'AH', 'AO', 'V', 'VE', 'AR', 'A99']]], '#ef4444',
-        // High risk long string matches (Austin FloodPro)
-        ['==', floodValue, 'City of Austin Fully Developed 100-Year Floodplain'], '#ef4444',
-        ['==', floodValue, '100-Year Floodplain'], '#ef4444',
-        // Moderate risk exact matches (500-year)
-        ['in', floodValue, ['literal', ['X500', 'B', 'D', '0.2 PCT']]], '#f97316',
-        // Moderate risk long string matches
-        ['==', floodValue, 'City of Austin Fully Developed 25-Year Floodplain'], '#f97316',
-        ['==', floodValue, '500-Year Floodplain'], '#f97316',
-        // Minimal risk exact matches
-        ['in', floodValue, ['literal', ['X', 'C']]], '#3b82f6',
-        // Unknown/unmatched = completely transparent (don't render)
-        'rgba(0,0,0,0)'
-      ];
+      // Build match expression for flood colors using normalized codes
+      const colorExpr = ['match', floodValue];
+      for (const [code, color] of Object.entries(FLOOD_COLORS)) {
+        colorExpr.push(code, color);
+      }
+      colorExpr.push('#475569'); // Slate fallback
+
+      // Build match expression for flood opacity
+      const opacityExpr = ['match', floodValue];
+      for (const [code, opacity] of Object.entries(FLOOD_OPACITY)) {
+        opacityExpr.push(code, opacity);
+      }
+      opacityExpr.push(0.15); // Fallback opacity
 
       // Floodplains go at the BOTTOM - below zoning if it exists, otherwise below parcels
       const zoningFill = map.getLayer('gis-zoning_districts-fill');
@@ -390,13 +386,7 @@ export default function MapContainer({
         source: sourceId,
         paint: {
           'fill-color': colorExpr,
-          'fill-opacity': ['case',
-            ['in', floodValue, ['literal', ['A', 'AE', 'AH', 'AO', 'V', 'VE', 'AR', 'A99']]], 0.4,
-            ['==', floodValue, 'City of Austin Fully Developed 100-Year Floodplain'], 0.4,
-            ['in', floodValue, ['literal', ['X500', 'B', 'D']]], 0.3,
-            ['in', floodValue, ['literal', ['X', 'C']]], 0.15,
-            0 // Transparent for unmatched
-          ]
+          'fill-opacity': opacityExpr
         }
       }, beforeId);
       map.addLayer({
@@ -406,13 +396,7 @@ export default function MapContainer({
         paint: {
           'line-color': colorExpr,
           'line-width': 1,
-          'line-opacity': ['case',
-            ['in', floodValue, ['literal', ['A', 'AE', 'AH', 'AO', 'V', 'VE', 'AR', 'A99']]], 0.5,
-            ['==', floodValue, 'City of Austin Fully Developed 100-Year Floodplain'], 0.5,
-            ['in', floodValue, ['literal', ['X500', 'B', 'D']]], 0.4,
-            ['in', floodValue, ['literal', ['X', 'C']]], 0.25,
-            0 // Transparent for unmatched
-          ]
+          'line-opacity': 0.5  // Consistent outline opacity
         }
       }, beforeId);
     }
