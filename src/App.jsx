@@ -336,8 +336,8 @@ export default function App() {
             style={{
               position: 'fixed',
               right: 0,
-              top: 0,
-              bottom: 0,
+              top: 104,
+              height: 'calc(100vh - 104px)',
               width: 48,
               zIndex: 64,
               background: t.bg.secondary,
@@ -387,8 +387,8 @@ export default function App() {
             style={{
               position: 'fixed',
               right: 0,
-              top: 0,
-              bottom: 0,
+              top: 104,
+              height: 'calc(100vh - 104px)',
               width: 48,
               zIndex: 54,
               background: t.bg.secondary,

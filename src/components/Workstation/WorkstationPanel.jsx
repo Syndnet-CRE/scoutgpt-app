@@ -31,6 +31,7 @@ const TABS = [
 
 const MIN_WIDTH = 400;
 const MAX_WIDTH_RATIO = 0.7;
+const HEADER_HEIGHT = 104; // Layout top bar (56px) + nav bar (48px)
 
 function TabPlaceholder({ name }) {
   const { t } = useTheme();
@@ -160,9 +161,9 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
       <div
         style={{
           position: 'fixed',
-          top: 0,
+          top: HEADER_HEIGHT,
           right: 0,
-          bottom: 0,
+          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
           width: widthStyle,
           minWidth: MIN_WIDTH,
           maxWidth: '70vw',
