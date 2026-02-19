@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Search, Bell, Plus, Hexagon, Sun, Moon } from 'lucide-react';
+import { Search, Bell, Plus, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '../theme.jsx';
 
@@ -28,14 +28,12 @@ export default function Layout() {
         style={{ background: t.bg.primary, borderBottom: `1px solid ${t.border.subtle}`, position: 'relative', zIndex: 70 }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-7 h-7 rounded-md flex items-center justify-center"
-            style={{ background: t.semantic.success }}
-          >
-            <Hexagon size={20} style={{ color: '#fff' }} />
-          </div>
-          <span className="text-base font-bold" style={{ color: t.text.primary }}>Parcyl.AI</span>
+        <div className="flex items-center">
+          <img
+            src={isDark ? '/parcyl-logo-light.png' : '/parcyl-logo-dark.png'}
+            alt="Parcyl.ai"
+            style={{ height: 28 }}
+          />
         </div>
 
         {/* Search Bar */}
