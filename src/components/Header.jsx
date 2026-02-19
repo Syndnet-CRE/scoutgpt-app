@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTheme } from '../theme';
 
 export default function Header() {
-  const { t } = useTheme();
+  const { t, isDark } = useTheme();
   const [searchFocused, setSearchFocused] = useState(false);
 
   return (
@@ -23,26 +23,13 @@ export default function Header() {
         fontFamily: t.font.display,
       }}
     >
-      {/* Left section — logo placeholder */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 160 }}>
-        <span style={{
-          fontSize: 15,
-          fontWeight: 700,
-          letterSpacing: '-0.01em',
-          color: t.text.primary,
-        }}>
-          Scout
-          <span style={{ color: t.accent.primary }}>GPT</span>
-        </span>
-        <span style={{
-          fontSize: 10,
-          fontWeight: 600,
-          color: t.text.quaternary,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-        }}>
-          v2
-        </span>
+      {/* Left section — Parcyl.ai logo */}
+      <div style={{ display: 'flex', alignItems: 'center', minWidth: 160 }}>
+        <img
+          src={isDark ? '/parcyl-logo-light.png' : '/parcyl-logo-dark.png'}
+          alt="Parcyl.ai"
+          style={{ height: 28 }}
+        />
       </div>
 
       {/* Center — Search bar */}
@@ -76,7 +63,6 @@ export default function Header() {
               fontSize: 13,
               fontFamily: t.font.display,
               color: t.text.primary,
-              '::placeholder': { color: t.text.tertiary },
             }}
           />
         </div>
