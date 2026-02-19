@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Search, Bell, Plus, Hexagon, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '../theme.jsx';
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Layout() {
+  const location = useLocation();
   const { t, isDark, toggleTheme } = useTheme();
   const [themeHovered, setThemeHovered] = useState(false);
 
@@ -125,7 +126,7 @@ export default function Layout() {
       </div>
 
       {/* Page Content */}
-      <Outlet />
+      <Outlet key={location.pathname} />
     </div>
   );
 }
