@@ -211,11 +211,13 @@ const CLEAR_ALL_PATTERNS = [
 
 export function parseNLQCommand(message) {
   const text = message.trim();
+  console.log('[NLQ] Parsing:', text);
   if (!text) return null;
 
   // --- Check for clear-all ---
   for (const pattern of CLEAR_ALL_PATTERNS) {
     if (pattern.test(text)) {
+      console.log('[NLQ] MATCHED clear_all');
       return {
         type: 'clear_all',
         confirmationText: '✅ All filters and layers cleared.',
@@ -227,6 +229,7 @@ export function parseNLQCommand(message) {
   for (const [layerKey, aliases] of Object.entries(LAYER_ALIASES)) {
     for (const pattern of aliases.hide) {
       if (pattern.test(text)) {
+        console.log('[NLQ] MATCHED gis_layer hide:', layerKey);
         return {
           type: 'gis_layer',
           action: 'hide',
@@ -237,6 +240,7 @@ export function parseNLQCommand(message) {
     }
     for (const pattern of aliases.show) {
       if (pattern.test(text)) {
+        console.log('[NLQ] MATCHED gis_layer show:', layerKey);
         return {
           type: 'gis_layer',
           action: 'show',
@@ -251,6 +255,7 @@ export function parseNLQCommand(message) {
   for (const [layerKey, aliases] of Object.entries(BASIC_LAYER_ALIASES)) {
     for (const pattern of aliases.hide) {
       if (pattern.test(text)) {
+        console.log('[NLQ] MATCHED basic_layer hide:', layerKey);
         return {
           type: 'basic_layer',
           action: 'hide',
@@ -261,6 +266,7 @@ export function parseNLQCommand(message) {
     }
     for (const pattern of aliases.show) {
       if (pattern.test(text)) {
+        console.log('[NLQ] MATCHED basic_layer show:', layerKey);
         return {
           type: 'basic_layer',
           action: 'show',
@@ -277,6 +283,7 @@ export function parseNLQCommand(message) {
     if (cmd.clearPatterns) {
       for (const pattern of cmd.clearPatterns) {
         if (pattern.test(text)) {
+          console.log('[NLQ] MATCHED filter clear:', cmd.filterKey);
           return {
             type: 'filter',
             action: 'clear',
@@ -291,6 +298,7 @@ export function parseNLQCommand(message) {
     // Check set patterns
     for (const pattern of cmd.patterns) {
       if (pattern.test(text)) {
+        console.log('[NLQ] MATCHED filter set:', cmd.filterKey);
         return {
           type: 'filter',
           action: 'set',
@@ -305,6 +313,7 @@ export function parseNLQCommand(message) {
   }
 
   // --- No match — fall through to Claude ---
+  console.log('[NLQ] No match for:', text);
   return null;
 }
 

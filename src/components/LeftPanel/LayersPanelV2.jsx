@@ -306,7 +306,7 @@ const SECTION_GIS_KEYS = {
   utilities: ['water_lines', 'wastewater_lines', 'stormwater_lines'],
 };
 
-export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, onGisOpacityChange, gisLayerOpacity, gisLayerLoading, mapRef, zIndex, onBringToFront, filterAPIRef }) {
+export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, onGisOpacityChange, gisLayerOpacity, gisLayerLoading, mapRef, zIndex, onBringToFront, filterAPIRef, visibleGisLayers }) {
   const { t } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("layers");
@@ -380,6 +380,33 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
       }
     }
   }, [ls, onLayerChange, onGisLayerChange]);
+
+  // Reverse sync: when App.jsx changes visibleGisLayers (e.g., from NLQ), update internal ls
+  useEffect(() => {
+    if (!visibleGisLayers) return;
+
+    // Reverse map: gisKey → panelId
+    const REVERSE_GIS_MAP = {
+      water_lines: 'waterMains',
+      wastewater_lines: 'sewerMains',
+      stormwater_lines: 'stormwaterLines',
+      zoning_districts: 'zoningDistricts',
+      floodplains: 'floodZones',
+    };
+
+    setLs(prev => {
+      const next = { ...prev };
+      let changed = false;
+      for (const [gisKey, panelId] of Object.entries(REVERSE_GIS_MAP)) {
+        const shouldBeVisible = !!visibleGisLayers[gisKey];
+        if (next[panelId] !== shouldBeVisible) {
+          next[panelId] = shouldBeVisible;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [visibleGisLayers]);
 
   // Notify parent when filters change (for wired filters only)
   useEffect(() => {

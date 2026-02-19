@@ -208,6 +208,7 @@ export default function App() {
   // NLQ interceptor — handles layer/filter commands without calling Claude API
   const handleNLQCommand = useCallback((text) => {
     const command = parseNLQCommand(text);
+    console.log('[NLQ] Command result:', command);
     if (!command) return false; // No match — let Claude handle it
 
     // Add user message to chat
@@ -216,6 +217,7 @@ export default function App() {
     // Execute the command
     switch (command.type) {
       case 'gis_layer':
+        console.log('[NLQ] Calling handleGisLayerChange:', command.layerKey, command.action === 'show');
         handleGisLayerChange(command.layerKey, command.action === 'show');
         break;
       case 'basic_layer':
@@ -398,6 +400,7 @@ export default function App() {
           zIndex={getPanelZ('left')}
           onBringToFront={() => setWorkstationOnTop(false)}
           filterAPIRef={filterAPIRef}
+          visibleGisLayers={visibleGisLayers}
         />
 
         {/* Property Card rendered inside Mapbox popup via portal */}
