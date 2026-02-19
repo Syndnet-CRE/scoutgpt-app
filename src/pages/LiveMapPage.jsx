@@ -196,11 +196,179 @@ export default function LiveMapPage() {
     root.style.setProperty('--scout-border-subtle', t.border.subtle);
   }, [t]);
 
+  // Ref to hold filterAPI functions exposed from LayersPanelV2
+  const filterAPIRef = useRef(null);
+
+  // NLQ interceptor — handles layer/filter commands without calling Claude API
+  // INLINED parseNLQCommand to prevent Vite tree-shaking
+  const handleNLQCommand = useCallback((text) => {
+    // ============================================================
+    // INLINE NLQ PARSER — cannot be tree-shaken from useCallback
+    // ============================================================
+    const normalizedText = (text || '').trim().toLowerCase();
+    if (!normalizedText) return false;
+
+    // LAYER COMMANDS — order: check hide first, then show
+    const LAYERS = [
+      { key: 'zoning_districts', type: 'gis_layer', name: 'Zoning',
+        show: ['show zoning', 'display zoning', 'turn on zoning', 'enable zoning', 'add zoning', 'activate zoning', 'zoning layer', 'zoning on', 'whats the zoning', "what's the zoning", 'what is the zoning', 'show zones', 'show zone'],
+        hide: ['hide zoning', 'remove zoning', 'turn off zoning', 'disable zoning', 'no zoning', 'zoning off', 'hide zones', 'remove zones'] },
+      { key: 'floodplains', type: 'gis_layer', name: 'Floodplains',
+        show: ['show flood', 'show floodplains', 'show floodplain', 'show flood zones', 'show flood zone', 'show fema', 'flood layer', 'flood on', 'display flood', 'turn on flood', 'whats the flood', "what's the flood zone"],
+        hide: ['hide flood', 'remove flood', 'turn off flood', 'disable flood', 'no flood', 'flood off', 'hide floodplains', 'remove floodplains'] },
+      { key: 'water_lines', type: 'gis_layer', name: 'Water Lines',
+        show: ['show water', 'show water lines', 'show water mains', 'water layer', 'water on', 'display water', 'turn on water'],
+        hide: ['hide water', 'remove water', 'turn off water', 'water off', 'remove water lines'] },
+      { key: 'wastewater_lines', type: 'gis_layer', name: 'Sewer Lines',
+        show: ['show sewer', 'show wastewater', 'show sewer lines', 'sewer layer', 'sewer on', 'display sewer', 'turn on sewer'],
+        hide: ['hide sewer', 'remove sewer', 'turn off sewer', 'sewer off', 'remove sewer lines', 'hide wastewater', 'remove wastewater'] },
+      { key: 'stormwater_lines', type: 'gis_layer', name: 'Stormwater',
+        show: ['show storm', 'show stormwater', 'show storm drains', 'show storm lines', 'storm layer', 'storm on', 'display storm', 'turn on storm'],
+        hide: ['hide storm', 'remove storm', 'turn off storm', 'storm off', 'remove stormwater', 'hide stormwater'] },
+      { key: 'parcels', type: 'basic_layer', name: 'Parcel Boundaries',
+        show: ['show parcels', 'show parcel boundaries', 'show boundaries', 'parcels on', 'display parcels', 'turn on parcels'],
+        hide: ['hide parcels', 'remove parcels', 'turn off parcels', 'parcels off', 'hide boundaries', 'remove boundaries'] },
+      { key: 'schools', type: 'basic_layer', name: 'School Districts',
+        show: ['show schools', 'show school districts', 'show school zones', 'schools on', 'display schools', 'turn on schools'],
+        hide: ['hide schools', 'remove schools', 'turn off schools', 'schools off', 'hide school districts', 'remove school districts'] },
+    ];
+
+    // FILTER COMMANDS
+    const FILTERS = [
+      { show: ['show foreclosures', 'filter foreclosures', 'filter to foreclosures', 'foreclosure filter', 'foreclosure properties'],
+        clear: ['remove foreclosure', 'clear foreclosure', 'hide foreclosure'],
+        key: 'hasForeclosure', val: true, clearVal: false, label: 'Foreclosure', tab: 'Risk' },
+      { show: ['show absentee', 'filter absentee', 'filter to absentee', 'absentee owners', 'absentee only'],
+        clear: ['remove absentee', 'clear absentee', 'hide absentee'],
+        key: 'absenteeOnly', val: true, clearVal: false, label: 'Absentee Owner', tab: 'Ownership' },
+      { show: ['show corporate', 'filter corporate', 'corporate owners', 'corporate owned', 'show llc'],
+        clear: ['remove corporate', 'clear corporate', 'hide corporate'],
+        key: 'ownerType', val: ['corporate'], clearVal: [], label: 'Corporate Owners', tab: 'Ownership', isArray: true },
+      { show: ['filter flood zone', 'in flood zone', 'show flood zone filter', 'fema filter'],
+        clear: ['remove flood filter', 'clear flood filter'],
+        key: 'inFloodZone', val: true, clearVal: false, label: 'In Flood Zone', tab: 'Risk' },
+      { show: ['show distressed', 'filter distressed', 'distressed properties', 'high distress'],
+        clear: ['remove distress', 'clear distress', 'hide distress'],
+        key: 'distressScoreMin', val: '30', clearVal: '', label: 'Distressed (score ≥ 30)', tab: 'Risk' },
+      { show: ['show high ltv', 'filter high ltv', 'overleveraged', 'high leverage', 'underwater'],
+        clear: ['remove ltv', 'clear ltv', 'hide ltv'],
+        key: 'highLtvOnly', val: true, clearVal: false, label: 'High LTV (>80%)', tab: 'Financial' },
+      { show: ['show recent sales', 'filter recent sales', 'recently sold', 'sold recently', 'recent transactions'],
+        clear: ['remove recent sales', 'clear recent sales'],
+        key: 'soldWithinDays', val: '365', clearVal: '', label: 'Recent Sales (12 mo)', tab: 'Sales' },
+      { show: ['show investor', 'filter investor', 'investor purchases', 'investor buys'],
+        clear: ['remove investor', 'clear investor', 'hide investor'],
+        key: 'investorOnly', val: true, clearVal: false, label: 'Investor Purchases', tab: 'Sales' },
+      { show: ['show high equity', 'filter high equity', 'equity rich', 'high equity properties'],
+        clear: ['remove equity', 'clear equity', 'hide equity'],
+        key: 'equityMin', val: '100000', clearVal: '', label: 'High Equity (≥$100K)', tab: 'Financial' },
+    ];
+
+    let command = null;
+
+    // Check layers — hide first, then show
+    for (const layer of LAYERS) {
+      for (const phrase of layer.hide) {
+        if (normalizedText.includes(phrase)) {
+          command = { type: layer.type, action: 'hide', layerKey: layer.key,
+            confirmationText: `✅ ${layer.name} layer hidden.` };
+          break;
+        }
+      }
+      if (command) break;
+      for (const phrase of layer.show) {
+        if (normalizedText.includes(phrase)) {
+          command = { type: layer.type, action: 'show', layerKey: layer.key,
+            confirmationText: `✅ ${layer.name} layer is now visible.` };
+          break;
+        }
+      }
+      if (command) break;
+    }
+
+    // Check filters — clear first, then set
+    if (!command) {
+      for (const f of FILTERS) {
+        for (const phrase of f.clear) {
+          if (normalizedText.includes(phrase)) {
+            command = { type: 'filter', action: 'clear', filterKey: f.key, filterValue: f.clearVal,
+              isArray: f.isArray || false, confirmationText: `✅ ${f.label} filter cleared.` };
+            break;
+          }
+        }
+        if (command) break;
+        for (const phrase of f.show) {
+          if (normalizedText.includes(phrase)) {
+            command = { type: 'filter', action: 'set', filterKey: f.key, filterValue: f.val,
+              isArray: f.isArray || false, tab: f.tab,
+              confirmationText: `✅ ${f.label} filter applied. Check the Filters panel (${f.tab} tab) to see results.` };
+            break;
+          }
+        }
+        if (command) break;
+      }
+    }
+
+    // Clear all
+    if (!command && (normalizedText.includes('clear all filters') || normalizedText.includes('reset all filters') || normalizedText.includes('remove all filters') || normalizedText.includes('clear all layers') || normalizedText.includes('turn off all layers'))) {
+      command = { type: 'clear_all', confirmationText: '✅ All filters and layers cleared.' };
+    }
+
+    // ============================================================
+    // END INLINE NLQ PARSER
+    // ============================================================
+
+    console.log('[NLQ] Command result:', command);
+    if (!command) return false; // No match — let Claude handle it
+
+    // Add user message to chat
+    setMessages(prev => [...prev, { role: 'user', content: text, timestamp: new Date() }]);
+
+    // Execute the command
+    switch (command.type) {
+      case 'gis_layer':
+        console.log('[NLQ] Calling handleGisLayerChange:', command.layerKey, command.action === 'show');
+        handleGisLayerChange(command.layerKey, command.action === 'show');
+        break;
+      case 'basic_layer':
+        handleLayerChange(command.layerKey, command.action === 'show');
+        break;
+      case 'filter':
+        if (filterAPIRef.current) {
+          filterAPIRef.current.setFilter(command.filterKey, command.filterValue);
+        }
+        break;
+      case 'clear_all':
+        // Clear all GIS layers
+        setVisibleGisLayers({});
+        // Clear filters
+        if (filterAPIRef.current) {
+          filterAPIRef.current.clearFilters();
+        }
+        break;
+      default:
+        break;
+    }
+
+    // Inject confirmation message into chat
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: command.confirmationText,
+        timestamp: new Date(),
+      }]);
+    }, 150);
+
+    return true; // Command was handled
+  }, [handleGisLayerChange, handleLayerChange, setMessages]);
+
   // Chat send handler — clear old highlights before sending new query
   const handleChatSend = useCallback((text) => {
+    // Try NLQ command first — if matched, don't call Claude
+    if (handleNLQCommand(text)) return;
     clearHighlights();
     sendChat(text);
-  }, [sendChat, clearHighlights]);
+  }, [handleNLQCommand, clearHighlights, sendChat]);
 
   // Chat panel: highlight specific properties on map
   const handleHighlightProperties = useCallback((attomIds) => {
@@ -305,6 +473,8 @@ export default function LiveMapPage() {
           mapRef={mapInstanceRef}
           zIndex={getPanelZ('left')}
           onBringToFront={() => setWorkstationOnTop(false)}
+          filterAPIRef={filterAPIRef}
+          visibleGisLayers={visibleGisLayers}
         />
 
         {/* Property Card rendered inside Mapbox popup via portal */}
