@@ -28,7 +28,7 @@ export default function MetricCard({ label, value, sub, accent }) {
         fontSize: 16,
         fontWeight: 800,
         color: t.text.primary,
-        fontFamily: t.font.mono,
+        fontFamily: t.font.display,
       }}>
         {value ?? '\u2014'}
       </span>
@@ -36,7 +36,7 @@ export default function MetricCard({ label, value, sub, accent }) {
         <span style={{
           fontSize: 11,
           color: accent ? t.accent.green : t.text.tertiary,
-          fontFamily: t.font.mono,
+          fontFamily: t.font.display,
         }}>
           {sub}
         </span>

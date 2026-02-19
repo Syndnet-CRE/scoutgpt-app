@@ -54,7 +54,7 @@ function LoanCard({ loan, t }) {
         <span style={{ fontSize: 11, fontWeight: 600, color: t.text.secondary, fontFamily: t.font.display, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Position {pos ?? '\u2014'}
         </span>
-        <span style={{ fontSize: 20, fontWeight: 700, color: t.text.primary, fontFamily: t.font.mono }}>
+        <span style={{ fontSize: 20, fontWeight: 700, color: t.text.primary, fontFamily: t.font.display }}>
           {fmtCurrency(amount)}
         </span>
       </div>
@@ -143,11 +143,11 @@ export default function FinancialsTab({ data }) {
           <span style={{ fontSize: 11, color: t.text.tertiary, fontFamily: t.font.display }}>
             AVM Estimated Value
           </span>
-          <span style={{ fontSize: 28, fontWeight: 700, color: t.accent.green, fontFamily: t.font.mono }}>
+          <span style={{ fontSize: 28, fontWeight: 700, color: t.accent.green, fontFamily: t.font.display }}>
             {fmtCurrency(estimatedValue)}
           </span>
           {(estMin != null || estMax != null) && (
-            <span style={{ fontSize: 11, color: t.text.quaternary, fontFamily: t.font.mono }}>
+            <span style={{ fontSize: 11, color: t.text.quaternary, fontFamily: t.font.display }}>
               {fmtCurrency(estMin)} \u2014 {fmtCurrency(estMax)}
             </span>
           )}

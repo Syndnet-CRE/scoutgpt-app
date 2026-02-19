@@ -1,6 +1,6 @@
 import { useTheme } from '../../../theme.jsx';
 
-export default function DataRow({ label, value, accent, mono = true }) {
+export default function DataRow({ label, value, accent, mono = false }) {
   const { t } = useTheme();
 
   return (

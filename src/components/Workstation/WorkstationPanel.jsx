@@ -184,27 +184,28 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
           onMouseEnter={() => setHandleHovered(true)}
           onMouseLeave={() => setHandleHovered(false)}
           style={{
-            width: 6,
+            width: 8,
             flexShrink: 0,
-            background: handleHovered || dragging ? t.bg.elevated : 'transparent',
+            background: handleHovered || dragging ? t.border.default : t.bg.tertiary,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'col-resize',
-            transition: 'background 0.15s ease',
+            transition: 'background 150ms ease',
             gap: 4,
           }}
         >
-          {/* Three small horizontal lines */}
+          {/* Three horizontal grip lines */}
           {[0, 1, 2].map((i) => (
             <div
               key={i}
               style={{
-                width: 4,
-                height: 1,
+                width: 16,
+                height: 3,
                 background: handleHovered || dragging ? t.text.tertiary : t.text.quaternary,
-                borderRadius: 1,
+                borderRadius: 2,
+                transition: 'background 150ms ease',
               }}
             />
           ))}

@@ -180,7 +180,7 @@ export default function AIInsightsTab({ data, aiInsights, aiLoading, onGenerateI
             fontSize: 36,
             fontWeight: 700,
             color: scoreColor(t, investmentScore),
-            fontFamily: t.font.mono,
+            fontFamily: t.font.display,
             lineHeight: 1,
           }}>
             {investmentScore ?? '\u2014'}

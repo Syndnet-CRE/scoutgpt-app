@@ -124,7 +124,7 @@ export default function RiskTab({ data }) {
             fontSize: 48,
             fontWeight: 700,
             color: scoreColor(t, totalScore),
-            fontFamily: t.font.mono,
+            fontFamily: t.font.display,
             lineHeight: 1,
           }}>
             {totalScore ?? '\u2014'}
@@ -175,7 +175,7 @@ export default function RiskTab({ data }) {
               padding: '8px 0 12px',
             }}>
               <Shield size={18} style={{ color: scoreColor(t, floodZoneVariant(floodZoneStr) === 'error' ? 80 : floodZoneVariant(floodZoneStr) === 'warning' ? 40 : 10), flexShrink: 0 }} />
-              <span style={{ fontSize: 20, fontWeight: 700, color: t.text.primary, fontFamily: t.font.mono }}>
+              <span style={{ fontSize: 20, fontWeight: 700, color: t.text.primary, fontFamily: t.font.display }}>
                 {floodZoneStr}
               </span>
               <StatusBadge label={floodZoneStr} variant={floodZoneVariant(floodZoneStr)} />

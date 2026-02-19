@@ -21,7 +21,7 @@ export default function ProgressBar({ value, label, showValue = true, color, max
             </span>
           )}
           {showValue && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: t.text.primary, fontFamily: t.font.mono }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: t.text.primary, fontFamily: t.font.display }}>
               {value != null ? `${Math.round(pct)}%` : '\u2014'}
             </span>
           )}

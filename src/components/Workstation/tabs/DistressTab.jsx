@@ -67,7 +67,7 @@ function ForeclosureCard({ record, t }) {
         {recType && <StatusBadge label={recType.toUpperCase()} variant={recordTypeBadge(recType)} />}
         {status && <StatusBadge label={status} variant="neutral" />}
         {filingDate && (
-          <span style={{ fontSize: 11, color: t.text.tertiary, fontFamily: t.font.mono, marginLeft: 'auto' }}>
+          <span style={{ fontSize: 11, color: t.text.tertiary, fontFamily: t.font.display, marginLeft: 'auto' }}>
             Filed {fmtDate(filingDate)}
           </span>
         )}
@@ -206,7 +206,7 @@ export default function DistressTab({ data }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <StatusBadge label={`DELINQUENT \u2014 ${delinquentYear}`} variant="error" />
             {taxBilled != null && (
-              <span style={{ fontSize: 11, color: t.text.tertiary, fontFamily: t.font.mono, marginTop: 4 }}>
+              <span style={{ fontSize: 11, color: t.text.tertiary, fontFamily: t.font.display, marginTop: 4 }}>
                 Tax billed: {fmtCurrency(taxBilled)}
               </span>
             )}

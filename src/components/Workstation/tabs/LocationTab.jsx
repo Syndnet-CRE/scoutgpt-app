@@ -37,7 +37,7 @@ function CopyableCoord({ label, value, t }) {
           fontSize: 12,
           fontWeight: 500,
           color: copied ? t.accent.green : t.text.primary,
-          fontFamily: t.font.mono,
+          fontFamily: t.font.display,
           background: 'none',
           border: 'none',
           cursor: value != null ? 'pointer' : 'default',
@@ -124,7 +124,7 @@ export default function LocationTab({ data }) {
         {floodZoneStr ? (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 10px' }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: t.text.primary, fontFamily: t.font.mono }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: t.text.primary, fontFamily: t.font.display }}>
                 {floodZoneStr}
               </span>
               <StatusBadge label={floodZoneStr} variant={floodZoneVariant(floodZoneStr)} />

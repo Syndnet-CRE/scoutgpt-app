@@ -110,7 +110,7 @@ export default function DataTable({ columns = [], rows = [], onRowClick, expanda
                       style={{
                         padding: '8px 12px',
                         fontSize: 12,
-                        fontFamily: isNum ? t.font.mono : t.font.display,
+                        fontFamily: t.font.display,
                         color: t.text.primary,
                         textAlign: col.align || 'left',
                         borderBottom: `1px solid ${t.border.subtle}`,

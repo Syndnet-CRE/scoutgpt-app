@@ -44,7 +44,7 @@ function YoyCell({ value, t }) {
   const Icon = isUp ? TrendingUp : TrendingDown;
   const color = isUp ? t.accent.green : t.semantic.error;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color, fontFamily: t.font.mono, fontSize: 12 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color, fontFamily: t.font.display, fontSize: 12 }}>
       <Icon size={12} />
       {Math.abs(value).toFixed(1)}%
     </span>
@@ -135,7 +135,7 @@ export default function TaxTab({ data }) {
             fontSize: 24,
             fontWeight: 700,
             color: t.text.primary,
-            fontFamily: t.font.mono,
+            fontFamily: t.font.display,
             padding: '4px 0 12px',
           }}>
             {fmtCurrency(assessedTotal)}

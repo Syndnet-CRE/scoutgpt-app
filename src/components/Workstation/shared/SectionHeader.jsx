@@ -30,7 +30,7 @@ export default function SectionHeader({ title, count }) {
           background: t.accent.greenMuted,
           borderRadius: 10,
           padding: '2px 7px',
-          fontFamily: t.font.mono,
+          fontFamily: t.font.display,
         }}>
           {count}
         </span>

@@ -35,7 +35,7 @@ function DetailRow({ label, value, t, mono = true }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', gap: 12 }}>
       <span style={{ fontSize: 11, color: t.text.tertiary, fontFamily: t.font.display, flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: 11, fontWeight: 500, color: t.text.secondary, fontFamily: mono ? t.font.mono : t.font.display, textAlign: 'right' }}>
+      <span style={{ fontSize: 11, fontWeight: 500, color: t.text.secondary, fontFamily: t.font.display, textAlign: 'right' }}>
         {value ?? '\u2014'}
       </span>
     </div>
@@ -147,13 +147,13 @@ export default function PermitsTab({ data }) {
                       transition: 'background 0.1s ease',
                     }}
                   >
-                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {isExpanded ? <ChevronDown size={12} style={{ color: t.text.tertiary }} /> : <ChevronRight size={12} style={{ color: t.text.tertiary }} />}
                         {row.permitNumber ?? '\u2014'}
                       </span>
                     </td>
-                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
+                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
                       {fmtDate(row.effectiveDate)}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
@@ -180,7 +180,7 @@ export default function PermitsTab({ data }) {
                         </span>
                       ) : <span style={{ color: t.text.quaternary }}>{'\u2014'}</span>}
                     </td>
-                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, textAlign: 'right', borderBottom: `1px solid ${t.border.subtle}` }}>
+                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, textAlign: 'right', borderBottom: `1px solid ${t.border.subtle}` }}>
                       {fmtCurrency(row.jobValue)}
                     </td>
                   </tr>

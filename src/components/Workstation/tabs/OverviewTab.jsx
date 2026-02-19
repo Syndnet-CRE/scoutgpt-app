@@ -1,4 +1,4 @@
-import { Sparkles, MapPin, ArrowRight, ChevronRight, Zap } from 'lucide-react';
+import { Sparkles, MapPin, ChevronRight, Zap } from 'lucide-react';
 import { useTheme } from '../../../theme.jsx';
 import MetricCard from '../shared/MetricCard.jsx';
 import DataRow from '../shared/DataRow.jsx';
@@ -9,13 +9,13 @@ function CardShell({ children, style }) {
   const { t } = useTheme();
   return (
     <div style={{
-      background: t.bg.primary,
+      background: t.bg.secondary,
       border: `1px solid ${t.border.default}`,
       borderRadius: 8,
-      padding: 16,
+      padding: 12,
       display: 'flex',
       flexDirection: 'column',
-      gap: 12,
+      gap: 10,
       ...style,
     }}>
       {children}
@@ -55,36 +55,6 @@ function CardHeader({ title, linkText, onLinkClick }) {
           <ChevronRight size={14} />
         </button>
       )}
-    </div>
-  );
-}
-
-function ActivityDot({ color }) {
-  return (
-    <div style={{
-      width: 8,
-      height: 8,
-      borderRadius: '50%',
-      background: color,
-      flexShrink: 0,
-      marginTop: 4,
-    }} />
-  );
-}
-
-function ActivityItem({ dot, text, time }) {
-  const { t } = useTheme();
-  return (
-    <div style={{ display: 'flex', gap: 10, paddingTop: 3 }}>
-      <ActivityDot color={dot} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 12, color: t.text.primary, fontFamily: t.font.display }}>
-          {text}
-        </span>
-        <span style={{ fontSize: 11, color: t.text.quaternary, fontFamily: t.font.display }}>
-          {time}
-        </span>
-      </div>
     </div>
   );
 }
@@ -145,198 +115,164 @@ export default function OverviewTab({ data, onTabChange }) {
   const ltv = d.valuations?.[0]?.ltv ?? null;
 
   return (
-    <div style={{
-      display: 'flex',
-      padding: 20,
-      gap: 20,
-    }}>
-      {/* \u2500\u2500 LEFT COLUMN \u2500\u2500 */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Key Metrics */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <SectionHeader title="Key Metrics" count={6} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <MetricCard label="Assessed Value" value={fmtCurrency(assessedValue)} />
-              <MetricCard label="AVM Estimate" value={fmtCurrency(avmEstimate)} />
-              <MetricCard
-                label="Lot Size"
-                value={fmt(lotSf, '', ' sqft')}
-                sub={lotAcres != null ? `${lotAcres} acres` : null}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <MetricCard
-                label="Building"
-                value={fmt(buildingSf, '', ' SF')}
-                sub={yearBuilt ? `Built ${yearBuilt}` : null}
-              />
-              <MetricCard
-                label="Last Sale"
-                value={fmtCurrency(lastSalePrice)}
-                sub={lastSaleDate ? fmtDate(lastSaleDate) : null}
-              />
-              <MetricCard label="Annual Tax" value={fmtCurrency(annualTax)} />
-            </div>
+      {/* KEY METRICS — full width section header */}
+      <SectionHeader title="Key Metrics" count={6} />
+
+      {/* Two-column layout */}
+      <div style={{ display: 'flex', gap: 16 }}>
+
+        {/* ── LEFT COLUMN ── */}
+        <div style={{ flex: 3, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* 3×2 Metric Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <MetricCard label="Assessed Value" value={fmtCurrency(assessedValue)} />
+            <MetricCard label="AVM Estimate" value={fmtCurrency(avmEstimate)} />
+            <MetricCard
+              label="Lot Size"
+              value={fmt(lotSf, '', ' sqft')}
+              sub={lotAcres != null ? `${lotAcres} acres` : null}
+            />
+            <MetricCard
+              label="Building"
+              value={fmt(buildingSf, '', ' SF')}
+              sub={yearBuilt ? `Built ${yearBuilt}` : null}
+            />
+            <MetricCard
+              label="Last Sale"
+              value={fmtCurrency(lastSalePrice)}
+              sub={lastSaleDate ? fmtDate(lastSaleDate) : null}
+            />
+            <MetricCard label="Annual Tax" value={fmtCurrency(annualTax)} />
           </div>
+
+          {/* Ownership Summary */}
+          <CardShell>
+            <CardHeader
+              title="Ownership Summary"
+              linkText="Full History \u2192"
+              onLinkClick={() => onTabChange?.('Ownership')}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <DataRow label="Owner" value={owner} />
+              <DataRow label="Owner Type" value={ownershipType} />
+              <DataRow
+                label="Absentee"
+                value={isAbsentee != null ? (isAbsentee ? 'Yes' : 'No') : null}
+              />
+              <DataRow label="Mailing" value={mailingAddress} />
+              <DataRow label="Ownership Length" value={fmtDate(transferDate)} />
+            </div>
+          </CardShell>
+
+          {/* Mortgage Summary */}
+          <CardShell>
+            <CardHeader
+              title="Mortgage Summary"
+              linkText="Details \u2192"
+              onLinkClick={() => onTabChange?.('Financials')}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <DataRow label="Lender" value={lender} />
+              <DataRow label="Balance" value={fmtCurrency(mortgageBalance)} />
+              <DataRow
+                label="Rate / Term"
+                value={
+                  mortgageRate != null || mortgageTerm != null
+                    ? `${mortgageRate != null ? fmtPct(mortgageRate) : '\u2014'} / ${mortgageTerm ?? '\u2014'}yr`
+                    : null
+                }
+              />
+              <DataRow label="Maturity" value={fmtDate(mortgageMaturity)} />
+            </div>
+            {ltv != null && (
+              <div style={{ paddingTop: 4 }}>
+                <ProgressBar label="Est. LTV" value={ltv} color={t.accent.primary} />
+              </div>
+            )}
+          </CardShell>
         </div>
 
-        {/* Ownership Summary */}
-        <CardShell>
-          <CardHeader
-            title="Ownership Summary"
-            linkText="Full History"
-            onLinkClick={() => onTabChange?.('Ownership')}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <DataRow label="Owner" value={owner} mono={false} />
-            <DataRow label="Owner Type" value={ownershipType} mono={false} />
-            <DataRow
-              label="Absentee"
-              value={isAbsentee != null ? (isAbsentee ? 'Yes' : 'No') : null}
-              mono={false}
-            />
-            <DataRow label="Mailing" value={mailingAddress} mono={false} />
-            <DataRow label="Transfer Date" value={fmtDate(transferDate)} mono={false} />
-          </div>
-        </CardShell>
+        {/* ── RIGHT COLUMN ── */}
+        <div style={{ flex: 2, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Mortgage Summary */}
-        <CardShell>
-          <CardHeader
-            title="Mortgage Summary"
-            linkText="Details"
-            onLinkClick={() => onTabChange?.('Financials')}
-          />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <DataRow label="Lender" value={lender} mono={false} />
-            <DataRow label="Balance" value={fmtCurrency(mortgageBalance)} />
-            <DataRow
-              label="Rate / Term"
-              value={
-                mortgageRate != null || mortgageTerm != null
-                  ? `${mortgageRate != null ? fmtPct(mortgageRate) : '\u2014'} / ${mortgageTerm ?? '\u2014'}yr`
-                  : null
-              }
-            />
-            <DataRow label="Due Date" value={fmtDate(mortgageMaturity)} mono={false} />
-          </div>
-          {ltv != null && (
-            <div style={{ paddingTop: 4 }}>
-              <ProgressBar label="Est. LTV" value={ltv} color={t.accent.primary} />
+          {/* AI Quick Take */}
+          <CardShell style={{ padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Sparkles size={16} style={{ color: t.accent.green }} />
+              <span style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: t.accent.green,
+                fontFamily: t.font.display,
+              }}>
+                AI Quick Take
+              </span>
             </div>
-          )}
-        </CardShell>
-      </div>
-
-      {/* \u2500\u2500 RIGHT COLUMN \u2500\u2500 */}
-      <div style={{ width: 200, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-        {/* AI Quick Take */}
-        <CardShell style={{
-          background: t.accent.primaryMuted,
-          border: `1px solid ${t.accent.primaryBorder}`,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Sparkles size={16} style={{ color: t.semantic.info }} />
-            <span style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: t.semantic.info,
-              fontFamily: t.font.display,
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 0',
             }}>
-              AI Quick Take
-            </span>
-          </div>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 8,
-            padding: '12px 0',
-          }}>
-            <span style={{
-              fontSize: 12,
-              color: t.text.tertiary,
-              fontFamily: t.font.display,
-              textAlign: 'center',
-            }}>
-              AI analysis not yet generated for this property.
-            </span>
-            <button style={{
+              <span style={{
+                fontSize: 12,
+                color: t.text.tertiary,
+                fontFamily: t.font.display,
+                textAlign: 'center',
+              }}>
+                No analysis generated yet
+              </span>
+              <button style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#fff',
+                background: t.accent.green,
+                border: 'none',
+                borderRadius: 6,
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontFamily: t.font.display,
+              }}>
+                <Zap size={14} />
+                Generate Analysis
+              </button>
+            </div>
+          </CardShell>
+
+          {/* Location Snapshot */}
+          <CardShell>
+            <CardHeader
+              title="Location"
+              linkText="Map \u2192"
+              onLinkClick={() => onTabChange?.('Location')}
+            />
+            {/* Map placeholder */}
+            <div style={{
+              width: '100%',
+              height: 100,
+              borderRadius: 6,
+              background: t.bg.tertiary,
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              fontSize: 12,
-              fontWeight: 600,
-              color: t.semantic.info,
-              background: 'none',
-              border: `1px solid ${t.accent.primaryBorder}`,
-              borderRadius: 6,
-              padding: '6px 12px',
-              cursor: 'pointer',
-              fontFamily: t.font.display,
+              justifyContent: 'center',
+              overflow: 'hidden',
             }}>
-              <Zap size={14} />
-              Generate Analysis
-            </button>
-          </div>
-        </CardShell>
-
-        {/* Location Snapshot */}
-        <CardShell>
-          <CardHeader
-            title="Location"
-            linkText="Map"
-            onLinkClick={() => onTabChange?.('Location')}
-          />
-          {/* Map placeholder */}
-          <div style={{
-            width: '100%',
-            height: 100,
-            borderRadius: 6,
-            background: t.bg.tertiary,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-          }}>
-            <MapPin size={20} style={{ color: t.text.quaternary }} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <DataRow label="Submarket" value={d.submarket} mono={false} />
-            <DataRow label="Vacancy" value={d.vacancy != null ? `${d.vacancy}%` : null} accent={d.vacancy != null && d.vacancy < 10} />
-            <DataRow label="Avg Rent" value={d.avgRent} />
-          </div>
-        </CardShell>
-
-        {/* Recent Activity */}
-        <CardShell>
-          <CardHeader title="Recent Activity" linkText="View All" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <ActivityItem
-              dot={t.accent.primary}
-              text="Added to Pipeline: Underwriting"
-              time="2 hours ago"
-            />
-            <ActivityItem
-              dot={t.accent.green}
-              text="AI Analysis Completed"
-              time="5 hours ago"
-            />
-            <ActivityItem
-              dot={t.semantic.warning}
-              text="Owner Contact Info Found"
-              time="Yesterday"
-            />
-            <ActivityItem
-              dot={t.text.quaternary}
-              text="Property Bookmarked"
-              time="3 days ago"
-            />
-          </div>
-        </CardShell>
+              <MapPin size={20} style={{ color: t.text.quaternary }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <DataRow label="Submarket" value={d.submarket} />
+              <DataRow label="Vacancy" value={d.vacancy != null ? `${d.vacancy}%` : null} accent={d.vacancy != null && d.vacancy < 10} />
+              <DataRow label="Avg Rent" value={d.avgRent} />
+            </div>
+          </CardShell>
+        </div>
       </div>
     </div>
   );
