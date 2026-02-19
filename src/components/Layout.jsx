@@ -1,22 +1,21 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { Search, Bell, Plus, Hexagon, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '../theme.jsx';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', to: '/' },
+  { label: 'Dashboard', to: '/dashboard' },
   { label: 'Live Map', to: '/live-map' },
-  { label: 'CRM', to: '#' },
-  { label: 'Properties', to: '#' },
-  { label: 'Deals', to: '#' },
-  { label: 'Markets', to: '#' },
-  { label: 'Analytics', to: '#' },
-  { label: 'Documents', to: '#' },
-  { label: 'Settings', to: '#' },
+  { label: 'CRM', to: '/crm' },
+  { label: 'Properties', to: '/properties' },
+  { label: 'Deals', to: '/deals' },
+  { label: 'Markets', to: '/markets' },
+  { label: 'Analytics', to: '/analytics' },
+  { label: 'Documents', to: '/documents' },
+  { label: 'Settings', to: '/settings' },
 ];
 
 export default function Layout() {
-  const location = useLocation();
   const { t, isDark, toggleTheme } = useTheme();
   const [themeHovered, setThemeHovered] = useState(false);
 
@@ -105,33 +104,23 @@ export default function Layout() {
         className="h-12 flex items-center px-6 shrink-0"
         style={{ background: t.bg.secondary, borderBottom: `1px solid ${t.border.default}`, position: 'relative', zIndex: 70 }}
       >
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.to === '/'
-            ? location.pathname === '/'
-            : location.pathname === item.to;
-          const isDisabled = item.to === '#';
-
-          return (
-            <Link
-              key={item.label}
-              to={item.to}
-              className={`h-full flex items-center justify-center px-4 text-[13px] border-b-2 transition-colors ${
-                isActive
-                  ? 'font-semibold'
-                  : isDisabled
-                    ? 'font-medium cursor-default'
-                    : 'font-medium'
-              }`}
-              style={{
-                color: isActive ? t.text.primary : isDisabled ? t.text.quaternary : t.text.tertiary,
-                borderBottomColor: isActive ? t.accent.primary : 'transparent',
-              }}
-              onClick={isDisabled ? (e) => e.preventDefault() : undefined}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.label}
+            to={item.to}
+            className={({ isActive }) =>
+              `h-full flex items-center justify-center px-4 text-[13px] border-b-2 transition-colors ${
+                isActive ? 'font-semibold' : 'font-medium'
+              }`
+            }
+            style={({ isActive }) => ({
+              color: isActive ? t.text.primary : t.text.tertiary,
+              borderBottomColor: isActive ? t.accent.primary : 'transparent',
+            })}
+          >
+            {item.label}
+          </NavLink>
+        ))}
       </div>
 
       {/* Page Content */}
