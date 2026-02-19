@@ -12,6 +12,7 @@ import { usePropertyDetail } from './hooks/usePropertyDetail';
 
 import { useChat } from './hooks/useChat';
 import { MOCK_FLOOD_GEOJSON, MOCK_SCHOOL_GEOJSON } from './data/mockData';
+import { parseNLQCommand } from './utils/nlqParser';
 
 export default function App() {
   const { t } = useTheme();
@@ -97,6 +98,9 @@ export default function App() {
 
   // Chat state
   const { messages, setMessages, loading: chatLoading, send: sendChat, highlightedProperties, setHighlightedProperties, clearHighlights, chatMarkers, resetChat } = useChat();
+
+  // Ref to hold filterAPI functions exposed from LayersPanelV2
+  const filterAPIRef = useRef(null);
 
   // Properties for current viewport
   const { properties } = useProperties(mapBbox, {});
@@ -201,11 +205,63 @@ export default function App() {
     root.style.setProperty('--scout-border-subtle', t.border.subtle);
   }, [t]);
 
+  // NLQ interceptor — handles layer/filter commands without calling Claude API
+  const handleNLQCommand = useCallback((text) => {
+    const command = parseNLQCommand(text);
+    if (!command) return false; // No match — let Claude handle it
+
+    // Add user message to chat
+    setMessages(prev => [...prev, { role: 'user', content: text, timestamp: new Date() }]);
+
+    // Execute the command
+    switch (command.type) {
+      case 'gis_layer':
+        handleGisLayerChange(command.layerKey, command.action === 'show');
+        break;
+      case 'basic_layer':
+        handleLayerChange(command.layerKey, command.action === 'show');
+        break;
+      case 'filter':
+        if (filterAPIRef.current) {
+          if (command.isArray) {
+            // For array filters like ownerType, set the whole array
+            filterAPIRef.current.setFilter(command.filterKey, command.filterValue);
+          } else {
+            filterAPIRef.current.setFilter(command.filterKey, command.filterValue);
+          }
+        }
+        break;
+      case 'clear_all':
+        // Clear all GIS layers
+        setVisibleGisLayers({});
+        // Clear filters
+        if (filterAPIRef.current) {
+          filterAPIRef.current.clearFilters();
+        }
+        break;
+      default:
+        break;
+    }
+
+    // Inject confirmation message into chat
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: command.confirmationText,
+        timestamp: new Date(),
+      }]);
+    }, 150);
+
+    return true; // Command was handled
+  }, [handleGisLayerChange, handleLayerChange, setMessages]);
+
   // Chat send handler — clear old highlights before sending new query
   const handleChatSend = useCallback((text) => {
+    // Try NLQ command first — if matched, don't call Claude
+    if (handleNLQCommand(text)) return;
     clearHighlights();
     sendChat(text);
-  }, [sendChat, clearHighlights]);
+  }, [handleNLQCommand, clearHighlights, sendChat]);
 
   // Chat panel: highlight specific properties on map
   const handleHighlightProperties = useCallback((attomIds) => {
@@ -341,6 +397,7 @@ export default function App() {
           mapRef={mapInstanceRef}
           zIndex={getPanelZ('left')}
           onBringToFront={() => setWorkstationOnTop(false)}
+          filterAPIRef={filterAPIRef}
         />
 
         {/* Property Card rendered inside Mapbox popup via portal */}

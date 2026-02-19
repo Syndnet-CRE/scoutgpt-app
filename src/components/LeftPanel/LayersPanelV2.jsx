@@ -306,7 +306,7 @@ const SECTION_GIS_KEYS = {
   utilities: ['water_lines', 'wastewater_lines', 'stormwater_lines'],
 };
 
-export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, onGisOpacityChange, gisLayerOpacity, gisLayerLoading, mapRef, zIndex, onBringToFront }) {
+export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, onGisOpacityChange, gisLayerOpacity, gisLayerLoading, mapRef, zIndex, onBringToFront, filterAPIRef }) {
   const { t } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("layers");
@@ -321,6 +321,17 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
   // New filter API hook
   const filterAPI = useFilterAPI(mapRef);
   const { filteredAttomIds, hasActiveFilters: newFiltersActive, count: filterCount } = filterAPI;
+
+  // Expose filterAPI to parent via ref (for NLQ bridge)
+  useEffect(() => {
+    if (filterAPIRef) {
+      filterAPIRef.current = {
+        setFilter: filterAPI.setFilter,
+        toggleArrayFilter: filterAPI.toggleArrayFilter,
+        clearFilters: filterAPI.clearFilters,
+      };
+    }
+  }, [filterAPIRef, filterAPI.setFilter, filterAPI.toggleArrayFilter, filterAPI.clearFilters]);
 
   // Propagate filtered IDs to parent for map highlighting
   useEffect(() => {
