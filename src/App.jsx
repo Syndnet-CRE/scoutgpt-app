@@ -39,6 +39,9 @@ export default function App() {
   // GIS layer opacity state (0-1 values)
   const [gisLayerOpacity, setGisLayerOpacity] = useState({});
 
+  // GIS layer loading state (true while fetching)
+  const [gisLayerLoading, setGisLayerLoading] = useState({});
+
   // Map viewport bbox
   const [mapBbox, setMapBbox] = useState(null);
 
@@ -270,6 +273,7 @@ export default function App() {
             onPopupClose={handlePopupClose}
             mapExpandRef={mapExpandRef}
             mapInstanceRef={mapInstanceRef}
+            setGisLayerLoading={setGisLayerLoading}
           />
 
         {/* Floating left panel overlay */}
@@ -281,6 +285,7 @@ export default function App() {
           onGisLayerChange={handleGisLayerChange}
           onGisOpacityChange={handleGisOpacityChange}
           gisLayerOpacity={gisLayerOpacity}
+          gisLayerLoading={gisLayerLoading}
           mapRef={mapInstanceRef}
           zIndex={getPanelZ('left')}
           onBringToFront={() => setWorkstationOnTop(false)}

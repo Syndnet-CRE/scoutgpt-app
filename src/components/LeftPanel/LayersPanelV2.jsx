@@ -5,7 +5,7 @@ import {
   Target, Wrench, Construction, AlertTriangle, Users, Navigation,
   Bookmark, Eye, ChevronDown, ChevronUp, RotateCcw,
   SlidersHorizontal, Plus, ThumbsUp, Send, MessageSquarePlus,
-  DollarSign, Building2, Clock, Train, Filter
+  DollarSign, Building2, Clock, Train, Filter, Loader2
 } from "lucide-react";
 import FilterPanel from '../filters/FilterPanel';
 import { useFilterAPI } from '../../hooks/useFilterAPI';
@@ -190,7 +190,7 @@ function ActiveCount({ active, total, t }) {
   return <span style={{ fontSize: 11, fontWeight: 500, color: t.text.tertiary, marginRight: 4, whiteSpace: "nowrap" }}>{active} of {total}</span>;
 }
 
-function Section({ title, icon: Icon, children, count, activeCount, defaultOpen = false, t }) {
+function Section({ title, icon: Icon, children, count, activeCount, defaultOpen = false, loading = false, t }) {
   const [open, setOpen] = useState(defaultOpen);
   const Ch = open ? ChevronUp : ChevronDown;
   return (<div style={{ background: t.bg.secondary, borderRadius: 10, border: `1px solid ${t.border.default}`, marginBottom: 6, overflow: "hidden" }}>
@@ -198,6 +198,7 @@ function Section({ title, icon: Icon, children, count, activeCount, defaultOpen 
       <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
         <Icon size={14} color={t.text.secondary} strokeWidth={1.8} />
         <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.8px", color: t.text.primary }}>{title}</span>
+        {loading && <Loader2 size={14} color="#22c55e" strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} />}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
         {count !== undefined && <ActiveCount active={activeCount||0} total={count} t={t} />}
@@ -298,7 +299,14 @@ function RequestModal({ isOpen, onClose, t }) {
 // ── MAIN ──
 // This is the original LayersPanelV2 component with added onLayerChange and onFilterChange callbacks.
 // It notifies the parent (App.jsx) whenever a wired layer or filter changes state.
-export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, onGisOpacityChange, gisLayerOpacity, mapRef, zIndex, onBringToFront }) {
+// Map section IDs to GIS layer keys for loading state
+const SECTION_GIS_KEYS = {
+  environmental: ['floodplains'],
+  zoning: ['zoning_districts'],
+  utilities: ['water_lines', 'wastewater_lines', 'stormwater_lines'],
+};
+
+export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, onGisOpacityChange, gisLayerOpacity, gisLayerLoading, mapRef, zIndex, onBringToFront }) {
   const { t } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState("layers");
@@ -491,8 +499,12 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
           </div>
         </div>
 
-        {filtered.map(sec => (
-          <Section key={sec.id} title={sec.title} icon={sec.icon} count={sec.layers.length} activeCount={cntActive(sec)} defaultOpen={false} t={t}>
+        {filtered.map(sec => {
+          // Check if any GIS layer in this section is loading
+          const gisKeys = SECTION_GIS_KEYS[sec.id] || [];
+          const sectionLoading = gisKeys.some(key => gisLayerLoading?.[key]);
+          return (
+          <Section key={sec.id} title={sec.title} icon={sec.icon} count={sec.layers.length} activeCount={cntActive(sec)} defaultOpen={false} loading={sectionLoading} t={t}>
             {sec.layers.map(layer => (
               <LayerRow key={layer.id} layer={layer} checked={ls[layer.id]||false}
                 onChange={sec.type==="radio"?()=>selRadio(sec.id,layer.id):()=>tog(layer.id)}
@@ -516,7 +528,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
               </div>
             )}
           </Section>
-        ))}
+        ); })}
 
         <button onClick={()=>setModal(true)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "10px 0", marginTop: 4, marginBottom: 16, borderRadius: 10, background: "transparent", border: `1px dashed ${t.border.default}`, color: t.text.tertiary, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.15s", fontFamily: font }}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=t.accent.primary;e.currentTarget.style.color=t.accent.primary;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=t.border.default;e.currentTarget.style.color=t.text.tertiary;}}>

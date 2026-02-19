@@ -10,6 +10,14 @@ const INITIAL_ZOOM = 12;
 const TILESET_ID = 'bradyirwin.travis-parcels-v2';
 const TILESET_LAYER = 'parcels'; // source-layer name from MTS recipe
 
+// Flood zone sub-layers (ordered bottom to top: darkest zones at bottom, lighter on top)
+const FLOOD_SUBLAYERS = [
+  'gis-floodplains-fill-ae', 'gis-floodplains-fill-ve',
+  'gis-floodplains-fill-a', 'gis-floodplains-fill-ao',
+  'gis-floodplains-outline-ae', 'gis-floodplains-outline-ve',
+  'gis-floodplains-outline-a', 'gis-floodplains-outline-ao'
+];
+
 // Asset class to use_code mapping for tile-side filtering
 const ASSET_CLASS_USE_CODES = {
   single_family: [385, 373, 375, 369, 381],
@@ -59,6 +67,7 @@ export default function MapContainer({
   onPopupClose,
   mapExpandRef,
   mapInstanceRef,
+  setGisLayerLoading,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -466,15 +475,8 @@ export default function MapContainer({
   }
 
   // Helper: reorder GIS layers to enforce z-order
-  // Order (bottom to top): floodplains → zoning → parcels → utility lines
+  // Order (bottom to top): floodplains (sub-layers) → zoning → parcels → utility lines
   function reorderGisLayers(map) {
-    const zOrder = [
-      'gis-floodplains-fill', 'gis-floodplains-outline',
-      'gis-zoning_districts-fill', 'gis-zoning_districts-outline',
-      // Parcels are added separately and stay in place
-      'gis-water_lines-line', 'gis-wastewater_lines-line', 'gis-stormwater_lines-line'
-    ];
-
     // Move utility lines to top (after all parcels)
     const utilityLayers = ['gis-water_lines-line', 'gis-wastewater_lines-line', 'gis-stormwater_lines-line'];
     for (const layerId of utilityLayers) {
@@ -544,60 +546,78 @@ export default function MapContainer({
       // Add hover popup for zoning district details
       addZoningHover(map, `${sourceId}-fill`);
     } else if (config.geometryType === 'fill' && layerKey === 'floodplains') {
-      // Flood: use _flood_zone (normalized during GeoJSON conversion)
-      const floodValue = ['get', '_flood_zone'];
-
-      // Build match expression for flood colors using normalized codes
-      const colorExpr = ['match', floodValue];
-      for (const [code, color] of Object.entries(FLOOD_COLORS)) {
-        colorExpr.push(code, color);
-      }
-      colorExpr.push('#475569'); // Slate fallback
-
-      // Build match expression for flood opacity
-      const opacityExpr = ['match', floodValue];
-      for (const [code, opacity] of Object.entries(FLOOD_OPACITY)) {
-        opacityExpr.push(code, opacity);
-      }
-      opacityExpr.push(0.15); // Fallback opacity
-
       // Floodplains go at the BOTTOM - below zoning if it exists, otherwise below parcels
       const zoningFill = map.getLayer('gis-zoning_districts-fill');
       const beforeId = zoningFill ? 'gis-zoning_districts-fill' :
                        (map.getLayer('parcels-fill') ? 'parcels-fill' : undefined);
 
-      // Filter to only show high-risk flood zones (exclude X, X_SHADED, D which cover the entire county)
-      const floodFilter = [
-        'match', ['get', '_flood_zone'],
-        ['A', 'AE', 'AO', 'AH', 'AR', 'A99', 'VE', 'V'],
-        true,
-        false
+      // Sub-layer definitions: ordered dark-on-bottom, light-on-top
+      // AE zones (darkest) at bottom, AO zones (lightest) on top
+      const floodSubLayers = [
+        // AE layer (bottom — darkest, 100-year detailed)
+        {
+          id: `${sourceId}-fill-ae`,
+          filter: ['in', ['get', '_flood_zone'], ['literal', ['AE']]],
+          color: '#1E40AF',
+          opacity: 0.40
+        },
+        // VE layer (coastal, same depth as AE)
+        {
+          id: `${sourceId}-fill-ve`,
+          filter: ['in', ['get', '_flood_zone'], ['literal', ['VE', 'V']]],
+          color: '#1E3A8A',
+          opacity: 0.40
+        },
+        // A layer (100-year approx, lighter)
+        {
+          id: `${sourceId}-fill-a`,
+          filter: ['in', ['get', '_flood_zone'], ['literal', ['A', 'A99', 'AR', 'AH']]],
+          color: '#2563EB',
+          opacity: 0.35
+        },
+        // AO layer (top — shallow flooding, lightest)
+        {
+          id: `${sourceId}-fill-ao`,
+          filter: ['==', ['get', '_flood_zone'], 'AO'],
+          color: '#2563EB',
+          opacity: 0.35
+        }
       ];
 
-      map.addLayer({
-        id: `${sourceId}-fill`,
-        type: 'fill',
-        source: sourceId,
-        filter: floodFilter,
-        paint: {
-          'fill-color': colorExpr,
-          'fill-opacity': opacityExpr
-        }
-      }, beforeId);
-      map.addLayer({
-        id: `${sourceId}-outline`,
-        type: 'line',
-        source: sourceId,
-        filter: floodFilter,
-        paint: {
-          'line-color': colorExpr,
-          'line-width': 1,
-          'line-opacity': 0.5  // Consistent outline opacity
-        }
-      }, beforeId);
+      // Add fill sub-layers (in order: AE bottom, then VE, A, AO on top)
+      for (const subLayer of floodSubLayers) {
+        map.addLayer({
+          id: subLayer.id,
+          type: 'fill',
+          source: sourceId,
+          filter: subLayer.filter,
+          paint: {
+            'fill-color': subLayer.color,
+            'fill-opacity': subLayer.opacity
+          }
+        }, beforeId);
+      }
 
-      // Add hover popup for floodplain details
-      addFloodHover(map, `${sourceId}-fill`);
+      // Add outline sub-layers (same order)
+      for (const subLayer of floodSubLayers) {
+        const outlineId = subLayer.id.replace('-fill-', '-outline-');
+        map.addLayer({
+          id: outlineId,
+          type: 'line',
+          source: sourceId,
+          filter: subLayer.filter,
+          paint: {
+            'line-color': subLayer.color,
+            'line-width': 1,
+            'line-opacity': 0.5
+          }
+        }, beforeId);
+      }
+
+      // Add hover popup for all floodplain fill sub-layers
+      for (const subLayer of floodSubLayers) {
+        addFloodHover(map, subLayer.id);
+      }
     }
 
     // After adding, reorder to enforce z-order
@@ -607,9 +627,19 @@ export default function MapContainer({
   // Helper: remove GIS map layers for a given layerKey
   function removeGisMapLayers(map, layerKey) {
     const sourceId = `gis-${layerKey}`;
-    for (const suffix of ['-line', '-fill', '-outline']) {
-      if (map.getLayer(sourceId + suffix)) map.removeLayer(sourceId + suffix);
+
+    // Special handling for floodplains - remove all sub-layers
+    if (layerKey === 'floodplains') {
+      for (const layerId of FLOOD_SUBLAYERS) {
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+      }
+    } else {
+      // Standard removal for other layers
+      for (const suffix of ['-line', '-fill', '-outline']) {
+        if (map.getLayer(sourceId + suffix)) map.removeLayer(sourceId + suffix);
+      }
     }
+
     if (map.getSource(sourceId)) map.removeSource(sourceId);
   }
 
@@ -966,6 +996,7 @@ export default function MapContainer({
 
           // Mark fetch as in-progress
           gisFetchingRef.current[layerKey] = true;
+          setGisLayerLoading?.(prev => ({ ...prev, [layerKey]: true }));
 
           fetchGisLayer(layerKey, currentBounds).then(geojson => {
             if (!geojson || !mapRef.current) return;
@@ -985,6 +1016,7 @@ export default function MapContainer({
           }).finally(() => {
             // Always clear in-progress flag
             gisFetchingRef.current[layerKey] = false;
+            setGisLayerLoading?.(prev => ({ ...prev, [layerKey]: false }));
           });
         }
       }, 800); // Increased from 500ms to reduce fetch storm
@@ -1154,6 +1186,7 @@ export default function MapContainer({
 
       if (isVisible && !map.getSource(sourceId)) {
         // Toggle ON — fetch and add
+        setGisLayerLoading?.(prev => ({ ...prev, [layerKey]: true }));
         fetchGisLayer(layerKey, map.getBounds()).then(geojson => {
           if (!geojson || !mapRef.current) return;
           // Check it's still supposed to be visible (user might have toggled off during fetch)
@@ -1164,7 +1197,9 @@ export default function MapContainer({
           gisDataRef.current[layerKey] = transformedData;
           m.addSource(sourceId, { type: 'geojson', data: transformedData });
           addGisMapLayers(m, layerKey, config);
-        }).catch(err => console.warn(`[GIS] Error loading ${layerKey}:`, err));
+        }).catch(err => console.warn(`[GIS] Error loading ${layerKey}:`, err)).finally(() => {
+          setGisLayerLoading?.(prev => ({ ...prev, [layerKey]: false }));
+        });
       } else if (!isVisible && map.getSource(sourceId)) {
         // Toggle OFF — remove
         removeGisMapLayers(map, layerKey);
@@ -1194,14 +1229,25 @@ export default function MapContainer({
           map.setPaintProperty(lineLayerId, 'line-opacity', opacity);
         }
       } else if (config.geometryType === 'fill') {
-        const fillLayerId = `${sourceId}-fill`;
-        const outlineLayerId = `${sourceId}-outline`;
-        if (map.getLayer(fillLayerId)) {
-          map.setPaintProperty(fillLayerId, 'fill-opacity', opacity);
-        }
-        if (map.getLayer(outlineLayerId)) {
-          // Outline slightly more opaque for visibility
-          map.setPaintProperty(outlineLayerId, 'line-opacity', Math.min(opacity + 0.25, 1));
+        // Special handling for floodplains - apply to all sub-layers
+        if (layerKey === 'floodplains') {
+          for (const layerId of FLOOD_SUBLAYERS) {
+            if (map.getLayer(layerId)) {
+              const propType = layerId.includes('-fill-') ? 'fill-opacity' : 'line-opacity';
+              const targetOpacity = layerId.includes('-outline-') ? Math.min(opacity + 0.25, 1) : opacity;
+              map.setPaintProperty(layerId, propType, targetOpacity);
+            }
+          }
+        } else {
+          const fillLayerId = `${sourceId}-fill`;
+          const outlineLayerId = `${sourceId}-outline`;
+          if (map.getLayer(fillLayerId)) {
+            map.setPaintProperty(fillLayerId, 'fill-opacity', opacity);
+          }
+          if (map.getLayer(outlineLayerId)) {
+            // Outline slightly more opaque for visibility
+            map.setPaintProperty(outlineLayerId, 'line-opacity', Math.min(opacity + 0.25, 1));
+          }
         }
       }
     }
