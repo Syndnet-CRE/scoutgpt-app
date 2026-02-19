@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTheme } from '../theme.jsx';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', to: '/dashboard' },
+  { label: 'Dashboard', to: '/' },
   { label: 'Live Map', to: '/live-map' },
   { label: 'CRM', to: '/crm' },
   { label: 'Properties', to: '/properties' },
@@ -108,6 +108,7 @@ export default function Layout() {
           <NavLink
             key={item.label}
             to={item.to}
+            end={item.to === '/'}
             className={({ isActive }) =>
               `h-full flex items-center justify-center px-4 text-[13px] border-b-2 transition-colors ${
                 isActive ? 'font-semibold' : 'font-medium'
