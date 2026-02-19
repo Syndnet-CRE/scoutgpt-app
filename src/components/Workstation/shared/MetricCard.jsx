@@ -9,14 +9,16 @@ export default function MetricCard({ label, value, sub, accent }) {
       minWidth: 0,
       background: t.bg.secondary,
       border: `1px solid ${t.border.default}`,
-      borderRadius: 12,
-      padding: '10px 12px',
+      borderRadius: 8,
+      padding: 10,
       display: 'flex',
       flexDirection: 'column',
       gap: 2,
     }}>
       <span style={{
-        fontSize: 11,
+        fontSize: 10,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
         color: t.text.secondary,
         fontFamily: t.font.display,
       }}>
@@ -24,7 +26,7 @@ export default function MetricCard({ label, value, sub, accent }) {
       </span>
       <span style={{
         fontSize: 16,
-        fontWeight: 700,
+        fontWeight: 800,
         color: t.text.primary,
         fontFamily: t.font.mono,
       }}>

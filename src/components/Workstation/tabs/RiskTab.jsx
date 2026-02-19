@@ -28,6 +28,22 @@ function floodZoneVariant(zone) {
   return 'neutral';
 }
 
+function floodZoneDescription(zone) {
+  if (!zone) return null;
+  const z = zone.toUpperCase();
+  if (z === 'X') return 'Minimal flood hazard';
+  if (z === 'A') return 'High risk';
+  if (z === 'AE') return 'High risk (base flood elevation determined)';
+  if (z === 'AH') return 'High risk (shallow flooding)';
+  if (z === 'AO') return 'High risk (sheet flow)';
+  if (z === 'V') return 'Coastal high hazard';
+  if (z === 'VE') return 'Coastal high hazard (base flood elevation determined)';
+  if (z === 'B' || z.includes('SHADED')) return 'Moderate flood hazard';
+  if (z === 'C') return 'Minimal flood hazard';
+  if (z === 'D') return 'Undetermined flood hazard';
+  return null;
+}
+
 const RISK_SCORES = [
   { key: 'floodRiskScore', label: 'Flood', icon: Droplets },
   { key: 'heatRiskScore', label: 'Heat', icon: Thermometer },
@@ -55,15 +71,33 @@ function RiskBar({ item, climate, t }) {
 export default function RiskTab({ data }) {
   const { t } = useTheme();
 
-  const climate = data?.climateRisk ?? {};
+  const climate = data?.climateRisk ?? null;
 
-  const totalScore = climate?.totalRiskScore ?? null;
+  if (!climate) {
+    return (
+      <div style={{
+        padding: 40,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+      }}>
+        <Shield size={32} style={{ color: t.text.quaternary }} />
+        <span style={{ fontSize: 13, color: t.text.tertiary, fontFamily: t.font.display }}>
+          Climate risk data not available for this property
+        </span>
+      </div>
+    );
+  }
 
-  const floodChanceFuture = climate?.floodChanceFuture ?? null;
-  const femaFloodRisk = climate?.femaFloodRisk ?? null;
+  const totalScore = climate.totalRiskScore ?? null;
+
+  const floodChanceFuture = climate.floodChanceFuture ?? null;
+  const femaFloodRisk = climate.femaFloodRisk ?? null;
 
   const floodZoneStr = data?.floodZone ?? null;
-  const floodZoneDesc = data?.floodZoneDesc ?? null;
+  const computedDesc = floodZoneDescription(floodZoneStr);
+  const floodZoneDesc = data?.floodZoneDesc ?? computedDesc;
   const inFloodplain = data?.inFloodplain ?? null;
 
   return (

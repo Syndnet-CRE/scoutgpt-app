@@ -90,6 +90,22 @@ export default function TaxTab({ data }) {
     },
   ];
 
+  if (assessments.length === 0) {
+    return (
+      <div style={{
+        padding: 40,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 12,
+      }}>
+        <span style={{ fontSize: 13, color: t.text.tertiary, fontFamily: t.font.display }}>
+          No tax assessment records
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
 
@@ -167,7 +183,9 @@ export default function TaxTab({ data }) {
       {historyRows.length > 0 && (
         <div>
           <SectionHeader title="Tax History" count={historyRows.length} />
-          <DataTable columns={tableColumns} rows={historyRows} />
+          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+            <DataTable columns={tableColumns} rows={historyRows} />
+          </div>
         </div>
       )}
     </div>

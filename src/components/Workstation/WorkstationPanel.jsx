@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTheme } from '../../theme.jsx';
 import WorkstationHeader from './WorkstationHeader.jsx';
 import OverviewTab from './tabs/OverviewTab.jsx';
@@ -30,6 +29,9 @@ const TABS = [
   'AI Insights',
 ];
 
+const MIN_WIDTH = 400;
+const MAX_WIDTH_RATIO = 0.7;
+
 function TabPlaceholder({ name }) {
   const { t } = useTheme();
   return (
@@ -51,7 +53,11 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
   const { t } = useTheme();
   const tabBarRef = useRef(null);
   const activeTabRef = useRef(null);
+  const [panelWidth, setPanelWidth] = useState(null);
+  const [dragging, setDragging] = useState(false);
   const [handleHovered, setHandleHovered] = useState(false);
+  const dragStartX = useRef(0);
+  const dragStartWidth = useRef(0);
 
   const currentTab = activeTab ?? 'Overview';
 
@@ -63,6 +69,41 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
       bar.scrollTo({ left: scrollLeft, behavior: 'smooth' });
     }
   }, [currentTab]);
+
+  // Drag resize handlers
+  const handleMouseDown = useCallback((e) => {
+    e.preventDefault();
+    const currentW = panelWidth || window.innerWidth * 0.45;
+    dragStartX.current = e.clientX;
+    dragStartWidth.current = currentW;
+    setDragging(true);
+  }, [panelWidth]);
+
+  useEffect(() => {
+    if (!dragging) return;
+
+    const handleMouseMove = (e) => {
+      const dx = dragStartX.current - e.clientX;
+      const maxW = window.innerWidth * MAX_WIDTH_RATIO;
+      const newW = Math.min(Math.max(dragStartWidth.current + dx, MIN_WIDTH), maxW);
+      setPanelWidth(newW);
+    };
+
+    const handleMouseUp = () => {
+      setDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragging]);
+
+  const handleDoubleClick = useCallback(() => {
+    onClose?.();
+  }, [onClose]);
 
   const renderTab = () => {
     switch (currentTab) {
@@ -103,103 +144,136 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
     }
   };
 
+  const widthStyle = panelWidth ? `${panelWidth}px` : '45vw';
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        width: '45vw',
-        minWidth: 480,
-        maxWidth: 960,
-        zIndex: 65,
-        background: t.bg.primary,
-        borderLeft: `1px solid ${t.border.default}`,
-        display: 'flex',
-        flexDirection: 'row',
-        transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 300ms ease',
-        boxShadow: isOpen ? `-4px 0 24px rgba(0,0,0,0.25)` : 'none',
-      }}
-    >
-      {/* Close Handle — left edge */}
+    <>
+      {/* Hide scrollbar CSS */}
+      <style>{`
+        .ws-tab-bar::-webkit-scrollbar { display: none; }
+        .scout-scroll::-webkit-scrollbar { width: 6px; }
+        .scout-scroll::-webkit-scrollbar-track { background: transparent; }
+        .scout-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+        .scout-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+      `}</style>
+
       <div
-        onClick={onClose}
-        onMouseEnter={() => setHandleHovered(true)}
-        onMouseLeave={() => setHandleHovered(false)}
         style={{
-          width: 28,
-          flexShrink: 0,
-          background: handleHovered ? t.bg.elevated : t.bg.tertiary,
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: widthStyle,
+          minWidth: MIN_WIDTH,
+          maxWidth: '70vw',
+          zIndex: 65,
+          background: t.bg.primary,
+          borderLeft: `1px solid ${t.border.default}`,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          borderRight: `1px solid ${t.border.default}`,
-          transition: 'background 0.15s ease',
+          flexDirection: 'row',
+          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          transition: dragging ? 'none' : 'transform 300ms ease',
+          boxShadow: isOpen ? `-4px 0 24px rgba(0,0,0,0.25)` : 'none',
+          userSelect: dragging ? 'none' : 'auto',
         }}
       >
-        <ChevronRight size={16} style={{ color: t.text.tertiary }} />
-      </div>
-
-      {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Sticky Header */}
-        <WorkstationHeader data={propertyData} onClose={onClose} />
-
-        {/* Sticky Tab Bar */}
+        {/* Drag Handle — left edge */}
         <div
-          ref={tabBarRef}
+          onMouseDown={handleMouseDown}
+          onDoubleClick={handleDoubleClick}
+          onMouseEnter={() => setHandleHovered(true)}
+          onMouseLeave={() => setHandleHovered(false)}
           style={{
-            display: 'flex',
-            height: 40,
+            width: 6,
             flexShrink: 0,
-            borderBottom: `1px solid ${t.border.default}`,
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            scrollbarWidth: 'none',
-            padding: '0 20px',
+            background: handleHovered || dragging ? t.bg.elevated : 'transparent',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'col-resize',
+            transition: 'background 0.15s ease',
+            gap: 4,
           }}
         >
-          {TABS.map((tab) => {
-            const isActive = tab === currentTab;
-            return (
-              <button
-                key={tab}
-                ref={isActive ? activeTabRef : undefined}
-                onClick={() => onTabChange?.(tab)}
-                style={{
-                  height: '100%',
-                  padding: '0 12px',
-                  fontSize: 12,
-                  fontWeight: isActive ? 600 : 500,
-                  fontFamily: t.font.display,
-                  color: isActive ? t.accent.green : t.text.tertiary,
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: isActive ? `2px solid ${t.accent.green}` : '2px solid transparent',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  transition: 'color 0.15s ease, border-color 0.15s ease',
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
+          {/* Three small horizontal lines */}
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              style={{
+                width: 4,
+                height: 1,
+                background: handleHovered || dragging ? t.text.tertiary : t.text.quaternary,
+                borderRadius: 1,
+              }}
+            />
+          ))}
         </div>
 
-        {/* Scrollable Content */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-        }}>
-          {renderTab()}
+        {/* Main Content */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          {/* Sticky Header */}
+          <WorkstationHeader data={propertyData} onClose={onClose} />
+
+          {/* Sticky Tab Bar */}
+          <div
+            ref={tabBarRef}
+            className="ws-tab-bar"
+            style={{
+              display: 'flex',
+              height: 40,
+              flexShrink: 0,
+              borderBottom: `1px solid ${t.border.default}`,
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              scrollbarWidth: 'none',
+              WebkitOverflowScrolling: 'touch',
+              padding: '0 12px',
+            }}
+          >
+            {TABS.map((tab) => {
+              const isActive = tab === currentTab;
+              return (
+                <button
+                  key={tab}
+                  ref={isActive ? activeTabRef : undefined}
+                  onClick={() => onTabChange?.(tab)}
+                  style={{
+                    height: '100%',
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    fontWeight: isActive ? 600 : 500,
+                    fontFamily: t.font.display,
+                    color: isActive ? t.accent.green : t.text.secondary,
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: isActive ? `2px solid ${t.accent.green}` : '2px solid transparent',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    transition: 'color 0.15s ease, border-color 0.15s ease',
+                  }}
+                >
+                  {tab}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Scrollable Content */}
+          <div
+            className="scout-scroll"
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+            }}
+          >
+            {renderTab()}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

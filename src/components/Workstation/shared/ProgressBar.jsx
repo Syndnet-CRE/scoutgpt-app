@@ -28,15 +28,15 @@ export default function ProgressBar({ value, label, showValue = true, color, max
         </div>
       )}
       <div style={{
-        height: 6,
-        borderRadius: 3,
+        height: 8,
+        borderRadius: 4,
         background: t.bg.tertiary,
         overflow: 'hidden',
       }}>
         <div style={{
           height: '100%',
           width: `${pct}%`,
-          borderRadius: 3,
+          borderRadius: 4,
           background: fill,
           transition: 'width 0.3s ease',
         }} />

@@ -8,7 +8,7 @@ export default function DataRow({ label, value, accent, mono = true }) {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'baseline',
-      padding: '8px 0',
+      padding: '3px 0',
       borderBottom: `1px solid ${t.border.subtle}`,
       gap: 16,
     }}>
@@ -21,8 +21,8 @@ export default function DataRow({ label, value, accent, mono = true }) {
         {label}
       </span>
       <span style={{
-        fontSize: 12,
-        fontWeight: 500,
+        fontSize: 13,
+        fontWeight: 600,
         color: accent ? t.accent.green : t.text.primary,
         fontFamily: mono ? t.font.mono : t.font.display,
         textAlign: 'right',

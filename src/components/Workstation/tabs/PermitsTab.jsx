@@ -43,12 +43,11 @@ function DetailRow({ label, value, t, mono = true }) {
 }
 
 const COLS = [
-  { key: 'effectiveDate', label: 'Date', w: '14%' },
-  { key: 'permitNumber', label: 'Permit #', w: '14%' },
-  { key: 'permitType', label: 'Type', w: '14%' },
-  { key: 'status', label: 'Status', w: '14%', align: 'center' },
-  { key: 'jobValue', label: 'Value', w: '14%', align: 'right' },
-  { key: 'description', label: 'Description', w: '30%' },
+  { key: 'permitNumber', label: 'Permit #', w: '25%' },
+  { key: 'effectiveDate', label: 'Date', w: '20%' },
+  { key: 'permitType', label: 'Type', w: '20%' },
+  { key: 'status', label: 'Status', w: '15%', align: 'center' },
+  { key: 'jobValue', label: 'Value', w: '20%', align: 'right' },
 ];
 
 export default function PermitsTab({ data }) {
@@ -86,8 +85,8 @@ export default function PermitsTab({ data }) {
     : null;
 
   const thStyle = (col) => ({
-    position: 'sticky', top: 0, background: t.bg.secondary,
-    padding: '8px 10px', fontSize: 10, fontWeight: 600,
+    position: 'sticky', top: 0, zIndex: 1, background: t.bg.primary,
+    padding: '8px 10px', fontSize: 11, fontWeight: 600,
     letterSpacing: '0.05em', textTransform: 'uppercase',
     color: t.text.tertiary, fontFamily: t.font.display,
     textAlign: col.align || 'left', borderBottom: `1px solid ${t.border.default}`,
@@ -101,7 +100,7 @@ export default function PermitsTab({ data }) {
   };
 
   return (
-    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
       {/* Summary Stats */}
       <div style={{ display: 'flex', gap: 8 }}>
@@ -113,7 +112,7 @@ export default function PermitsTab({ data }) {
       <SectionHeader title="Building Permits" count={permits.length} />
 
       <div style={{ borderRadius: 8, border: `1px solid ${t.border.default}`, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: '0 4px' }}>
           <thead>
             <tr>
               {COLS.map((col) => (
@@ -148,26 +147,41 @@ export default function PermitsTab({ data }) {
                       transition: 'background 0.1s ease',
                     }}
                   >
-                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
+                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}`, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {isExpanded ? <ChevronDown size={12} style={{ color: t.text.tertiary }} /> : <ChevronRight size={12} style={{ color: t.text.tertiary }} />}
-                        {fmtDate(row.effectiveDate)}
+                        {row.permitNumber ?? '\u2014'}
                       </span>
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {row.permitNumber ?? '\u2014'}
+                      {fmtDate(row.effectiveDate)}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.primary, borderBottom: `1px solid ${t.border.subtle}` }}>
                       {row.permitType ?? '\u2014'}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, textAlign: 'center', borderBottom: `1px solid ${t.border.subtle}` }}>
-                      {status ? <StatusBadge label={status} variant={statusVariant(status)} /> : <span style={{ color: t.text.quaternary }}>{'\u2014'}</span>}
+                      {status ? (
+                        <span style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          whiteSpace: 'nowrap',
+                          background: statusVariant(status) === 'success' ? `rgba(52,199,89,0.15)`
+                            : statusVariant(status) === 'warning' ? `rgba(255,214,10,0.15)`
+                            : statusVariant(status) === 'error' ? `rgba(255,69,58,0.15)`
+                            : t.bg.tertiary,
+                          color: statusVariant(status) === 'success' ? t.semantic.success
+                            : statusVariant(status) === 'warning' ? t.semantic.warning
+                            : statusVariant(status) === 'error' ? t.semantic.error
+                            : t.text.tertiary,
+                        }}>
+                          {status}
+                        </span>
+                      ) : <span style={{ color: t.text.quaternary }}>{'\u2014'}</span>}
                     </td>
                     <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.mono, color: t.text.primary, textAlign: 'right', borderBottom: `1px solid ${t.border.subtle}` }}>
                       {fmtCurrency(row.jobValue)}
-                    </td>
-                    <td style={{ padding: '8px 10px', fontSize: 12, fontFamily: t.font.display, color: t.text.secondary, borderBottom: `1px solid ${t.border.subtle}` }} title={desc}>
-                      {truncate(desc, 60)}
                     </td>
                   </tr>
 
@@ -184,7 +198,7 @@ export default function PermitsTab({ data }) {
                           {desc && (
                             <div style={{ paddingTop: 6 }}>
                               <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: t.text.tertiary, fontFamily: t.font.display }}>
-                                Full Description
+                                Description
                               </span>
                               <p style={{ fontSize: 12, color: t.text.primary, fontFamily: t.font.display, lineHeight: 1.5, margin: '4px 0 0', wordBreak: 'break-word' }}>
                                 {desc}
