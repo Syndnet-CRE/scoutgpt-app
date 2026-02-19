@@ -5,6 +5,7 @@ import MapContainer from './components/Map/MapContainer';
 import LayersPanel from './components/LeftPanel/LayersPanelV2';
 import ScoutGPTChatPanel from './components/RightPanel/ScoutGPTChatPanel';
 import { PropertyCard } from './components/PropertyCard/PropertyCardModule';
+import { SelectionActionBar } from './components/SelectionActionBar';
 import WorkstationPanel from './components/Workstation/WorkstationPanel';
 import { useProperties } from './hooks/useProperties';
 import { usePropertyDetail } from './hooks/usePropertyDetail';
@@ -86,6 +87,10 @@ export default function App() {
 
   // Track if workstation was open in previous render (to avoid clearing popup on first property load)
   const wasWorkstationOpenRef = useRef(false);
+
+  // Selection state for multi-select mode
+  const [selectedProperties, setSelectedProperties] = useState(new Map());
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
 
   // Property detail state
   const { property: selectedProperty, loading: detailLoading, loadProperty, clearProperty } = usePropertyDetail();
@@ -253,6 +258,37 @@ export default function App() {
     setPopupContainer(null);
   }, [clearProperty]);
 
+  // Selection handlers
+  const handleToggleSelect = useCallback((attomId, propertyData) => {
+    setSelectedProperties(prev => {
+      const next = new Map(prev);
+      if (next.has(attomId)) {
+        next.delete(attomId);
+      } else {
+        next.set(attomId, propertyData);
+      }
+      return next;
+    });
+  }, []);
+
+  const handlePinToChat = useCallback((attomId) => {
+    // Placeholder — will wire to chat panel in future session
+    console.log('[PIN TO CHAT]', attomId);
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedProperties(new Map());
+    setMultiSelectMode(false);
+  }, []);
+
+  const handleSelectMore = useCallback(() => {
+    setMultiSelectMode(true);
+  }, []);
+
+  const handleExitMultiSelect = useCallback(() => {
+    setMultiSelectMode(false);
+  }, []);
+
   // Update workstation data when a new parcel is clicked while workstation is already open
   useEffect(() => {
     // Only auto-update workstation if it was ALREADY open before this property loaded
@@ -314,6 +350,9 @@ export default function App() {
             onClose={() => { clearProperty(); setPopupContainer(null); }}
             onExpand={() => mapExpandRef.current?.()}
             onOpenWorkstation={() => handleOpenWorkstation(selectedProperty)}
+            isSelected={selectedProperties.has(selectedProperty?.attomId)}
+            onToggleSelect={handleToggleSelect}
+            onPinToChat={handlePinToChat}
           />,
           popupContainer
         )}
@@ -431,6 +470,37 @@ export default function App() {
             </span>
           </button>
         )}
+
+        {/* Selection Action Bar (visible when properties are selected) */}
+        {selectedProperties.size > 0 && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '24px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 58,
+            }}
+          >
+            <SelectionActionBar
+              count={selectedProperties.size}
+              isMultiSelectMode={multiSelectMode}
+              onSelectMore={handleSelectMore}
+              onCompReport={() => console.log('[COMP REPORT]', Array.from(selectedProperties.keys()))}
+              onSave={() => console.log('[SAVE GROUP]', Array.from(selectedProperties.keys()))}
+              onClear={handleClearSelection}
+              onExitMultiSelect={handleExitMultiSelect}
+            />
+          </div>
+        )}
+
+        {/* CSS Animation for slideUp */}
+        <style>{`
+          @keyframes slideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
       </div>
     </div>
   );

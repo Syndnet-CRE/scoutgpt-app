@@ -982,16 +982,20 @@ const RiskEnvironment = ({ data }) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MINI POPUP (for Mapbox popup portal)
+// MINI POPUP (for Mapbox popup portal) — Horizontal Layout with Selection
 // ══════════════════════════════════════════════════════════════════════════════
 
-const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
+const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation, isSelected, onToggleSelect, onPinToChat }) => {
   const { t } = useTheme();
   const { streetView, loading: svLoading } = useStreetView(data?.attomId || data?.attom_id);
-  const [closeHovered, setCloseHovered] = useState(false);
-  const [workstationHovered, setWorkstationHovered] = useState(false);
+  const [selectHovered, setSelectHovered] = useState(false);
+  const [detailsHovered, setDetailsHovered] = useState(false);
+  const [pinHovered, setPinHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
 
   if (!data) return null;
+
+  const attomId = data.attomId || data.attom_id;
 
   // Get data with fallbacks for both camelCase and snake_case
   const addressFull = get(data, 'addressFull', 'address_full') || "—";
@@ -999,10 +1003,6 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
   const state = get(data, 'addressState', 'address_state');
   const zip = get(data, 'addressZip', 'address_zip');
   const propertyType = resolvePropertyType(get(data, 'propertyUseStandardized', 'property_use_standardized'), get(data, 'propertyUseGroup', 'property_use_group'));
-
-  // Valuation
-  const valuation = data.valuations?.[0] || data.valuation;
-  const avm = get(valuation, 'estimatedValue', 'estimated_value');
 
   // Sale info
   const lastSalePrice = get(data, 'lastSalePrice', 'last_sale_price');
@@ -1021,6 +1021,9 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
   // Owner
   const owner = data.ownership?.[0];
   const ownerName = owner ? (get(owner, 'owner1NameFull', 'owner1_name_full') || "—") : "—";
+  const companyFlag = owner ? get(owner, 'companyFlag', 'company_flag') : false;
+  const trustFlag = owner ? get(owner, 'trustFlag', 'trust_flag') : false;
+  const isCorp = companyFlag || trustFlag;
 
   // Distress signals
   const foreclosures = data.foreclosureRecords || data.foreclosure_records || [];
@@ -1038,134 +1041,261 @@ const MiniPopup = ({ data, onViewDetails, onClose, onOpenWorkstation }) => {
   // Lot display
   const lotDisplay = fmt.acres(lotAc) || fmt.sf(lotSf) || "—";
 
+  // Handle selection toggle
+  const handleToggleSelect = () => {
+    if (onToggleSelect) {
+      onToggleSelect(attomId, data);
+    }
+  };
+
+  // Handle pin to chat
+  const handlePinToChat = () => {
+    if (onPinToChat) {
+      onPinToChat(attomId);
+      setPinned(true);
+      setTimeout(() => setPinned(false), 1800);
+    }
+  };
+
+  // Checkbox SVG icons
+  const CheckboxEmpty = () => (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    </svg>
+  );
+
+  const CheckboxFilled = () => (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="12" height="12" rx="2" fill="currentColor" />
+      <path d="M3.5 6L5.5 8L8.5 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+
   return (
-    <Glass className="w-[416px] overflow-hidden shadow-2xl">
-      <StreetViewImage streetView={streetView} loading={svLoading} height={150} showCameraIcon={false} />
-
-      {/* Distress Banner */}
-      {(hasForeclosure || hasTaxDelinquent) && (
-        <div className="px-4 py-2" style={{ background: hasForeclosure ? `${t.semantic.error}20` : `${t.semantic.warning}20` }}>
-          <div className="flex items-center gap-2" style={{ color: hasForeclosure ? t.semantic.error : t.semantic.warning }}>
-            <Icon name="alert-triangle" size={14} />
-            <span className="text-xs font-semibold uppercase tracking-wider">
-              {hasForeclosure ? 'Foreclosure Filed' : `Tax Delinquent ${taxDelinquentYear}`}
-            </span>
-            {hasForeclosure && foreclosures[0] && (
-              <span className="text-xs opacity-75 ml-auto">
-                {fmt.shortDate(get(foreclosures[0], 'foreclosureRecordingDate', 'foreclosure_recording_date'))}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="px-4 pt-4 pb-3" style={{ borderBottom: `1px solid ${t.border.subtle}` }}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="font-semibold text-base leading-tight truncate" style={{ color: t.text.primary }}>{addressFull}</h3>
-            <p className="text-xs mt-0.5" style={{ color: t.text.secondary }}>
-              {[city, state].filter(Boolean).join(', ')} {zip}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            onMouseEnter={() => setCloseHovered(true)}
-            onMouseLeave={() => setCloseHovered(false)}
-            className="shrink-0 p-1.5 rounded-lg transition-colors"
-            style={{
-              background: closeHovered ? 'rgba(255,255,255,0.1)' : 'transparent',
-              color: closeHovered ? t.text.primary : t.text.secondary,
-            }}
-          >
-            <Icon name="x" size={16} />
-          </button>
-        </div>
-
-        <div className="mt-2">
-          <Badge color={typeColor}>{propertyType}</Badge>
-        </div>
+    <Glass className="w-[550px] overflow-hidden shadow-2xl" style={{ display: 'flex', flexDirection: 'row' }}>
+      {/* Left 1/3 — Street View */}
+      <div style={{
+        width: '33.333%',
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: '12px 0 0 12px',
+        flexShrink: 0,
+      }}>
+        <StreetViewImage streetView={streetView} loading={svLoading} height="100%" showCameraIcon={false} />
       </div>
 
-      {/* Metrics Grid */}
-      <div className="px-4 py-3">
-        <div className="grid grid-cols-4 gap-3">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>AVM Value</div>
-            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{fmt.dollarK(avm)}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Last Sale</div>
-            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{fmt.dollarK(lastSalePrice)}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Assessed</div>
-            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{fmt.dollarK(taxTotal)}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Year Built</div>
-            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{yearBuilt || "—"}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Building</div>
-            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{fmt.sf(buildingSf)}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Lot Size</div>
-            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{lotDisplay}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Owner</div>
-            <div className="text-sm font-semibold mt-0.5 truncate" style={{ color: t.text.primary }} title={ownerName}>
-              {ownerName.length > 12 ? ownerName.substring(0, 12) + "..." : ownerName}
-            </div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider" style={{ color: t.text.tertiary }}>Zoning</div>
-            <div className="text-sm font-semibold mt-0.5" style={{ color: t.text.primary }}>{zoning || "—"}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Buttons */}
-      <div className="px-4 pb-4">
+      {/* Right 2/3 — Content */}
+      <div style={{
+        width: '66.666%',
+        padding: '12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        justifyContent: 'space-between',
+        position: 'relative',
+      }}>
+        {/* Select Pill — top right */}
         <button
-          onClick={onViewDetails}
-          className="w-full py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+          onClick={handleToggleSelect}
+          onMouseEnter={() => setSelectHovered(true)}
+          onMouseLeave={() => setSelectHovered(false)}
           style={{
-            background: `linear-gradient(to right, ${t.accent.primary}, ${t.accent.primaryHover})`,
-            color: '#000',
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            zIndex: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: isSelected ? '0' : '4px',
+            padding: isSelected ? '4px 6px' : '4px 8px',
+            borderRadius: '20px',
+            background: isSelected ? t.semantic.success : (selectHovered ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.12)'),
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            color: isSelected ? '#fff' : t.text.secondary,
           }}
         >
-          VIEW PROPERTY DETAILS
-          <Icon name="chevron-down" size={14} className="rotate-[-90deg]" />
+          {isSelected ? <CheckboxFilled /> : <CheckboxEmpty />}
+          {!isSelected && <span style={{ fontSize: '10px', fontWeight: 500 }}>Select</span>}
         </button>
-        {onOpenWorkstation && (
+
+        {/* Row 1: Address + Type */}
+        <div>
+          <h3 style={{
+            fontSize: '14px',
+            fontWeight: 700,
+            color: t.text.primary,
+            margin: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            paddingRight: '65px',
+          }}>
+            {addressFull}
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+            <span style={{ fontSize: '10.5px', color: t.text.secondary }}>
+              {[city, state].filter(Boolean).join(', ')} {zip}
+            </span>
+            <Badge color={typeColor}>{propertyType}</Badge>
+          </div>
+        </div>
+
+        {/* Row 2: 6 Metrics — TWO rows of THREE */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
+          {[
+            { label: 'ZONING', value: zoning || "—" },
+            { label: 'LAST SALE', value: fmt.dollarK(lastSalePrice) },
+            { label: 'BUILDING', value: fmt.sf(buildingSf) },
+            { label: 'LOT SIZE', value: lotDisplay },
+            { label: 'YR BUILT', value: yearBuilt || "—" },
+            { label: 'ASSESSED', value: fmt.dollarK(taxTotal) },
+          ].map((metric, i) => (
+            <div key={i} style={{
+              background: t.bg.tertiary,
+              borderRadius: '4px',
+              padding: '3px 6px',
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontSize: '7px',
+                color: t.text.tertiary,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                fontWeight: 600,
+              }}>
+                {metric.label}
+              </div>
+              <div style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: t.text.primary,
+                fontFamily: t.font.mono,
+                whiteSpace: 'nowrap',
+              }}>
+                {metric.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Row 3: Owner line */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          background: `${t.bg.tertiary}80`,
+          borderRadius: '4px',
+          padding: '3px 6px',
+        }}>
+          <User size={11} style={{ color: t.text.tertiary, flexShrink: 0 }} />
+          <span style={{ fontSize: '10px', color: t.text.tertiary }}>Owner:</span>
+          <span style={{
+            fontSize: '10px',
+            fontWeight: 600,
+            color: t.text.primary,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flex: 1,
+          }}>
+            {ownerName}
+          </span>
+          {isCorp && (
+            <span style={{
+              fontSize: '8px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              background: `${t.semantic.success}20`,
+              color: t.semantic.success,
+              padding: '1px 5px',
+              borderRadius: '3px',
+            }}>
+              CORP
+            </span>
+          )}
+        </div>
+
+        {/* Row 4: Distress banner (compact) */}
+        {(hasForeclosure || hasTaxDelinquent) && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: hasForeclosure ? `${t.semantic.error}15` : `${t.semantic.warning}15`,
+            borderRadius: '4px',
+            padding: '4px 6px',
+          }}>
+            <AlertTriangle size={11} style={{ color: hasForeclosure ? t.semantic.error : t.semantic.warning }} />
+            <span style={{
+              fontSize: '9px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              color: hasForeclosure ? t.semantic.error : t.semantic.warning,
+            }}>
+              {hasForeclosure ? 'Foreclosure Filed' : `Tax Delinquent ${taxDelinquentYear}`}
+            </span>
+          </div>
+        )}
+
+        {/* Row 5: Two buttons side-by-side */}
+        <div style={{ display: 'flex', gap: '5px', marginTop: 'auto' }}>
+          {/* Details button */}
           <button
             onClick={onOpenWorkstation}
-            onMouseEnter={() => setWorkstationHovered(true)}
-            onMouseLeave={() => setWorkstationHovered(false)}
+            onMouseEnter={() => setDetailsHovered(true)}
+            onMouseLeave={() => setDetailsHovered(false)}
             style={{
-              width: '100%',
-              padding: '9px 0',
-              marginTop: '6px',
-              background: workstationHovered ? t.accent.primaryHover : t.accent.primary,
-              border: 'none',
-              borderRadius: '8px',
-              color: '#000',
-              fontSize: '13px',
-              fontWeight: 700,
-              cursor: 'pointer',
+              flex: 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px',
-              letterSpacing: '0.02em',
+              gap: '5px',
+              padding: '7px 10px',
+              borderRadius: '6px',
+              border: 'none',
+              background: `linear-gradient(to right, ${t.accent.primary}, ${t.accent.primaryHover})`,
+              color: '#000',
+              fontSize: '10.5px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease',
+              transform: detailsHovered ? 'translateY(-1px)' : 'none',
             }}
           >
-            <LayoutDashboard size={14} /> OPEN IN WORKSTATION
+            <LayoutDashboard size={11} />
+            Details
           </button>
-        )}
+
+          {/* Pin to Chat button */}
+          <button
+            onClick={handlePinToChat}
+            onMouseEnter={() => setPinHovered(true)}
+            onMouseLeave={() => setPinHovered(false)}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '5px',
+              padding: '7px 10px',
+              borderRadius: '6px',
+              border: `1px solid ${pinned ? t.accent.primaryBorder : t.border.default}`,
+              background: 'transparent',
+              color: pinned ? t.accent.primary : (pinHovered ? t.text.primary : t.text.tertiary),
+              fontSize: '10.5px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <MapPin size={12} />
+            {pinned ? 'Pinned!' : 'Pin to Chat'}
+          </button>
+        </div>
       </div>
     </Glass>
   );
@@ -1320,14 +1450,13 @@ const DetailModule = ({ data, onClose }) => {
 // PROPERTY CARD (manages mini/expanded state)
 // ══════════════════════════════════════════════════════════════════════════════
 
-const PropertyCard = ({ data, onClose, onExpand, onOpenWorkstation }) => {
+const PropertyCard = ({ data, onClose, onExpand, onOpenWorkstation, isSelected, onToggleSelect, onPinToChat }) => {
   const [expanded, setExpanded] = useState(false);
 
   if (!data) return null;
 
   const handleViewDetails = () => {
     setExpanded(true);
-    // Notify parent so map can re-pan to center the larger card
     onExpand?.();
   };
 
@@ -1335,7 +1464,17 @@ const PropertyCard = ({ data, onClose, onExpand, onOpenWorkstation }) => {
     return <DetailModule data={data} onClose={onClose} />;
   }
 
-  return <MiniPopup data={data} onViewDetails={handleViewDetails} onClose={onClose} onOpenWorkstation={onOpenWorkstation} />;
+  return (
+    <MiniPopup
+      data={data}
+      onViewDetails={handleViewDetails}
+      onClose={onClose}
+      onOpenWorkstation={onOpenWorkstation}
+      isSelected={isSelected}
+      onToggleSelect={onToggleSelect}
+      onPinToChat={onPinToChat}
+    />
+  );
 };
 
 export { PropertyCard };

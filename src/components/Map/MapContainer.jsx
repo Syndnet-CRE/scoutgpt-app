@@ -834,7 +834,7 @@ export default function MapContainer({
             const popup = new mapboxgl.Popup({
               closeButton: false,
               closeOnClick: false,
-              maxWidth: '800px',
+              maxWidth: '570px',
               anchor: 'bottom',
               offset: 15,
               className: 'scout-popup',
@@ -901,7 +901,7 @@ export default function MapContainer({
           const popup = new mapboxgl.Popup({
             closeButton: false,
             closeOnClick: false,
-            maxWidth: '800px',
+            maxWidth: '570px',
             anchor: 'bottom',
             offset: 15,
             className: 'scout-popup',
