@@ -31,7 +31,6 @@ const TABS = [
 
 const MIN_WIDTH = 400;
 const MAX_WIDTH_RATIO = 0.7;
-const HEADER_HEIGHT = 104; // Layout top bar (56px) + nav bar (48px)
 
 function TabPlaceholder({ name }) {
   const { t } = useTheme();
@@ -50,8 +49,9 @@ function TabPlaceholder({ name }) {
   );
 }
 
-export default function WorkstationPanel({ isOpen, onClose, propertyData, activeTab, onTabChange, infrastructureData, aiInsights, aiLoading, onGenerateInsights, onOpenChat }) {
+export default function WorkstationPanel({ isOpen, onClose, propertyData, activeTab, onTabChange, infrastructureData, aiInsights, aiLoading, onGenerateInsights, onOpenChat, topOffset }) {
   const { t } = useTheme();
+  const top = topOffset || 104;
   const tabBarRef = useRef(null);
   const activeTabRef = useRef(null);
   const [panelWidth, setPanelWidth] = useState(null);
@@ -161,9 +161,9 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
       <div
         style={{
           position: 'fixed',
-          top: HEADER_HEIGHT,
+          top: top,
           right: 0,
-          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+          height: `calc(100vh - ${top}px)`,
           width: widthStyle,
           minWidth: MIN_WIDTH,
           maxWidth: '70vw',
@@ -185,31 +185,37 @@ export default function WorkstationPanel({ isOpen, onClose, propertyData, active
           onMouseEnter={() => setHandleHovered(true)}
           onMouseLeave={() => setHandleHovered(false)}
           style={{
-            width: 8,
+            width: 10,
             flexShrink: 0,
             background: handleHovered || dragging ? t.border.default : t.bg.tertiary,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'col-resize',
             transition: 'background 150ms ease',
-            gap: 4,
           }}
         >
-          {/* Three horizontal grip lines */}
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              style={{
-                width: 16,
-                height: 3,
-                background: handleHovered || dragging ? t.text.tertiary : t.text.quaternary,
-                borderRadius: 2,
-                transition: 'background 150ms ease',
-              }}
-            />
-          ))}
+          {/* 2×3 dot grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '3px 3px',
+            gridTemplateRows: '3px 3px 3px',
+            columnGap: 3,
+            rowGap: 4,
+          }}>
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                style={{
+                  width: 3,
+                  height: 3,
+                  borderRadius: '50%',
+                  background: handleHovered || dragging ? t.text.tertiary : t.text.quaternary,
+                  transition: 'background 150ms ease',
+                }}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Main Content */}

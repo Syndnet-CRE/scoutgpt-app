@@ -15,6 +15,22 @@ import { MOCK_FLOOD_GEOJSON, MOCK_SCHOOL_GEOJSON } from './data/mockData';
 export default function App() {
   const { t } = useTheme();
 
+  // Dynamic header height measurement
+  const contentRef = useRef(null);
+  const [headerBottom, setHeaderBottom] = useState(104); // fallback
+
+  useEffect(() => {
+    const measure = () => {
+      if (contentRef.current) {
+        const top = contentRef.current.getBoundingClientRect().top;
+        if (top > 0) setHeaderBottom(top);
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
   // Panel z-index focus state
   const [workstationOnTop, setWorkstationOnTop] = useState(false);
 
@@ -252,7 +268,7 @@ export default function App() {
   }, [selectedProperty, workstationOpen, clearProperty]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ background: t.bg.primary }}>
+    <div ref={contentRef} className="flex-1 flex flex-col overflow-hidden" style={{ background: t.bg.primary }}>
       <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
         {/* Map — full width */}
         <div className="flex-1 relative">
@@ -336,8 +352,8 @@ export default function App() {
             style={{
               position: 'fixed',
               right: 0,
-              top: 104,
-              height: 'calc(100vh - 104px)',
+              top: headerBottom,
+              height: `calc(100vh - ${headerBottom}px)`,
               width: 48,
               zIndex: 64,
               background: t.bg.secondary,
@@ -375,6 +391,7 @@ export default function App() {
           activeTab={activeWorkstationTab}
           onTabChange={setActiveWorkstationTab}
           onOpenChat={() => setRightPanelMode('chat')}
+          topOffset={headerBottom}
         />
 
         {/* Collapsed Workstation Strip (visible when chat is active and workstation has data) */}
@@ -387,8 +404,8 @@ export default function App() {
             style={{
               position: 'fixed',
               right: 0,
-              top: 104,
-              height: 'calc(100vh - 104px)',
+              top: headerBottom,
+              height: `calc(100vh - ${headerBottom}px)`,
               width: 48,
               zIndex: 54,
               background: t.bg.secondary,

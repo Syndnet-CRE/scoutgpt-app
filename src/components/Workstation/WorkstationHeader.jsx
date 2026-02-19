@@ -94,7 +94,7 @@ export default function WorkstationHeader({ data, onClose }) {
     }}>
       {/* Close Button Column */}
       <div style={{
-        width: 40,
+        width: 32,
         flexShrink: 0,
         display: 'flex',
         alignItems: 'center',
@@ -105,9 +105,9 @@ export default function WorkstationHeader({ data, onClose }) {
           onMouseEnter={() => setCloseBtnHovered(true)}
           onMouseLeave={() => setCloseBtnHovered(false)}
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
+            width: 24,
+            height: 24,
+            borderRadius: 6,
             background: closeBtnHovered ? t.bg.tertiary : t.bg.secondary,
             border: `1px solid ${t.border.default}`,
             color: closeBtnHovered ? t.text.primary : t.text.secondary,
@@ -115,10 +115,11 @@ export default function WorkstationHeader({ data, onClose }) {
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
+            padding: 0,
             transition: 'background 0.15s ease, color 0.15s ease',
           }}
         >
-          <X size={16} />
+          <X size={14} />
         </button>
       </div>
 
