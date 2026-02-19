@@ -566,10 +566,19 @@ export default function MapContainer({
       const beforeId = zoningFill ? 'gis-zoning_districts-fill' :
                        (map.getLayer('parcels-fill') ? 'parcels-fill' : undefined);
 
+      // Filter to only show high-risk flood zones (exclude X, X_SHADED, D which cover the entire county)
+      const floodFilter = [
+        'match', ['get', '_flood_zone'],
+        ['A', 'AE', 'AO', 'AH', 'AR', 'A99', 'VE', 'V'],
+        true,
+        false
+      ];
+
       map.addLayer({
         id: `${sourceId}-fill`,
         type: 'fill',
         source: sourceId,
+        filter: floodFilter,
         paint: {
           'fill-color': colorExpr,
           'fill-opacity': opacityExpr
@@ -579,6 +588,7 @@ export default function MapContainer({
         id: `${sourceId}-outline`,
         type: 'line',
         source: sourceId,
+        filter: floodFilter,
         paint: {
           'line-color': colorExpr,
           'line-width': 1,
