@@ -180,12 +180,14 @@ export function normalizeFloodZone(value) {
   return 'UNKNOWN';
 }
 
-// Flood zone colors by normalized code — FEMA blue scheme
+// Flood zone colors by normalized code
 export const FLOOD_COLORS = {
-  // High risk - 100-year floodplain (dark blue)
-  'A': '#1e40af', 'AE': '#1e40af', 'AH': '#1e40af', 'AO': '#1e40af', 'AR': '#1e40af', 'A99': '#1e40af',
-  // Coastal high hazard (navy)
-  'V': '#1e3a8a', 'VE': '#1e3a8a',
+  // AE - 100-year detailed (tangerine)
+  'AE': '#FF8C00',
+  // A-group - 100-year approx (blue)
+  'A': '#2563EB', 'AH': '#2563EB', 'AR': '#2563EB', 'A99': '#2563EB',
+  // AO - shallow flooding (turquoise)
+  'AO': '#06B6D4',
   // Moderate risk - 500-year / shaded X (sky blue)
   'X_SHADED': '#0ea5e9', 'B': '#0ea5e9',
   // Undetermined (gray-blue)
@@ -196,10 +198,11 @@ export const FLOOD_COLORS = {
   'UNKNOWN': '#475569',
 };
 
-// Flood zone opacity by risk level — reduced for less bleed
+// Flood zone opacity by risk level
 export const FLOOD_OPACITY = {
-  'A': 0.35, 'AE': 0.35, 'AH': 0.35, 'AO': 0.35, 'AR': 0.35, 'A99': 0.35,
-  'V': 0.40, 'VE': 0.40,
+  'AE': 0.40,
+  'A': 0.35, 'AH': 0.35, 'AR': 0.35, 'A99': 0.35,
+  'AO': 0.35,
   'X_SHADED': 0.25, 'B': 0.25,
   'D': 0.15,
   'X': 0.08, 'C': 0.08,

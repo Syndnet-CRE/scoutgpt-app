@@ -10,12 +10,10 @@ const INITIAL_ZOOM = 12;
 const TILESET_ID = 'bradyirwin.travis-parcels-v2';
 const TILESET_LAYER = 'parcels'; // source-layer name from MTS recipe
 
-// Flood zone sub-layers (ordered bottom to top: darkest zones at bottom, lighter on top)
+// Flood zone sub-layers (ordered bottom to top: AE tangerine, A blue, AO turquoise)
 const FLOOD_SUBLAYERS = [
-  'gis-floodplains-fill-ae', 'gis-floodplains-fill-ve',
-  'gis-floodplains-fill-a', 'gis-floodplains-fill-ao',
-  'gis-floodplains-outline-ae', 'gis-floodplains-outline-ve',
-  'gis-floodplains-outline-a', 'gis-floodplains-outline-ao'
+  'gis-floodplains-fill-ae', 'gis-floodplains-fill-a', 'gis-floodplains-fill-ao',
+  'gis-floodplains-outline-ae', 'gis-floodplains-outline-a', 'gis-floodplains-outline-ao'
 ];
 
 // Asset class to use_code mapping for tile-side filtering
@@ -551,35 +549,30 @@ export default function MapContainer({
       const beforeId = zoningFill ? 'gis-zoning_districts-fill' :
                        (map.getLayer('parcels-fill') ? 'parcels-fill' : undefined);
 
-      // Sub-layer definitions: ordered dark-on-bottom, light-on-top
-      // AE zones (darkest) at bottom, AO zones (lightest) on top
+      // Sub-layer definitions: AE tangerine (bottom), A blue (middle), AO turquoise (top)
       const floodSubLayers = [
-        // AE layer (bottom — darkest, 100-year detailed)
+        // AE layer (bottom — tangerine, 100-year detailed)
         {
           id: `${sourceId}-fill-ae`,
           filter: ['in', ['get', '_flood_zone'], ['literal', ['AE']]],
-          color: '#1E40AF',
+          color: '#FF8C00',
+          outlineColor: '#CC7000',
           opacity: 0.40
         },
-        // VE layer (coastal, same depth as AE)
-        {
-          id: `${sourceId}-fill-ve`,
-          filter: ['in', ['get', '_flood_zone'], ['literal', ['VE', 'V']]],
-          color: '#1E3A8A',
-          opacity: 0.40
-        },
-        // A layer (100-year approx, lighter)
+        // A layer (100-year approx, blue)
         {
           id: `${sourceId}-fill-a`,
           filter: ['in', ['get', '_flood_zone'], ['literal', ['A', 'A99', 'AR', 'AH']]],
           color: '#2563EB',
+          outlineColor: '#2563EB',
           opacity: 0.35
         },
-        // AO layer (top — shallow flooding, lightest)
+        // AO layer (top — turquoise, shallow flooding)
         {
           id: `${sourceId}-fill-ao`,
           filter: ['==', ['get', '_flood_zone'], 'AO'],
-          color: '#2563EB',
+          color: '#06B6D4',
+          outlineColor: '#0891B2',
           opacity: 0.35
         }
       ];
@@ -607,7 +600,7 @@ export default function MapContainer({
           source: sourceId,
           filter: subLayer.filter,
           paint: {
-            'line-color': subLayer.color,
+            'line-color': subLayer.outlineColor || subLayer.color,
             'line-width': 1,
             'line-opacity': 0.5
           }
