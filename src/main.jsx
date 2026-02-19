@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import LiveMapPage from './pages/LiveMapPage';
 import Dashboard from './pages/Dashboard';
@@ -14,28 +14,25 @@ import SettingsPage from './pages/SettingsPage';
 import { ThemeProvider } from './theme.jsx';
 import './styles/index.css';
 
-const router = createBrowserRouter([
-  {
-    element: <Layout />,
-    children: [
-      { path: '/', element: <Navigate to="/dashboard" replace /> },
-      { path: '/dashboard', element: <Dashboard /> },
-      { path: '/live-map', element: <LiveMapPage /> },
-      { path: '/crm', element: <CRMPage /> },
-      { path: '/properties', element: <PropertiesPage /> },
-      { path: '/deals', element: <DealsPage /> },
-      { path: '/markets', element: <MarketsPage /> },
-      { path: '/analytics', element: <AnalyticsPage /> },
-      { path: '/documents', element: <DocumentsPage /> },
-      { path: '/settings', element: <SettingsPage /> },
-    ],
-  },
-]);
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ThemeProvider>
-      <RouterProvider router={router} />
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/live-map" element={<LiveMapPage />} />
+            <Route path="/crm" element={<CRMPage />} />
+            <Route path="/properties" element={<PropertiesPage />} />
+            <Route path="/deals" element={<DealsPage />} />
+            <Route path="/markets" element={<MarketsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   </React.StrictMode>
 );
