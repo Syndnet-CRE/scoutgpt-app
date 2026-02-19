@@ -18,8 +18,8 @@ const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
-      { path: '/', element: <Dashboard /> },
-      { path: '/dashboard', element: <Navigate to="/" replace /> },
+      { path: '/', element: <Navigate to="/dashboard" replace /> },
+      { path: '/dashboard', element: <Dashboard /> },
       { path: '/live-map', element: <LiveMapPage /> },
       { path: '/crm', element: <CRMPage /> },
       { path: '/properties', element: <PropertiesPage /> },
