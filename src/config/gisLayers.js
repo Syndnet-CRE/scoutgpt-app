@@ -240,7 +240,39 @@ export const GIS_LAYERS = {
     name: 'Floodplains',
     color: '#ef4444',
     geometryType: 'fill',
-  }
+  },
+  traffic_roadways: {
+    name: 'Traffic Roadways',
+    color: '#64748b',
+    geometryType: 'line',
+  },
+  traffic_aadt: {
+    name: 'Traffic AADT',
+    color: '#f59e0b',
+    geometryType: 'line',
+    gradient: ['#fde68a', '#fbbf24', '#f59e0b', '#d97706'],
+    thresholds: [5000, 15000, 30000, 50000],
+  },
+  city_limits: {
+    name: 'City Limits',
+    color: '#3b82f6',
+    geometryType: 'line',
+  },
+  etj_boundaries: {
+    name: 'ETJ Boundaries',
+    color: '#8b5cf6',
+    geometryType: 'line',
+  },
+  etj_released: {
+    name: 'ETJ Released',
+    color: '#10b981',
+    geometryType: 'fill',
+  },
+  future_land_use: {
+    name: 'Future Land Use',
+    color: '#f472b6',
+    geometryType: 'fill',
+  },
 };
 
 // Layer key to API type mapping
@@ -249,7 +281,13 @@ const LAYER_TYPE_MAP = {
   wastewater_lines: 'sewer',
   stormwater_lines: 'storm',
   zoning_districts: 'zoning',
-  floodplains: 'flood'
+  floodplains: 'flood',
+  traffic_roadways: 'traffic-roadways',
+  traffic_aadt: 'traffic-aadt',
+  city_limits: 'city-limits',
+  etj_boundaries: 'etj-boundaries',
+  etj_released: 'etj-released',
+  future_land_use: 'future-land-use',
 };
 
 // --- Neon API Fetch ---
