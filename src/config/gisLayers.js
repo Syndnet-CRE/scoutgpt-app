@@ -253,8 +253,8 @@ export const GIS_LAYERS = {
   },
   city_limits: {
     name: 'City Limits',
-    color: '#3b82f6',
-    geometryType: 'fill', // Polygon with solid stroke
+    color: '#8b5cf6',   // Violet (same as ETJ)
+    geometryType: 'fill', // Polygon with 8px dashed stroke
   },
   etj_boundaries: {
     name: 'ETJ Boundaries',
@@ -308,11 +308,10 @@ export const AADT_COLORS = {
   veryHigh: '#ef4444', // > 50K - red
 };
 
+// Fixed radii - size does NOT change by tier (only color changes)
 export const AADT_RADII = {
-  low: 4,
-  medium: 6,
-  high: 8,
-  veryHigh: 10,
+  dot: 4,    // Inner dot radius (fixed)
+  ring: 8,   // Outer ring radius (fixed)
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

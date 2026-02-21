@@ -566,17 +566,25 @@ export default function MapContainer({
     });
   }
 
-  // Helper: add hover handlers for AADT station markers
-  function addAADTHover(map, layerId) {
-    map.on('mouseenter', layerId, (e) => {
+  // Helper: add CLICK handler for AADT station markers (NOT hover)
+  function addAADTClick(map, layerId) {
+    // Cursor change on hover
+    map.on('mouseenter', layerId, () => {
       map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', layerId, () => {
+      map.getCanvas().style.cursor = '';
+    });
 
+    // Click handler for popup
+    map.on('click', layerId, (e) => {
       if (e.features && e.features.length > 0) {
         const props = e.features[0].properties;
         const aadt = props._AADT || props.aadt || 0;
         const year = props._AADT_YEAR || props.aadt_year || '';
+        const county = props.CNTY || props.cnty || '';
 
-        // Build sparkline from historical data (F2001-F2020)
+        // Build SVG sparkline from historical data (F2001-F2020)
         const histYears = [];
         const histValues = [];
         for (let y = 2001; y <= 2020; y++) {
@@ -593,16 +601,34 @@ export default function MapContainer({
           const maxVal = Math.max(...histValues);
           const minVal = Math.min(...histValues);
           const range = maxVal - minVal || 1;
-          const barWidth = Math.floor(120 / histValues.length);
+          const width = 140;
+          const height = 32;
+          const padding = 2;
+          const stepX = (width - padding * 2) / (histValues.length - 1);
+
+          // Build SVG path for line sparkline
+          const points = histValues.map((v, i) => {
+            const x = padding + i * stepX;
+            const y = height - padding - ((v - minVal) / range) * (height - padding * 2);
+            return `${x},${y}`;
+          });
+          const pathD = `M ${points.join(' L ')}`;
 
           sparklineHtml = `
-            <div style="margin-top: 6px; display: flex; align-items: flex-end; gap: 1px; height: 24px;">
-              ${histValues.map((v, i) => {
-                const height = Math.max(4, Math.round(((v - minVal) / range) * 20 + 4));
-                return `<div style="width: ${barWidth}px; height: ${height}px; background: var(--scout-accent-primary, #1877F2); border-radius: 1px;" title="${histYears[i]}: ${v.toLocaleString()}"></div>`;
-              }).join('')}
+            <div style="margin-top: 8px;">
+              <svg width="${width}" height="${height}" style="display: block;">
+                <path d="${pathD}" fill="none" stroke="var(--scout-accent-primary, #1877F2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                ${histValues.map((v, i) => {
+                  const x = padding + i * stepX;
+                  const y = height - padding - ((v - minVal) / range) * (height - padding * 2);
+                  return `<circle cx="${x}" cy="${y}" r="2" fill="var(--scout-accent-primary, #1877F2)"/>`;
+                }).join('')}
+              </svg>
+              <div style="display: flex; justify-content: space-between; color: var(--scout-text-tertiary, #94a3b8); font-size: 9px; margin-top: 2px;">
+                <span>${histYears[0]}</span>
+                <span>${histYears[histYears.length - 1]}</span>
+              </div>
             </div>
-            <div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 9px; margin-top: 2px;">${histYears[0]} → ${histYears[histYears.length - 1]}</div>
           `;
         }
 
@@ -613,10 +639,11 @@ export default function MapContainer({
         }
 
         const popup = new mapboxgl.Popup({
-          closeButton: false,
-          closeOnClick: false,
+          closeButton: true,
+          closeOnClick: true,
           className: 'gis-polygon-popup',
           offset: 12,
+          maxWidth: '200px',
         })
           .setLngLat(e.lngLat)
           .setHTML(`
@@ -624,38 +651,25 @@ export default function MapContainer({
               background: var(--scout-bg-secondary, rgba(15, 23, 42, 0.95));
               border: 1px solid var(--scout-border-subtle, rgba(255, 255, 255, 0.08));
               border-radius: 6px;
-              padding: 8px 12px;
+              padding: 10px 14px;
               font-family: var(--scout-font-display, 'DM Sans', sans-serif);
               color: var(--scout-text-primary, #e2e8f0);
               font-size: 12px;
               box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-              min-width: 130px;
             ">
-              <div style="font-weight: 600; color: #f59e0b; margin-bottom: 2px;">AADT Station</div>
-              <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 600; font-size: 14px;">
-                ${aadt.toLocaleString()} <span style="font-size: 10px; font-weight: 400; color: var(--scout-text-tertiary, #94a3b8);">vehicles/day</span>
+              <div style="font-weight: 600; color: #f59e0b; margin-bottom: 4px;">AADT Station</div>
+              <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 700; font-size: 18px; color: var(--scout-text-primary, #fff);">
+                ${Number(aadt).toLocaleString()}
               </div>
-              ${year ? `<div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 11px;">Year: ${year}</div>` : ''}
+              <div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 11px; margin-bottom: 4px;">vehicles/day</div>
+              ${year ? `<div style="color: var(--scout-text-secondary, #cbd5e1); font-size: 11px;"><span style="color: var(--scout-text-tertiary);">Year:</span> ${year}</div>` : ''}
+              ${county ? `<div style="color: var(--scout-text-secondary, #cbd5e1); font-size: 11px;"><span style="color: var(--scout-text-tertiary);">County:</span> ${county}</div>` : ''}
               ${sparklineHtml}
             </div>
           `)
           .addTo(map);
 
         polygonPopupRef.current = popup;
-      }
-    });
-
-    map.on('mousemove', layerId, (e) => {
-      if (polygonPopupRef.current && e.lngLat) {
-        polygonPopupRef.current.setLngLat(e.lngLat);
-      }
-    });
-
-    map.on('mouseleave', layerId, () => {
-      map.getCanvas().style.cursor = '';
-      if (polygonPopupRef.current) {
-        polygonPopupRef.current.remove();
-        polygonPopupRef.current = null;
       }
     });
   }
@@ -693,7 +707,7 @@ export default function MapContainer({
               white-space: nowrap;
               box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             ">
-              <div style="font-weight: 600; color: #3b82f6; margin-bottom: 2px;">City Limits</div>
+              <div style="font-weight: 600; color: #8b5cf6; margin-bottom: 2px;">City Limits</div>
               <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 500;">${cityName}</div>
             </div>
           `)
@@ -973,45 +987,63 @@ export default function MapContainer({
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // TRAFFIC AADT — Circle markers by _AADT value
+    // TRAFFIC AADT — Ring + Dot markers (fixed size, color varies by tier)
+    // Ring: 8px radius, transparent fill, 2px colored stroke at 40% opacity
+    // Dot: 4px radius, solid colored fill
     // ═══════════════════════════════════════════════════════════════════════════
     else if (layerKey === 'traffic_aadt') {
-      const layerId = `${sourceId}-circle`;
+      const ringLayerId = `${sourceId}-ring`;
+      const dotLayerId = `${sourceId}-circle`;
 
-      // Color expression: < 5K green, 5K-15K yellow, 15K-50K orange, > 50K red
-      const colorExpr = ['case',
-        ['<', ['get', '_AADT'], AADT_THRESHOLDS[0]], AADT_COLORS.low,
-        ['<', ['get', '_AADT'], AADT_THRESHOLDS[1]], AADT_COLORS.medium,
-        ['<', ['get', '_AADT'], AADT_THRESHOLDS[2]], AADT_COLORS.high,
+      // Stroke color expression for ring (40% opacity RGBA)
+      const ringStrokeColorExpr = ['case',
+        ['<', ['coalesce', ['get', '_AADT'], 0], AADT_THRESHOLDS[0]], 'rgba(34, 197, 94, 0.4)',   // green
+        ['<', ['coalesce', ['get', '_AADT'], 0], AADT_THRESHOLDS[1]], 'rgba(234, 179, 8, 0.4)',  // yellow
+        ['<', ['coalesce', ['get', '_AADT'], 0], AADT_THRESHOLDS[2]], 'rgba(249, 115, 22, 0.4)', // orange
+        'rgba(239, 68, 68, 0.4)' // red
+      ];
+
+      // Solid color expression for dot
+      const dotColorExpr = ['case',
+        ['<', ['coalesce', ['get', '_AADT'], 0], AADT_THRESHOLDS[0]], AADT_COLORS.low,
+        ['<', ['coalesce', ['get', '_AADT'], 0], AADT_THRESHOLDS[1]], AADT_COLORS.medium,
+        ['<', ['coalesce', ['get', '_AADT'], 0], AADT_THRESHOLDS[2]], AADT_COLORS.high,
         AADT_COLORS.veryHigh
       ];
 
-      // Radius expression
-      const radiusExpr = ['case',
-        ['<', ['get', '_AADT'], AADT_THRESHOLDS[0]], AADT_RADII.low,
-        ['<', ['get', '_AADT'], AADT_THRESHOLDS[1]], AADT_RADII.medium,
-        ['<', ['get', '_AADT'], AADT_THRESHOLDS[2]], AADT_RADII.high,
-        AADT_RADII.veryHigh
-      ];
-
+      // Layer 1: Ring (rendered BEHIND the dot)
       map.addLayer({
-        id: layerId,
+        id: ringLayerId,
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-color': colorExpr,
-          'circle-radius': radiusExpr,
-          'circle-stroke-width': 1.5,
-          'circle-stroke-color': '#ffffff',
-          'circle-opacity': 0.9
+          'circle-radius': 8,                    // Fixed 8px radius
+          'circle-color': 'rgba(0, 0, 0, 0)',    // Transparent fill
+          'circle-stroke-width': 2,              // 2px stroke
+          'circle-stroke-color': ringStrokeColorExpr,
+          'circle-opacity': 1
         }
       });
 
-      addAADTHover(map, layerId);
+      // Layer 2: Dot (rendered ON TOP)
+      map.addLayer({
+        id: dotLayerId,
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-radius': 4,                    // Fixed 4px radius
+          'circle-color': dotColorExpr,
+          'circle-stroke-width': 0,              // No stroke on dot
+          'circle-opacity': 1
+        }
+      });
+
+      // Click handler instead of hover for AADT
+      addAADTClick(map, dotLayerId);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // CITY LIMITS — Polygons with fill and solid stroke
+    // CITY LIMITS — Polygons with violet fill and 8px dashed stroke
     // ═══════════════════════════════════════════════════════════════════════════
     else if (layerKey === 'city_limits') {
       map.addLayer({
@@ -1019,8 +1051,8 @@ export default function MapContainer({
         type: 'fill',
         source: sourceId,
         paint: {
-          'fill-color': '#3b82f6',
-          'fill-opacity': 0.1
+          'fill-color': '#8b5cf6',       // Violet
+          'fill-opacity': 0.12
         }
       }, beforeId);
 
@@ -1029,9 +1061,10 @@ export default function MapContainer({
         type: 'line',
         source: sourceId,
         paint: {
-          'line-color': '#3b82f6',
-          'line-width': 2,
-          'line-opacity': 0.8
+          'line-color': '#8b5cf6',       // Violet
+          'line-width': 8,               // 8px thick
+          'line-opacity': 0.8,
+          'line-dasharray': [12, 8]      // Dashed pattern
         }
       }, beforeId);
 
@@ -1279,8 +1312,8 @@ export default function MapContainer({
         if (map.getLayer(layerId)) map.removeLayer(layerId);
       }
     } else {
-      // Standard removal for other layers (includes circle for AADT)
-      for (const suffix of ['-line', '-fill', '-outline', '-circle']) {
+      // Standard removal for other layers (includes ring+circle for AADT)
+      for (const suffix of ['-line', '-fill', '-outline', '-circle', '-ring']) {
         if (map.getLayer(sourceId + suffix)) map.removeLayer(sourceId + suffix);
       }
     }
