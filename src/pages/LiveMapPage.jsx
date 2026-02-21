@@ -184,16 +184,26 @@ export default function LiveMapPage() {
     console.log('[APP] highlightedProperties changed:', highlightedProperties.length, highlightedProperties.slice(0, 5));
   }, [highlightedProperties]);
 
-  // Sync theme tokens to CSS custom properties for index.css
+  // Sync theme tokens to CSS custom properties for index.css and GIS popups
   useEffect(() => {
     const root = document.documentElement;
+    // Background colors
     root.style.setProperty('--scout-bg-primary', t.bg.primary);
     root.style.setProperty('--scout-bg-secondary', t.bg.secondary);
     root.style.setProperty('--scout-bg-tertiary', t.bg.tertiary);
+    // Text colors
     root.style.setProperty('--scout-text-primary', t.text.primary);
     root.style.setProperty('--scout-text-secondary', t.text.secondary);
+    root.style.setProperty('--scout-text-tertiary', t.text.tertiary);
+    // Border colors
     root.style.setProperty('--scout-border', t.border.default);
     root.style.setProperty('--scout-border-subtle', t.border.subtle);
+    // Accent colors
+    root.style.setProperty('--scout-accent-primary', t.accent.primary);
+    root.style.setProperty('--scout-accent-green', t.accent.green);
+    // Fonts
+    root.style.setProperty('--scout-font-display', t.font.display);
+    root.style.setProperty('--scout-font-mono', t.font.mono);
   }, [t]);
 
   // Ref to hold filterAPI functions exposed from LayersPanelV2

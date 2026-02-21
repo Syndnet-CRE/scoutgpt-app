@@ -1,6 +1,22 @@
 import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { GIS_LAYERS, ZONING_CATEGORY_COLORS, FLOOD_COLORS, FLOOD_OPACITY, DIAMETER_ALIASES, fetchGisLayer, categorizeZoneCode, normalizeFloodZone } from '../../config/gisLayers';
+import {
+  GIS_LAYERS,
+  ZONING_CATEGORY_COLORS,
+  FLOOD_COLORS,
+  FLOOD_OPACITY,
+  DIAMETER_ALIASES,
+  fetchGisLayer,
+  categorizeZoneCode,
+  normalizeFloodZone,
+  TRAFFIC_ROADWAY_COLORS,
+  TRAFFIC_ROADWAY_WIDTHS,
+  AADT_THRESHOLDS,
+  AADT_COLORS,
+  AADT_RADII,
+  FUTURE_LAND_USE_COLORS,
+  categorizeFutureLandUse,
+} from '../../config/gisLayers';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.placeholder';
 
@@ -197,8 +213,8 @@ export default function MapContainer({
     return '#888888';
   }
 
-  // Helper: Transform GeoJSON features for zoning and flood layers
-  // Normalizes _zone_category and _flood_zone to match paint expression keys
+  // Helper: Transform GeoJSON features for zoning, flood, and future land use layers
+  // Normalizes category fields to match paint expression keys
   function transformGisGeoJSON(layerKey, geojson) {
     if (!geojson || !geojson.features) return geojson;
 
@@ -225,6 +241,20 @@ export default function MapContainer({
           properties: {
             ...f.properties,
             _flood_zone: normalizeFloodZone(f.properties?.flood_zone || f.properties?._flood_zone)
+          }
+        }))
+      };
+    }
+
+    if (layerKey === 'future_land_use') {
+      // Transform zone_code to _land_use_category for categorical coloring
+      return {
+        ...geojson,
+        features: geojson.features.map(f => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            _land_use_category: categorizeFutureLandUse(f.properties?.zone_code || f.properties?.land_use)
           }
         }))
       };
@@ -472,6 +502,417 @@ export default function MapContainer({
     });
   }
 
+  // Helper: add hover handlers for traffic roadway layers
+  function addTrafficRoadwayHover(map, layerId) {
+    map.on('mouseenter', layerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const prefix = props.RTE_PRFX || props.rte_prfx || '';
+        const number = props.RTE_NBR || props.rte_nbr || '';
+        const direction = props.DES_DRCT || props.des_drct || '';
+        const routeName = `${prefix} ${number}`.trim() || 'Unknown Route';
+
+        // Remove existing polygon popup
+        if (polygonPopupRef.current) {
+          polygonPopupRef.current.remove();
+          polygonPopupRef.current = null;
+        }
+
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'gis-polygon-popup',
+          offset: 10,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: var(--scout-bg-secondary, rgba(15, 23, 42, 0.95));
+              border: 1px solid var(--scout-border-subtle, rgba(255, 255, 255, 0.08));
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: var(--scout-font-display, 'DM Sans', sans-serif);
+              color: var(--scout-text-primary, #e2e8f0);
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            ">
+              <div style="font-weight: 600; color: ${TRAFFIC_ROADWAY_COLORS[prefix] || TRAFFIC_ROADWAY_COLORS.OTHER}; margin-bottom: 2px;">Traffic Roadway</div>
+              <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 500;">${routeName}</div>
+              ${direction ? `<div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 11px;">${direction}</div>` : ''}
+              <div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 10px; margin-top: 2px;">${prefix || 'Local'} Highway</div>
+            </div>
+          `)
+          .addTo(map);
+
+        polygonPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', layerId, (e) => {
+      if (polygonPopupRef.current && e.lngLat) {
+        polygonPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', layerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (polygonPopupRef.current) {
+        polygonPopupRef.current.remove();
+        polygonPopupRef.current = null;
+      }
+    });
+  }
+
+  // Helper: add hover handlers for AADT station markers
+  function addAADTHover(map, layerId) {
+    map.on('mouseenter', layerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const aadt = props._AADT || props.aadt || 0;
+        const year = props._AADT_YEAR || props.aadt_year || '';
+
+        // Build sparkline from historical data (F2001-F2020)
+        const histYears = [];
+        const histValues = [];
+        for (let y = 2001; y <= 2020; y++) {
+          const key = `F${y}`;
+          const val = props[key] || props[key.toLowerCase()];
+          if (val != null && val > 0) {
+            histYears.push(y);
+            histValues.push(Number(val));
+          }
+        }
+
+        let sparklineHtml = '';
+        if (histValues.length > 3) {
+          const maxVal = Math.max(...histValues);
+          const minVal = Math.min(...histValues);
+          const range = maxVal - minVal || 1;
+          const barWidth = Math.floor(120 / histValues.length);
+
+          sparklineHtml = `
+            <div style="margin-top: 6px; display: flex; align-items: flex-end; gap: 1px; height: 24px;">
+              ${histValues.map((v, i) => {
+                const height = Math.max(4, Math.round(((v - minVal) / range) * 20 + 4));
+                return `<div style="width: ${barWidth}px; height: ${height}px; background: var(--scout-accent-primary, #1877F2); border-radius: 1px;" title="${histYears[i]}: ${v.toLocaleString()}"></div>`;
+              }).join('')}
+            </div>
+            <div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 9px; margin-top: 2px;">${histYears[0]} → ${histYears[histYears.length - 1]}</div>
+          `;
+        }
+
+        // Remove existing popup
+        if (polygonPopupRef.current) {
+          polygonPopupRef.current.remove();
+          polygonPopupRef.current = null;
+        }
+
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'gis-polygon-popup',
+          offset: 12,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: var(--scout-bg-secondary, rgba(15, 23, 42, 0.95));
+              border: 1px solid var(--scout-border-subtle, rgba(255, 255, 255, 0.08));
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: var(--scout-font-display, 'DM Sans', sans-serif);
+              color: var(--scout-text-primary, #e2e8f0);
+              font-size: 12px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              min-width: 130px;
+            ">
+              <div style="font-weight: 600; color: #f59e0b; margin-bottom: 2px;">AADT Station</div>
+              <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 600; font-size: 14px;">
+                ${aadt.toLocaleString()} <span style="font-size: 10px; font-weight: 400; color: var(--scout-text-tertiary, #94a3b8);">vehicles/day</span>
+              </div>
+              ${year ? `<div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 11px;">Year: ${year}</div>` : ''}
+              ${sparklineHtml}
+            </div>
+          `)
+          .addTo(map);
+
+        polygonPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', layerId, (e) => {
+      if (polygonPopupRef.current && e.lngLat) {
+        polygonPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', layerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (polygonPopupRef.current) {
+        polygonPopupRef.current.remove();
+        polygonPopupRef.current = null;
+      }
+    });
+  }
+
+  // Helper: add hover handlers for city limits polygons
+  function addCityLimitsHover(map, fillLayerId) {
+    map.on('mouseenter', fillLayerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const cityName = props.zone_code || props.city_name || props.name || 'Unknown City';
+
+        if (polygonPopupRef.current) {
+          polygonPopupRef.current.remove();
+          polygonPopupRef.current = null;
+        }
+
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'gis-polygon-popup',
+          offset: 10,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: var(--scout-bg-secondary, rgba(15, 23, 42, 0.95));
+              border: 1px solid var(--scout-border-subtle, rgba(255, 255, 255, 0.08));
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: var(--scout-font-display, 'DM Sans', sans-serif);
+              color: var(--scout-text-primary, #e2e8f0);
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            ">
+              <div style="font-weight: 600; color: #3b82f6; margin-bottom: 2px;">City Limits</div>
+              <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 500;">${cityName}</div>
+            </div>
+          `)
+          .addTo(map);
+
+        polygonPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', fillLayerId, (e) => {
+      if (polygonPopupRef.current && e.lngLat) {
+        polygonPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', fillLayerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (polygonPopupRef.current) {
+        polygonPopupRef.current.remove();
+        polygonPopupRef.current = null;
+      }
+    });
+  }
+
+  // Helper: add hover handlers for ETJ boundary polygons
+  function addETJBoundariesHover(map, fillLayerId) {
+    map.on('mouseenter', fillLayerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const jurisdiction = props.zone_code || props.jurisdiction || props.name || 'Unknown Jurisdiction';
+
+        if (polygonPopupRef.current) {
+          polygonPopupRef.current.remove();
+          polygonPopupRef.current = null;
+        }
+
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'gis-polygon-popup',
+          offset: 10,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: var(--scout-bg-secondary, rgba(15, 23, 42, 0.95));
+              border: 1px solid var(--scout-border-subtle, rgba(255, 255, 255, 0.08));
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: var(--scout-font-display, 'DM Sans', sans-serif);
+              color: var(--scout-text-primary, #e2e8f0);
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            ">
+              <div style="font-weight: 600; color: #8b5cf6; margin-bottom: 2px;">ETJ Boundary</div>
+              <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 500;">${jurisdiction}</div>
+              <div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 10px; margin-top: 2px;">Extraterritorial Jurisdiction</div>
+            </div>
+          `)
+          .addTo(map);
+
+        polygonPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', fillLayerId, (e) => {
+      if (polygonPopupRef.current && e.lngLat) {
+        polygonPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', fillLayerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (polygonPopupRef.current) {
+        polygonPopupRef.current.remove();
+        polygonPopupRef.current = null;
+      }
+    });
+  }
+
+  // Helper: add hover handlers for ETJ released polygons
+  function addETJReleasedHover(map, fillLayerId) {
+    map.on('mouseenter', fillLayerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const jurisdiction = props.zone_code || props.jurisdiction || props.name || 'Unknown';
+        const releaseDate = props.release_date || props.released_date || '';
+
+        if (polygonPopupRef.current) {
+          polygonPopupRef.current.remove();
+          polygonPopupRef.current = null;
+        }
+
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'gis-polygon-popup',
+          offset: 10,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: var(--scout-bg-secondary, rgba(15, 23, 42, 0.95));
+              border: 1px solid var(--scout-border-subtle, rgba(255, 255, 255, 0.08));
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: var(--scout-font-display, 'DM Sans', sans-serif);
+              color: var(--scout-text-primary, #e2e8f0);
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            ">
+              <div style="font-weight: 600; color: #10b981; margin-bottom: 2px;">ETJ Released</div>
+              <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 500;">${jurisdiction}</div>
+              ${releaseDate ? `<div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 11px;">Released: ${releaseDate}</div>` : ''}
+            </div>
+          `)
+          .addTo(map);
+
+        polygonPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', fillLayerId, (e) => {
+      if (polygonPopupRef.current && e.lngLat) {
+        polygonPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', fillLayerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (polygonPopupRef.current) {
+        polygonPopupRef.current.remove();
+        polygonPopupRef.current = null;
+      }
+    });
+  }
+
+  // Helper: add hover handlers for future land use polygons
+  function addFutureLandUseHover(map, fillLayerId) {
+    const categoryLabels = {
+      single_family: 'Single Family',
+      multifamily: 'Multifamily',
+      commercial: 'Commercial',
+      mixed_use: 'Mixed Use',
+      office: 'Office',
+      industrial: 'Industrial',
+      open_space: 'Open Space / Park',
+      rural_ag: 'Rural / Agricultural',
+      civic: 'Civic / Public',
+      tod_transit: 'TOD / Transit',
+      other: 'Other',
+    };
+
+    map.on('mouseenter', fillLayerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        const zoneCode = props.zone_code || props.land_use || 'Unknown';
+        const category = props._land_use_category || 'other';
+        const categoryLabel = categoryLabels[category] || 'Other';
+        const color = FUTURE_LAND_USE_COLORS[category] || FUTURE_LAND_USE_COLORS.other;
+
+        if (polygonPopupRef.current) {
+          polygonPopupRef.current.remove();
+          polygonPopupRef.current = null;
+        }
+
+        const popup = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: 'gis-polygon-popup',
+          offset: 10,
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="
+              background: var(--scout-bg-secondary, rgba(15, 23, 42, 0.95));
+              border: 1px solid var(--scout-border-subtle, rgba(255, 255, 255, 0.08));
+              border-radius: 6px;
+              padding: 8px 12px;
+              font-family: var(--scout-font-display, 'DM Sans', sans-serif);
+              color: var(--scout-text-primary, #e2e8f0);
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            ">
+              <div style="font-weight: 600; color: ${color}; margin-bottom: 2px;">Future Land Use</div>
+              <div style="font-family: var(--scout-font-mono, 'JetBrains Mono', monospace); font-weight: 500;">${zoneCode}</div>
+              <div style="color: var(--scout-text-tertiary, #94a3b8); font-size: 11px;">${categoryLabel}</div>
+            </div>
+          `)
+          .addTo(map);
+
+        polygonPopupRef.current = popup;
+      }
+    });
+
+    map.on('mousemove', fillLayerId, (e) => {
+      if (polygonPopupRef.current && e.lngLat) {
+        polygonPopupRef.current.setLngLat(e.lngLat);
+      }
+    });
+
+    map.on('mouseleave', fillLayerId, () => {
+      map.getCanvas().style.cursor = '';
+      if (polygonPopupRef.current) {
+        polygonPopupRef.current.remove();
+        polygonPopupRef.current = null;
+      }
+    });
+  }
+
   // Helper: reorder GIS layers to enforce z-order
   // Order (bottom to top): floodplains (sub-layers) → zoning → parcels → utility lines
   function reorderGisLayers(map) {
@@ -488,8 +929,212 @@ export default function MapContainer({
   // Note: GIS layers added with z-ordering: flood (bottom) → zoning → parcels → utilities (top)
   function addGisMapLayers(map, layerKey, config) {
     const sourceId = `gis-${layerKey}`;
+    const beforeId = map.getLayer('parcels-fill') ? 'parcels-fill' : undefined;
 
-    if (config.geometryType === 'line') {
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TRAFFIC ROADWAYS — Polylines colored by RTE_PRFX attribute
+    // ═══════════════════════════════════════════════════════════════════════════
+    if (layerKey === 'traffic_roadways') {
+      const layerId = `${sourceId}-line`;
+
+      // Build color expression based on RTE_PRFX
+      const colorExpr = ['match', ['get', 'RTE_PRFX'],
+        'IH', TRAFFIC_ROADWAY_COLORS.IH,
+        'US', TRAFFIC_ROADWAY_COLORS.US,
+        'SH', TRAFFIC_ROADWAY_COLORS.SH,
+        'FM', TRAFFIC_ROADWAY_COLORS.FM,
+        'RM', TRAFFIC_ROADWAY_COLORS.RM,
+        TRAFFIC_ROADWAY_COLORS.OTHER
+      ];
+
+      // Build width expression based on RTE_PRFX
+      const widthExpr = ['match', ['get', 'RTE_PRFX'],
+        'IH', TRAFFIC_ROADWAY_WIDTHS.IH,
+        'US', TRAFFIC_ROADWAY_WIDTHS.US,
+        'SH', TRAFFIC_ROADWAY_WIDTHS.SH,
+        'FM', TRAFFIC_ROADWAY_WIDTHS.FM,
+        'RM', TRAFFIC_ROADWAY_WIDTHS.RM,
+        TRAFFIC_ROADWAY_WIDTHS.OTHER
+      ];
+
+      map.addLayer({
+        id: layerId,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': colorExpr,
+          'line-width': widthExpr,
+          'line-opacity': 0.85
+        },
+        layout: { 'line-cap': 'round', 'line-join': 'round' }
+      });
+
+      addTrafficRoadwayHover(map, layerId);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TRAFFIC AADT — Circle markers by _AADT value
+    // ═══════════════════════════════════════════════════════════════════════════
+    else if (layerKey === 'traffic_aadt') {
+      const layerId = `${sourceId}-circle`;
+
+      // Color expression: < 5K green, 5K-15K yellow, 15K-50K orange, > 50K red
+      const colorExpr = ['case',
+        ['<', ['get', '_AADT'], AADT_THRESHOLDS[0]], AADT_COLORS.low,
+        ['<', ['get', '_AADT'], AADT_THRESHOLDS[1]], AADT_COLORS.medium,
+        ['<', ['get', '_AADT'], AADT_THRESHOLDS[2]], AADT_COLORS.high,
+        AADT_COLORS.veryHigh
+      ];
+
+      // Radius expression
+      const radiusExpr = ['case',
+        ['<', ['get', '_AADT'], AADT_THRESHOLDS[0]], AADT_RADII.low,
+        ['<', ['get', '_AADT'], AADT_THRESHOLDS[1]], AADT_RADII.medium,
+        ['<', ['get', '_AADT'], AADT_THRESHOLDS[2]], AADT_RADII.high,
+        AADT_RADII.veryHigh
+      ];
+
+      map.addLayer({
+        id: layerId,
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-color': colorExpr,
+          'circle-radius': radiusExpr,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.9
+        }
+      });
+
+      addAADTHover(map, layerId);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CITY LIMITS — Polygons with fill and solid stroke
+    // ═══════════════════════════════════════════════════════════════════════════
+    else if (layerKey === 'city_limits') {
+      map.addLayer({
+        id: `${sourceId}-fill`,
+        type: 'fill',
+        source: sourceId,
+        paint: {
+          'fill-color': '#3b82f6',
+          'fill-opacity': 0.1
+        }
+      }, beforeId);
+
+      map.addLayer({
+        id: `${sourceId}-outline`,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 2,
+          'line-opacity': 0.8
+        }
+      }, beforeId);
+
+      addCityLimitsHover(map, `${sourceId}-fill`);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ETJ BOUNDARIES — Polygons with fill and dashed stroke
+    // ═══════════════════════════════════════════════════════════════════════════
+    else if (layerKey === 'etj_boundaries') {
+      map.addLayer({
+        id: `${sourceId}-fill`,
+        type: 'fill',
+        source: sourceId,
+        paint: {
+          'fill-color': '#8b5cf6',
+          'fill-opacity': 0.1
+        }
+      }, beforeId);
+
+      map.addLayer({
+        id: `${sourceId}-outline`,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': '#8b5cf6',
+          'line-width': 2,
+          'line-opacity': 0.8,
+          'line-dasharray': [4, 4]
+        }
+      }, beforeId);
+
+      addETJBoundariesHover(map, `${sourceId}-fill`);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ETJ RELEASED — Polygons with fill and solid stroke
+    // ═══════════════════════════════════════════════════════════════════════════
+    else if (layerKey === 'etj_released') {
+      map.addLayer({
+        id: `${sourceId}-fill`,
+        type: 'fill',
+        source: sourceId,
+        paint: {
+          'fill-color': '#10b981',
+          'fill-opacity': 0.15
+        }
+      }, beforeId);
+
+      map.addLayer({
+        id: `${sourceId}-outline`,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 1,
+          'line-opacity': 0.7
+        }
+      }, beforeId);
+
+      addETJReleasedHover(map, `${sourceId}-fill`);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FUTURE LAND USE — Categorical fill by zone_code
+    // ═══════════════════════════════════════════════════════════════════════════
+    else if (layerKey === 'future_land_use') {
+      // Build match expression for category colors
+      const categoryValue = ['get', '_land_use_category'];
+      const colorExpr = ['match', categoryValue];
+      for (const [category, color] of Object.entries(FUTURE_LAND_USE_COLORS)) {
+        colorExpr.push(category, color);
+      }
+      colorExpr.push(FUTURE_LAND_USE_COLORS.other); // Fallback
+
+      map.addLayer({
+        id: `${sourceId}-fill`,
+        type: 'fill',
+        source: sourceId,
+        paint: {
+          'fill-color': colorExpr,
+          'fill-opacity': 0.3
+        }
+      }, beforeId);
+
+      map.addLayer({
+        id: `${sourceId}-outline`,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': colorExpr,
+          'line-width': 0.5,
+          'line-opacity': 0.6
+        }
+      }, beforeId);
+
+      addFutureLandUseHover(map, `${sourceId}-fill`);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // UTILITY LINES (water, wastewater, stormwater) — Diameter-based styling
+    // ═══════════════════════════════════════════════════════════════════════════
+    else if (config.geometryType === 'line') {
       const layerId = `${sourceId}-line`;
 
       // Utility lines go on TOP (no beforeId = add to top)
@@ -507,7 +1152,12 @@ export default function MapContainer({
 
       // Add hover popup for utility line details
       addUtilityLineHover(map, layerId, layerKey);
-    } else if (config.geometryType === 'fill' && layerKey === 'zoning_districts') {
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ZONING DISTRICTS — Categorical fill by zone category
+    // ═══════════════════════════════════════════════════════════════════════════
+    else if (config.geometryType === 'fill' && layerKey === 'zoning_districts') {
       // Zoning: use _zone_category (normalized during GeoJSON conversion)
       const categoryValue = ['get', '_zone_category'];
 
@@ -517,9 +1167,6 @@ export default function MapContainer({
         colorExpr.push(category, color);
       }
       colorExpr.push('#475569'); // Slate fallback for unknown
-
-      // Add below parcels-fill if it exists
-      const beforeId = map.getLayer('parcels-fill') ? 'parcels-fill' : undefined;
 
       map.addLayer({
         id: `${sourceId}-fill`,
@@ -543,10 +1190,15 @@ export default function MapContainer({
 
       // Add hover popup for zoning district details
       addZoningHover(map, `${sourceId}-fill`);
-    } else if (config.geometryType === 'fill' && layerKey === 'floodplains') {
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FLOODPLAINS — Sub-layers by FEMA zone code
+    // ═══════════════════════════════════════════════════════════════════════════
+    else if (config.geometryType === 'fill' && layerKey === 'floodplains') {
       // Floodplains go at the BOTTOM - below zoning if it exists, otherwise below parcels
       const zoningFill = map.getLayer('gis-zoning_districts-fill');
-      const beforeId = zoningFill ? 'gis-zoning_districts-fill' :
+      const floodBeforeId = zoningFill ? 'gis-zoning_districts-fill' :
                        (map.getLayer('parcels-fill') ? 'parcels-fill' : undefined);
 
       // Sub-layer definitions: AE tangerine (bottom), A blue (middle), AO turquoise (top)
@@ -588,7 +1240,7 @@ export default function MapContainer({
             'fill-color': subLayer.color,
             'fill-opacity': subLayer.opacity
           }
-        }, beforeId);
+        }, floodBeforeId);
       }
 
       // Add outline sub-layers (same order)
@@ -604,7 +1256,7 @@ export default function MapContainer({
             'line-width': 1,
             'line-opacity': 0.5
           }
-        }, beforeId);
+        }, floodBeforeId);
       }
 
       // Add hover popup for all floodplain fill sub-layers
@@ -627,8 +1279,8 @@ export default function MapContainer({
         if (map.getLayer(layerId)) map.removeLayer(layerId);
       }
     } else {
-      // Standard removal for other layers
-      for (const suffix of ['-line', '-fill', '-outline']) {
+      // Standard removal for other layers (includes circle for AADT)
+      for (const suffix of ['-line', '-fill', '-outline', '-circle']) {
         if (map.getLayer(sourceId + suffix)) map.removeLayer(sourceId + suffix);
       }
     }
@@ -1220,6 +1872,12 @@ export default function MapContainer({
         const lineLayerId = `${sourceId}-line`;
         if (map.getLayer(lineLayerId)) {
           map.setPaintProperty(lineLayerId, 'line-opacity', opacity);
+        }
+      } else if (config.geometryType === 'point') {
+        // Circle markers (AADT stations)
+        const circleLayerId = `${sourceId}-circle`;
+        if (map.getLayer(circleLayerId)) {
+          map.setPaintProperty(circleLayerId, 'circle-opacity', opacity);
         }
       } else if (config.geometryType === 'fill') {
         // Special handling for floodplains - apply to all sub-layers

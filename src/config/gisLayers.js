@@ -249,19 +249,17 @@ export const GIS_LAYERS = {
   traffic_aadt: {
     name: 'Traffic AADT',
     color: '#f59e0b',
-    geometryType: 'line',
-    gradient: ['#fde68a', '#fbbf24', '#f59e0b', '#d97706'],
-    thresholds: [5000, 15000, 30000, 50000],
+    geometryType: 'point', // Circle markers
   },
   city_limits: {
     name: 'City Limits',
     color: '#3b82f6',
-    geometryType: 'line',
+    geometryType: 'fill', // Polygon with solid stroke
   },
   etj_boundaries: {
     name: 'ETJ Boundaries',
     color: '#8b5cf6',
-    geometryType: 'line',
+    geometryType: 'fill', // Polygon with dashed stroke
   },
   etj_released: {
     name: 'ETJ Released',
@@ -274,6 +272,104 @@ export const GIS_LAYERS = {
     geometryType: 'fill',
   },
 };
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRAFFIC ROADWAY STYLING — Color by RTE_PRFX (route prefix)
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const TRAFFIC_ROADWAY_COLORS = {
+  IH: '#ef4444',  // Interstate - red
+  US: '#f97316',  // US Highway - orange
+  SH: '#eab308',  // State Highway - yellow
+  FM: '#3b82f6',  // Farm-to-Market - blue
+  RM: '#3b82f6',  // Ranch-to-Market - blue (same as FM)
+  OTHER: '#6b7280', // Other - gray
+};
+
+export const TRAFFIC_ROADWAY_WIDTHS = {
+  IH: 3,
+  US: 2.5,
+  SH: 2,
+  FM: 1.5,
+  RM: 1.5,
+  OTHER: 1,
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AADT STATION STYLING — Circle markers by traffic volume
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const AADT_THRESHOLDS = [5000, 15000, 50000]; // < 5K, 5K-15K, 15K-50K, > 50K
+
+export const AADT_COLORS = {
+  low: '#22c55e',      // < 5K - green
+  medium: '#eab308',   // 5K-15K - yellow
+  high: '#f97316',     // 15K-50K - orange
+  veryHigh: '#ef4444', // > 50K - red
+};
+
+export const AADT_RADII = {
+  low: 4,
+  medium: 6,
+  high: 8,
+  veryHigh: 10,
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FUTURE LAND USE STYLING — Categorical fill by zone_code
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const FUTURE_LAND_USE_COLORS = {
+  single_family: '#fde047',    // yellow
+  multifamily: '#fb923c',      // orange
+  commercial: '#ef4444',       // red
+  mixed_use: '#f472b6',        // pink
+  office: '#a855f7',           // purple
+  industrial: '#6b7280',       // gray
+  open_space: '#22c55e',       // green
+  rural_ag: '#15803d',         // dark green
+  civic: '#3b82f6',            // blue
+  tod_transit: '#06b6d4',      // cyan
+  other: '#475569',            // slate
+};
+
+// Categorize future land use zone codes to standard categories
+export function categorizeFutureLandUse(code) {
+  if (!code || typeof code !== 'string') return 'other';
+  const c = code.toUpperCase().trim();
+
+  // Single Family patterns
+  if (/SINGLE|SF[-]?\d|R[-]?1|RS[-]?|RE[-]?|DETACHED|SFR/.test(c)) return 'single_family';
+
+  // Multifamily patterns
+  if (/MULTI|MF[-]?\d|APARTMENT|R[-]?[234]|RM[-]?|ATTACHED|TOWNHOME|DUPLEX/.test(c)) return 'multifamily';
+
+  // Commercial patterns
+  if (/COMMERCIAL|RETAIL|COM[-]?|C[-]?\d|SHOPPING|STORE/.test(c)) return 'commercial';
+
+  // Mixed Use patterns
+  if (/MIXED|MU[-]?|MXD|DOWNTOWN|URBAN CENTER|VILLAGE/.test(c)) return 'mixed_use';
+
+  // Office patterns
+  if (/OFFICE|OF[-]?|PROFESSIONAL|BUSINESS PARK/.test(c)) return 'office';
+
+  // Industrial patterns
+  if (/INDUSTRIAL|IND[-]?|MANUFACTURING|WAREHOUSE|I[-]?\d|LIGHT IND|HEAVY IND/.test(c)) return 'industrial';
+
+  // Open Space / Park patterns
+  if (/OPEN SPACE|PARK|RECREATION|GREENWAY|CONSERVATION|PRESERVE|OS[-]?/.test(c)) return 'open_space';
+
+  // Rural / Agricultural patterns
+  if (/RURAL|AGRICULTURAL|AG[-]?|FARM|RANCH|COUNTRY|ESTATE LOT/.test(c)) return 'rural_ag';
+
+  // Civic / Public patterns
+  if (/CIVIC|PUBLIC|GOVERNMENT|INSTITUTIONAL|SCHOOL|CHURCH|HOSPITAL|UTIL/.test(c)) return 'civic';
+
+  // TOD / Transit patterns
+  if (/TOD|TRANSIT|RAIL|STATION AREA|CORRIDOR/.test(c)) return 'tod_transit';
+
+  return 'other';
+}
 
 // Layer key to API type mapping
 const LAYER_TYPE_MAP = {
