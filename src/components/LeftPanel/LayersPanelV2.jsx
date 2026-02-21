@@ -5,7 +5,7 @@ import {
   Target, Wrench, Construction, AlertTriangle, Users, Navigation,
   Bookmark, Eye, ChevronDown, ChevronUp, RotateCcw,
   SlidersHorizontal, Plus, ThumbsUp, Send, MessageSquarePlus,
-  DollarSign, Building2, Clock, Train, Filter, Loader2
+  DollarSign, Building2, Clock, Train, Filter, Loader2, Locate
 } from "lucide-react";
 import FilterPanel from '../filters/FilterPanel';
 import { useFilterAPI } from '../../hooks/useFilterAPI';
@@ -44,7 +44,6 @@ const SECTIONS = [
   ]},
   { id: "zoning", title: "ZONING", icon: Map, hasOpacity: true, layers: [
     { id: "zoningDistricts", label: "Zoning Districts", sym: sym("fill","#3B82F6"), hasData: true },
-    { id: "futureLandUse", label: "Future Land Use", sym: sym("fill","#8B5CF6"), hasData: false, badge: "Soon" },
     { id: "zoningOverlays", label: "Zoning Overlays", sym: sym("dashed","#60a5fa"), hasData: false, badge: "Later" },
   ]},
   { id: "environmental", title: "ENVIRONMENTAL", icon: Trees, hasOpacity: true, layers: [
@@ -101,11 +100,17 @@ const SECTIONS = [
     { id: "transitStops", label: "Transit Stops", sym: sym("point","#1877F2"), hasData: true },
     { id: "parks", label: "Parks", sym: sym("fill","#1565D8"), hasData: true },
   ]},
-  { id: "transportation", title: "TRANSPORTATION", icon: Navigation, layers: [
-    { id: "trafficAADT", label: "Traffic (AADT)", sym: sym("solid","#EF4444"), hasData: false, badge: "Soon" },
-    { id: "majorRoads", label: "Major Roads", sym: sym("solid","#f59e0b"), hasData: false, badge: "Later" },
+  { id: "transportation", title: "TRANSPORTATION", icon: Navigation, hasOpacity: true, layers: [
+    { id: "trafficAADT", label: "Traffic (AADT)", gradient: ["#fde68a","#fbbf24","#f59e0b","#d97706"], hasData: true },
+    { id: "majorRoads", label: "Major Roads", sym: sym("solid","#64748b"), hasData: true },
     { id: "bikeRoutes", label: "Bike Routes", sym: sym("dashed","#1877F2"), hasData: false, badge: "Later" },
     { id: "sidewalks", label: "Sidewalks", sym: sym("dotted","#a0a0a0"), hasData: false, badge: "Later" },
+  ]},
+  { id: "boundaries", title: "BOUNDARIES & LAND USE", icon: Locate, hasOpacity: true, layers: [
+    { id: "cityLimits", label: "City Limits", sym: sym("solid","#3b82f6"), hasData: true },
+    { id: "etjBoundaries", label: "ETJ Boundaries", sym: sym("dashed","#8b5cf6"), hasData: true },
+    { id: "etjReleased", label: "ETJ Released", sym: sym("fill","#10b981"), hasData: true },
+    { id: "futureLandUse", label: "Future Land Use", sym: sym("fill","#f472b6"), hasData: true },
   ]},
 ];
 
@@ -304,6 +309,8 @@ const SECTION_GIS_KEYS = {
   environmental: ['floodplains'],
   zoning: ['zoning_districts'],
   utilities: ['water_lines', 'wastewater_lines', 'stormwater_lines'],
+  transportation: ['traffic_aadt', 'traffic_roadways'],
+  boundaries: ['city_limits', 'etj_boundaries', 'etj_released', 'future_land_use'],
 };
 
 export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredIdsChange, onAssetClassChange, onGisLayerChange, onGisOpacityChange, gisLayerOpacity, gisLayerLoading, mapRef, zIndex, onBringToFront, filterAPIRef, visibleGisLayers }) {
@@ -315,7 +322,7 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
   const [pack, setPack] = useState(null);
   const [baseMap, setBaseMap] = useState("streets");
   const [ls, setLs] = useState(() => { const i = {}; SECTIONS.forEach(s => s.layers.forEach(l => { i[l.id]=false; })); i.parcelBoundaries=true; return i; });
-  const [op, setOp] = useState({ parcels: 80, zoning: 25, environmental: 35, utilities: 85 });
+  const [op, setOp] = useState({ parcels: 80, zoning: 25, environmental: 35, utilities: 85, transportation: 80, boundaries: 60 });
   const [fs, setFs] = useState(() => { const i = {}; FILTER_GROUPS.forEach(g => g.filters.forEach(f => { if (f.type==="range") i[f.id]=[f.min,f.max]; else if (f.type==="select") i[f.id]=f.options[0]; else i[f.id]=false; })); return i; });
 
   // New filter API hook
@@ -372,6 +379,12 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
       stormwaterLines: 'stormwater_lines',
       zoningDistricts: 'zoning_districts',
       floodZones: 'floodplains',
+      trafficAADT: 'traffic_aadt',
+      majorRoads: 'traffic_roadways',
+      cityLimits: 'city_limits',
+      etjBoundaries: 'etj_boundaries',
+      etjReleased: 'etj_released',
+      futureLandUse: 'future_land_use',
     };
 
     for (const [panelId, gisKey] of Object.entries(GIS_LAYER_MAP)) {
@@ -392,6 +405,12 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
       stormwater_lines: 'stormwaterLines',
       zoning_districts: 'zoningDistricts',
       floodplains: 'floodZones',
+      traffic_aadt: 'trafficAADT',
+      traffic_roadways: 'majorRoads',
+      city_limits: 'cityLimits',
+      etj_boundaries: 'etjBoundaries',
+      etj_released: 'etjReleased',
+      future_land_use: 'futureLandUse',
     };
 
     setLs(prev => {
@@ -445,6 +464,8 @@ export default function LayersPanel({ onLayerChange, onFilterChange, onFilteredI
     zoning: ['zoning_districts'],
     environmental: ['floodplains'],
     utilities: ['water_lines', 'wastewater_lines', 'stormwater_lines'],
+    transportation: ['traffic_aadt', 'traffic_roadways'],
+    boundaries: ['city_limits', 'etj_boundaries', 'etj_released', 'future_land_use'],
   };
 
   // Handle opacity slider change — update local state AND notify parent
